@@ -142,9 +142,13 @@ function bouwZip() {
       if (Number(verzoek.query.match(/first: (\d+)/)?.[1]) > 100) {
         return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ errors: [{ message: 'Maximum number of 100 requested items exceeded' }] }) });
       }
-      const items = [...MENU, 'Kees Bakker heeft opdracht Portfolio M1 ingeleverd.', 'Piet Jansen heeft opdracht Meetmoment SD Engels M2 ingeleverd.'];
+      // 121 ongelezen: 7 relevant, plus 110 meetmomenten van SD; de server geeft per pagina hooguit 100.
+      const items = [...MENU, 'Kees Bakker heeft opdracht Portfolio M1 ingeleverd.', 'Piet Jansen heeft opdracht Meetmoment SD Engels M2 ingeleverd.',
+        ...Array.from({ length: 110 }, (_, i) => `Student Q heeft opdracht Meetmoment SD Rekenen M${i} ingeleverd.`)];
+      const first = Number(verzoek.query.match(/first: (\d+)/)[1]), page = Number(verzoek.query.match(/page: (\d+)/)?.[1] || 1);
+      const stuk = items.slice((page - 1) * first, page * first);
       return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
-        body: JSON.stringify({ data: { viewer: { notifications: { data: items.map((text, i) => ({ id: `m${i}`, text })), paginatorInfo: { total: items.length } } } } }) });
+        body: JSON.stringify({ data: { viewer: { notifications: { data: stuk.map((text, i) => ({ id: `m${page}-${i}`, text })), paginatorInfo: { total: items.length, lastPage: Math.ceil(items.length / first) } } } } }) });
     }
     if (verzoek.operationName === 'getLatestUnreadNotification') {
       meldVerzoeken.push(verzoek.query.match(/notifications\(first: (\d+)/)?.[1]);
@@ -213,13 +217,13 @@ function bouwZip() {
   await sim.reload(); await sim.waitForTimeout(1300);
   const belletje = '#notifications-dropdown > a.dropdown-toggle .badge';
   check((await sim.textContent(belletje)) === '7' && (await sim.textContent('.nav-user a[href="/notifications"] .badge')) === '7',
-    `teller toont 7 relevante in plaats van 117 (belletje "${await sim.textContent(belletje)}", ${tellerVerzoeken} verzoek(en))`);
-  check((await sim.getAttribute(belletje, 'title')).includes('11 in totaal'), `tooltip met het echte totaal ("${await sim.getAttribute(belletje, 'title')}")`);
-  check((await sim.textContent('#notifications-dropdown .panel-heading strong')) === 'Je hebt 7 ongelezen meldingen voor jouw opleidingen (van de 11).', 'kop van het menu aangepast');
+    `teller toont exact 7 relevante (alle 121 geteld over 2 pagina's) in plaats van 117 (belletje "${await sim.textContent(belletje)}", ${tellerVerzoeken} verzoek(en))`);
+  check((await sim.getAttribute(belletje, 'title')).includes('121 in totaal'), `tooltip met het echte totaal ("${await sim.getAttribute(belletje, 'title')}")`);
+  check((await sim.textContent('#notifications-dropdown .panel-heading strong')) === 'Je hebt 7 ongelezen meldingen voor jouw opleidingen (van de 121).', 'kop van het menu aangepast');
   const voor = tellerVerzoeken;
   await sim.evaluate((sel) => { document.querySelector(sel).textContent = '12'; }, belletje); // Simulise werkt de teller bij
   await sim.waitForTimeout(1800);
-  check((await sim.textContent(belletje)) === '7' && tellerVerzoeken === voor + 2, `nieuwe waarde van Simulise: opnieuw geteld, met terugval van 200 naar 100 (${tellerVerzoeken - voor} verzoeken, belletje "${await sim.textContent(belletje)}")`);
+  check((await sim.textContent(belletje)) === '7' && tellerVerzoeken === voor + 3, `nieuwe waarde van Simulise: opnieuw geteld, terugval naar 100 en 2 pagina's (${tellerVerzoeken - voor} verzoeken, belletje "${await sim.textContent(belletje)}")`);
   await zet({ notifFilter: false });
   check((await sim.textContent(belletje)) === '12', 'module meldingen uit: teller van Simulise terug');
   await zet({ notifFilter: true });
@@ -379,7 +383,7 @@ function bouwZip() {
   const net = await leesDownload('n');
   const netLek = ['Piet', 'Jansen', 'pjansen', 'Meetmoment SD', 'Opdracht X'].filter((w) => net.tekst.includes(w));
   check(netLek.length === 0, `netwerkrapport bevat geen namen of titels${netLek.length ? ` (gelekt: ${netLek.join(', ')})` : ''}`);
-  const netNodig = ['## Meldingenteller', 'first: 200 · HTTP 200 · fouten: Maximum number of 100 requested items exceeded', 'first: 100 · HTTP 200 · 11 meldingen, totaal 11, tekst met HTML: ja', 'vanaf het laden van de pagina', 'GET /api/vroeg?per_page=25', 'xmlhttprequest · `/api/vroeg?per_page=25`', 'fetch · `/api/graphql`',
+  const netNodig = ['## Meldingenteller', 'first: 200 · HTTP 200 · fouten: Maximum number of 100 requested items exceeded', "first: 100 · HTTP 200 · 121 meldingen (2 pagina's), totaal 121, tekst met HTML: ja", 'vanaf het laden van de pagina', 'GET /api/vroeg?per_page=25', 'xmlhttprequest · `/api/vroeg?per_page=25`', 'fetch · `/api/graphql`',
     'div[data-options]', '"student": "string"', 'AssignedAssignments', '"first": 25', '"page": 2', 'HANDED_IN', '"total": 34', 'per_page=25', '"username"', 'GET /assignments/assigned/data?page=2&per_page=25&q=…'].filter((w) => !net.tekst.includes(w));
   check(netNodig.length === 0, `netwerkrapport toont adressen, paginering en veldnamen${netNodig.length ? ` (mist: ${netNodig.join(', ')})` : ''}`);
   await sim.keyboard.press('Escape');

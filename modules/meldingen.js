@@ -52,7 +52,7 @@ SD.register({
       if (e.source !== window || e.data?.type !== 'sd-teller' || !this.SD) return;
       const { totaal, items = [], max } = e.data;
       const relevant = items.filter((x) => !this.tekstReden(x.text)).length;
-      this.teller = { totaal, relevant, volledig: totaal == null || totaal <= items.length || items.length < max };
+      this.teller = { totaal, relevant, volledig: totaal == null || totaal <= items.length || max === Infinity || items.length < max };
       this.pasTellerAan();
     };
     window.addEventListener('message', this._bericht);

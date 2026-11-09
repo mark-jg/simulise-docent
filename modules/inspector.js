@@ -262,7 +262,7 @@ SD.register({
       md.push(`- Aan: ${tl.aan ? 'ja' : 'nee'} · verzoek van Simulise gevonden om na te doen: ${tl.bronGevonden ? 'ja' : 'nee'}${tl.headers ? ` · headers: ${tl.headers.join(', ') || 'geen'}` : ''}`);
       if (!tl.pogingen?.length) md.push('- Nog geen pogingen.');
       for (const p of tl.pogingen || []) {
-        md.push(`- ${p.tijd} · first: ${p.first} · HTTP ${p.http ?? '-'}${p.meldingen != null ? ` · ${p.meldingen} meldingen, totaal ${p.totaal}, tekst met HTML: ${p.tekstMetHtml ? 'ja' : 'nee'}` : ''}`
+        md.push(`- ${p.tijd} · first: ${p.first} · HTTP ${p.http ?? '-'}${p.meldingen != null ? ` · ${p.meldingen} meldingen${p.paginas > 1 ? ` (${p.paginas} pagina's)` : ''}, totaal ${p.totaal}, tekst met HTML: ${p.tekstMetHtml ? 'ja' : 'nee'}` : ''}`
           + `${p.fouten?.length ? ` · fouten: ${p.fouten.join(' | ')}` : ''}${p.fout ? ` · fout: ${p.fout}` : ''}`);
       }
     }
