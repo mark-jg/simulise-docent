@@ -139,6 +139,9 @@ function bouwZip() {
     const verzoek = JSON.parse(r.request().postData() || '{}');
     if (verzoek.operationName === 'sdDocentTeller') {
       tellerVerzoeken++;
+      if (Number(verzoek.query.match(/first: (\d+)/)?.[1]) > 100) {
+        return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ errors: [{ message: 'Maximum number of 100 requested items exceeded' }] }) });
+      }
       const items = [...MENU, 'Kees Bakker heeft opdracht Portfolio M1 ingeleverd.', 'Piet Jansen heeft opdracht Meetmoment SD Engels M2 ingeleverd.'];
       return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
         body: JSON.stringify({ data: { viewer: { notifications: { data: items.map((text, i) => ({ id: `m${i}`, text })), paginatorInfo: { total: items.length } } } } }) });
@@ -216,7 +219,7 @@ function bouwZip() {
   const voor = tellerVerzoeken;
   await sim.evaluate((sel) => { document.querySelector(sel).textContent = '12'; }, belletje); // Simulise werkt de teller bij
   await sim.waitForTimeout(1800);
-  check((await sim.textContent(belletje)) === '7' && tellerVerzoeken === voor + 1, `nieuwe waarde van Simulise: opnieuw geteld (${tellerVerzoeken - voor} verzoek, belletje "${await sim.textContent(belletje)}")`);
+  check((await sim.textContent(belletje)) === '7' && tellerVerzoeken === voor + 2, `nieuwe waarde van Simulise: opnieuw geteld, met terugval van 200 naar 100 (${tellerVerzoeken - voor} verzoeken, belletje "${await sim.textContent(belletje)}")`);
   await zet({ notifFilter: false });
   check((await sim.textContent(belletje)) === '12', 'module meldingen uit: teller van Simulise terug');
   await zet({ notifFilter: true });
@@ -376,7 +379,7 @@ function bouwZip() {
   const net = await leesDownload('n');
   const netLek = ['Piet', 'Jansen', 'pjansen', 'Meetmoment SD', 'Opdracht X'].filter((w) => net.tekst.includes(w));
   check(netLek.length === 0, `netwerkrapport bevat geen namen of titels${netLek.length ? ` (gelekt: ${netLek.join(', ')})` : ''}`);
-  const netNodig = ['vanaf het laden van de pagina', 'GET /api/vroeg?per_page=25', 'xmlhttprequest · `/api/vroeg?per_page=25`', 'fetch · `/api/graphql`',
+  const netNodig = ['## Meldingenteller', 'first: 200 · HTTP 200 · fouten: Maximum number of 100 requested items exceeded', 'first: 100 · HTTP 200 · 11 meldingen, totaal 11, tekst met HTML: ja', 'vanaf het laden van de pagina', 'GET /api/vroeg?per_page=25', 'xmlhttprequest · `/api/vroeg?per_page=25`', 'fetch · `/api/graphql`',
     'div[data-options]', '"student": "string"', 'AssignedAssignments', '"first": 25', '"page": 2', 'HANDED_IN', '"total": 34', 'per_page=25', '"username"', 'GET /assignments/assigned/data?page=2&per_page=25&q=…'].filter((w) => !net.tekst.includes(w));
   check(netNodig.length === 0, `netwerkrapport toont adressen, paginering en veldnamen${netNodig.length ? ` (mist: ${netNodig.join(', ')})` : ''}`);
   await sim.keyboard.press('Escape');

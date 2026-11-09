@@ -101,6 +101,8 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.10.1: meldingenteller: als Simulise 200 meldingen in één keer weigert, probeert de extensie 100 en
+  dan 50. Het netwerkrapport (N) toont wat de teller deed, met eventuele foutmeldingen van Simulise.
 - 0.10.0: de meldingenteller (het getal op het belletje, in het gebruikersmenu en bij Meldingen) telt
   alleen nog ongelezen meldingen voor jouw opleidingen. Het echte totaal staat in de tooltip. De
   meldingen blijven in Simulise zelf gewoon ongelezen.

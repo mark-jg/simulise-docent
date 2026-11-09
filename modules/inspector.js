@@ -255,6 +255,18 @@ SD.register({
       if (r.antwoord) md.push('- Antwoord (opbouw):', '```json', JSON.stringify(r.antwoord, null, 2).slice(0, 6000), '```');
       md.push('');
     }
+    md.push('## Meldingenteller (Simulise Docent)', '');
+    const tl = antwoord.teller;
+    if (!tl) md.push('Niet actief (module Filter in Meldingen uit, of de pagina is niet herladen na het bijwerken).');
+    else {
+      md.push(`- Aan: ${tl.aan ? 'ja' : 'nee'} · verzoek van Simulise gevonden om na te doen: ${tl.bronGevonden ? 'ja' : 'nee'}${tl.headers ? ` · headers: ${tl.headers.join(', ') || 'geen'}` : ''}`);
+      if (!tl.pogingen?.length) md.push('- Nog geen pogingen.');
+      for (const p of tl.pogingen || []) {
+        md.push(`- ${p.tijd} · first: ${p.first} · HTTP ${p.http ?? '-'}${p.meldingen != null ? ` · ${p.meldingen} meldingen, totaal ${p.totaal}, tekst met HTML: ${p.tekstMetHtml ? 'ja' : 'nee'}` : ''}`
+          + `${p.fouten?.length ? ` · fouten: ${p.fouten.join(' | ')}` : ''}${p.fout ? ` · fout: ${p.fout}` : ''}`);
+      }
+    }
+    md.push('');
     const api = bronnen.filter((b) => !/\.(js|css|png|jpe?g|svg|gif|woff2?|ico)(\?|$)/i.test(b.url));
     md.push('## Alle opgevraagde adressen volgens de browser', '',
       api.length ? 'Ook van vóór de log. Alleen adres, soort en moment (ms na het laden).' : 'Geen (fetch, XHR of beacon).', '');

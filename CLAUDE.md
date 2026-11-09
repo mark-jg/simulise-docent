@@ -147,7 +147,14 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   /notifications; kop `#notifications-dropdown .panel-heading strong`. `#notifications-dropdown` is
   een `li.hidden-xs` zonder class `.dropdown`. De lijst in het menu wordt pas geladen als je het
   opent (eerst een spinner). Of `text` in GraphQL HTML met `<b>` is of platte tekst, is nog niet
-  gezien; meldingen.js kan beide.
+  gezien; meldingen.js kan beide. `notifications(first: 200, unread: true)` gaf een GraphQL-fout
+  (path viewer.notifications, viewer null); waarschijnlijk een maximum. teller.js probeert daarom
+  200, 100, 50 en zet wat het deed in `window.__sdTellerStatus` (zichtbaar in het netwerkrapport).
+- **Dashboard** (`/@<gebruiker>`): tegels via GraphQL, o.a. `dashboardTileGroups` (`user(id).groupsActive`
+  met `id name icon path permalink actionableAssignmentsCount`) en `dashboardTileAssignmentsReviewCount`
+  (`assignedAssignments(filters: $filters, page: 1, first: 5)`, `first: 5` letterlijk in de query;
+  `data[] { id state permalink assignment { id icon title } deliveredAt statusMessage }`,
+  `paginatorInfo.total`). Bruikbaar voor de Beoordelen-tegel op het dashboard (2.1, nog open).
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
 
 ## Open punten / bekende issues

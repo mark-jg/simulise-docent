@@ -109,6 +109,7 @@
         if (at.name.startsWith('data-') || at.name.startsWith(':') || at.name === 'props') probeer(`${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}[${at.name}]`, at.value);
       }
     }
-    window.postMessage({ type: 'sd-netlog-antwoord', log, bronnen, ingebed, vanafStart: vlag }, location.origin);
+    window.postMessage({ type: 'sd-netlog-antwoord', log, bronnen, ingebed, vanafStart: vlag,
+      teller: window.__sdTellerStatus ? JSON.parse(JSON.stringify(window.__sdTellerStatus)) : null }, location.origin);
   });
 })();
