@@ -39,6 +39,7 @@ SD.register({
     };
     chrome.runtime.onMessage.addListener(this._msg);
     SD.addCommand('inspector', 'Inspector starten (ontwikkelaar)', () => this.start());
+    SD.root.setAttribute('data-sim-netlog', ''); // netwerklog (modules/netlog.js) aan
   },
 
   destroy(SD) {
@@ -46,6 +47,7 @@ SD.register({
     window.removeEventListener('keydown', this._key, true);
     chrome.runtime.onMessage.removeListener(this._msg);
     SD.removeCommand('inspector');
+    SD.root.removeAttribute('data-sim-netlog');
     this.SD = null;
   },
 
@@ -58,7 +60,7 @@ SD.register({
     const bar = document.createElement('div'); bar.className = 'bar';
     const sel = document.createElement('div'); sel.className = 'sel'; sel.textContent = 'Inspector: beweeg over een element';
     const keys = document.createElement('div'); keys.className = 'keys';
-    keys.textContent = 'klik = selector kopiëren · R = rapport · S = alleen structuur · Esc = stoppen';
+    keys.textContent = 'klik = selector kopiëren · R = rapport · S = alleen structuur · N = netwerk · Esc = stoppen';
     const msg = document.createElement('div'); msg.className = 'msg';
     bar.append(sel, keys, msg); shadow.append(box, bar);
     this.ui = { host, box, sel, msg };
@@ -80,6 +82,7 @@ SD.register({
       if (/^(input|textarea|select)$/i.test(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
       const k = e.key.toLowerCase();
       if (k === 'escape') { e.preventDefault(); this.stop(); }
+      else if (k === 'n') { e.preventDefault(); this.netrapport().catch((err) => this.melding(`Netwerkrapport mislukt: ${err.message}`)); }
       else if (k === 'r' || k === 's') {
         e.preventDefault();
         try { this.rapport(k === 'r'); }
@@ -203,6 +206,58 @@ SD.register({
     });
     // Simulise gebruikt soms ?status:A,B zonder =; dat komt hierboven als sleutel zonder waarde door.
     return pad + (q.length ? `?${q.join('&')}` : '');
+  },
+
+  /* ---------- Netwerkrapport ---------- */
+  /* Vraagt de log op bij modules/netlog.js (in de pagina) en schrijft per soort verzoek de opbouw uit.
+   * Adressen worden gemaskeerd zoals in het paginarapport; getallen bij paginering blijven staan. */
+  netUrl(href) {
+    const u = new URL(href, location.href);
+    const pad = this.schoneUrl(u.origin + u.pathname).split('?')[0];
+    const PAG = /^(limit|offset|page|per_?page|perPage|page_?size|pageSize|size|first|skip|take|current_?page)$/i;
+    const q = [...u.searchParams].map(([k, v]) => `${k}=${PAG.test(k) && /^\d+$/.test(v) ? v : /^[A-Z][A-Z_,:]*$|^[a-z_]+:[A-Z_,]+$/.test(v) ? v : '…'}`);
+    return `${u.host === location.host ? '' : u.host}${pad}${q.length ? `?${q.join('&')}` : ''}`;
+  },
+
+  async netrapport() {
+    const log = await new Promise((res) => {
+      const t = setTimeout(() => { window.removeEventListener('message', op); res(null); }, 1500);
+      const op = (e) => {
+        if (e.source !== window || e.data?.type !== 'sd-netlog-antwoord') return;
+        clearTimeout(t); window.removeEventListener('message', op); res(e.data.log || []);
+      };
+      window.addEventListener('message', op);
+      window.postMessage({ type: 'sd-netlog-vraag' }, location.origin);
+    });
+    if (!log) { this.melding('Geen netwerklog gevonden. Herlaad de pagina en probeer opnieuw.'); return; }
+    const masker = this.maskerVoorPagina();
+    const groepen = new Map();
+    for (const r of log) {
+      if (/\.(js|css|png|jpe?g|svg|gif|woff2?|ico)(\?|$)/i.test(r.url)) continue;
+      const sleutel = `${r.methode} ${this.netUrl(r.url)}${r.body?.graphql ? ` (${r.body.graphql})` : ''}`;
+      const g = groepen.get(sleutel) || { n: 0, r };
+      g.n++; g.laatste = r; groepen.set(sleutel, g);
+    }
+    const md = ['# Simulise Docent: netwerkrapport', '',
+      `- Pagina: \`${this.schoneUrl(location.href)}\``,
+      `- Extensie: v${chrome.runtime.getManifest().version}, gemaakt ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
+      `- ${log.length} verzoeken vastgelegd sinds het laden van de pagina (met ontwikkelaarsmodus aan), ${groepen.size} soorten.`,
+      '- Alleen de opbouw: namen van parameters en velden met hun type. Geen waarden, behalve getallen bij paginering en vaste codes.',
+      ''];
+    if (!groepen.size) md.push('Nog geen verzoeken. Klik bijvoorbeeld naar pagina 2 van de lijst (met de Inspector uit), start de Inspector opnieuw en druk op N.', '');
+    for (const [sleutel, g] of groepen) {
+      const r = g.laatste;
+      md.push(`## ${sleutel}`, '', `- ${g.n}× · status ${r.status} · ${r.type || 'onbekend type'}`);
+      if (r.body) md.push('- Verzoek:', '```json', JSON.stringify(r.body, null, 2).slice(0, 3000), '```');
+      if (r.antwoord) md.push('- Antwoord (opbouw):', '```json', JSON.stringify(r.antwoord, null, 2).slice(0, 6000), '```');
+      md.push('');
+    }
+    const text = masker(md.join('\n'));
+    const slug = this.schoneUrl(location.href).split('?')[0].replace(/[{}@]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'pagina';
+    this.download(`simulise-netwerk-${slug}.md`, text);
+    const ok = await this.copy(text);
+    this.melding(`Netwerkrapport: ${groepen.size} soorten verzoeken, gedownload${ok ? ' en gekopieerd' : ''}.`);
+    return text;
   },
 
   /* ---------- Rapport ---------- */

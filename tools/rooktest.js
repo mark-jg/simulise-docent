@@ -47,7 +47,13 @@ const BEOORDELEN = `<html><head></head><body><aside id="nav"><ul class="nav-main
 <section id="scrollable-page-wrapper"><div class="row"><div class="col-12 col-lg-data"><div class="relative"><div class="table-responsive">
 <table class="table table-v-a-m table-index"><thead><tr><th class="hidden-xs"><input type="checkbox"></th><th class="drag-handle"><div class="text-nowrap"><a href="#">Toegewezen aan</a></div></th>
 <th class="drag-handle"><div class="text-nowrap"><a href="#">Opdracht titel</a></div></th><th class="drag-handle"><div class="text-nowrap"><a href="#">Status</a></div></th></tr></thead>
-<tbody>${RIJEN.map(rij).join('')}</tbody></table></div></div></div></div></section></div></div></div></body></html>`;
+<tbody>${RIJEN.map(rij).join('')}</tbody></table></div></div></div></div></section></div></div></div>
+<script>setTimeout(() => {
+  fetch('/api/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ operationName: 'AssignedAssignments',
+    query: 'query AssignedAssignments($first: Int, $page: Int) { assigned(first: $first, page: $page, search: "Piet") { total items { title student { name username } } } }',
+    variables: { first: 25, page: 2, status: 'HANDED_IN', search: 'Piet Jansen' } }) });
+  const x = new XMLHttpRequest(); x.open('GET', '/assignments/assigned/data?page=2&per_page=25&q=pjansen'); x.send();
+}, 700);</script></body></html>`;
 const UUID = '0a1b2c3d-1111-4222-8333-444455556666';
 const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
 <div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/groups"><span>Groepen</span></a></span><span class="text-muted">/</span><span>MR1A</span></p></div>
@@ -79,6 +85,8 @@ function bouwZip() {
   const ZIP_URL = 'https://github.com/mark-jg/simulise-docent/releases/download/v9.9.9/simulise-docent-v9.9.9.zip';
   await ctx.route('https://ma.simulise.com/**', (r) => {
     const p = new URL(r.request().url()).pathname;
+    if (p === '/api/graphql') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { assigned: { total: 34, items: [{ title: 'Meetmoment SD Engels M4', student: { name: 'Piet Jansen', username: 'pjansen' } }] } } }) });
+    if (p === '/assignments/assigned/data') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: [{ id: 5, title: 'Opdracht X', user: { name: 'Piet Jansen' } }], current_page: 2, per_page: 25, total: 34 }) });
     const body = p.startsWith('/assignments/assigned') ? BEOORDELEN : p.startsWith('/groups/school/') ? GROEPSPAGINA : NEPPAGINA;
     return r.fulfill({ contentType: 'text/html', body });
   });
@@ -97,6 +105,11 @@ function bouwZip() {
   check(Boolean(id), `background.js draait (extensie-id ${id})`);
 
   const nieuw = async (url) => { const p = await ctx.newPage(); p.on('pageerror', (e) => fouten.push(`${url}: ${e.message}`)); await p.goto(url); return p; };
+
+  const leesDownload = async (toets) => {
+    const [dl] = await Promise.all([sim.waitForEvent('download'), sim.keyboard.press(toets)]);
+    return { naam: dl.suggestedFilename(), tekst: fs.readFileSync(await dl.path(), 'utf8') };
+  };
 
   // 1. Content script op Simulise
   const sim = await nieuw('https://ma.simulise.com/');
@@ -170,10 +183,6 @@ function bouwZip() {
   check(await sim.isVisible(balk), 'Alt+I start de Inspector');
   await sim.hover('td:has-text("MEP1A")');
   check((await sim.textContent('#sim-docent-inspector .sel')).includes('table.table.table-index'), `selector onder de muis (${await sim.textContent('#sim-docent-inspector .sel')})`);
-  const leesDownload = async (toets) => {
-    const [dl] = await Promise.all([sim.waitForEvent('download'), sim.keyboard.press(toets)]);
-    return { naam: dl.suggestedFilename(), tekst: fs.readFileSync(await dl.path(), 'utf8') };
-  };
   const rap = await leesDownload('r');
   const lek = ['Sanne', 'Vries', 'Mohammed', 'Amrani', 'Lotte', 'Berg', 'Jansen', 'Pietersen', 'pjansen', 'kdevries', 'student.example', '1234567', '/users/557', '/users/555', '0f1e2d3c'].filter((w) => rap.tekst.includes(w));
   check(lek.length === 0, `rapport bevat geen namen, e-mail of nummers${lek.length ? ` (gelekt: ${lek.join(', ')})` : ''}`);
@@ -221,6 +230,18 @@ function bouwZip() {
   await zet({ grading: false });
   check((await zichtbaar()).length === 3 && !(await sim.isVisible('#sim-docent-beoordelen')), 'module uitzetten: filterbalk weg en alles zichtbaar');
   await zet({ grading: true, bdUitsluiten: '' });
+
+  // Netwerkrapport (N): opbouw van de verzoeken, zonder namen
+  await zet({ developer: true });
+  await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN'); await sim.waitForTimeout(1300);
+  await sim.keyboard.press('Alt+KeyI');
+  const net = await leesDownload('n');
+  const netLek = ['Piet', 'Jansen', 'pjansen', 'Meetmoment SD', 'Opdracht X'].filter((w) => net.tekst.includes(w));
+  check(netLek.length === 0, `netwerkrapport bevat geen namen of titels${netLek.length ? ` (gelekt: ${netLek.join(', ')})` : ''}`);
+  const netNodig = ['AssignedAssignments', '"first": 25', '"page": 2', 'HANDED_IN', '"total": 34', 'per_page=25', '"username"', 'GET /assignments/assigned/data?page=2&per_page=25&q=…'].filter((w) => !net.tekst.includes(w));
+  check(netNodig.length === 0, `netwerkrapport toont adressen, paginering en veldnamen${netNodig.length ? ` (mist: ${netNodig.join(', ')})` : ''}`);
+  await sim.keyboard.press('Escape');
+  await zet({ developer: false });
 
   const versie = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8')).version;
   check((await popup.textContent('#ver')) === `v${versie}`, `popup toont versie v${versie}`);
@@ -270,7 +291,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 8, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 9, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();

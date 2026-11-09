@@ -68,6 +68,10 @@ Simulise-pagina, met de knop **Inspector starten** in de popup, of via Cmd+K.
 - **R**: paginarapport (koppen, tabellen met de eerste rijen, filters en knoppen, linkpatronen en de
   structuur van de pagina). Wordt gedownload als `.md` en gekopieerd; stuur het naar Claude.
 - **S**: alleen de structuur (tags en classes), zonder enige tekst. Voor als je twijfelt.
+- **N**: netwerkrapport: welke verzoeken de pagina deed sinds het laden (met de ontwikkelaarsmodus
+  aan), met adres, namen van parameters en velden en hun type. Geen waarden, behalve getallen bij
+  paginering (page, per_page, total, ...) en vaste codes zoals HANDED_IN. Vastgelegd door
+  `modules/netlog.js`, dat alleen meekijkt als de ontwikkelaarsmodus aan staat.
 - **Esc**: stoppen.
 
 Privacy: namen die Simulise als persoon toont (links naar personen, avatars, elementen met
@@ -95,6 +99,8 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.6.1: Inspector: netwerkrapport met toets N. Laat zien welke verzoeken Simulise doet (adres, parameters,
+  veldnamen en paginering), zonder waarden. Nodig om de Beoordelen-lijst straks in één keer op te halen.
 - 0.6.0: filter in Beoordelen. Boven de lijst staat een balk met Alles / Mijn opleidingen: meetmomenten
   van andere opleidingen (bijv. SD, GA) worden verborgen, met het aantal erbij en "Toon even alles".
   Opleidingen en uitsluitwoorden stel je in via Instellingen in die balk. Inspector: gebruikersnamen

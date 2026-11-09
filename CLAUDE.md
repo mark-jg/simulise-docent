@@ -29,7 +29,9 @@ modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.
                 zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/school/<uuid>, groepsnamen in
                 chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
                 inspector.js (alleen als `developer` aan staat; Alt+I, R = rapport met namen vervangen,
-                S = alleen structuur). Modules met `dev: true` in registry staan onder Ontwikkelaarsmodus.
+                S = alleen structuur, N = netwerkrapport). netlog.js draait in de pagina (world MAIN) en
+                legt fetch/XHR alleen vast bij data-sim-netlog op <html>; alleen opbouw, geen waarden.
+                Modules met `dev: true` in registry staan onder Ontwikkelaarsmodus.
                 core.js biedt ook SD.addCommand (voor Cmd+K), SD.ready, SD.shadowHost en SD.observe.
                 Eigen UI altijd in een shadow root, met de --sim-*-tokens (die erven door).
 content.js      Start de modules (SD.start())
