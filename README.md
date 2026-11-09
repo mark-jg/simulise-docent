@@ -101,6 +101,10 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.8.0: Beoordelen: "Mijn groepen". Kies bij Instellingen in de filterbalk je groepen (of laat ze kiezen
+  op basis van je opleidingscodes); dan zie je alleen de opdrachten van die groepen. Welke groepen er
+  zijn en bij welke groep een rij hoort, komt uit wat Simulise zelf al meestuurt. Rijen zonder groep
+  blijven zichtbaar en worden apart geteld.
 - 0.7.0: Beoordelen: "Alles op één pagina" (standaard aan). Simulise laadt de hele lijst in één keer in
   plaats van per 25, zodat de filter over alle opdrachten werkt en je niet meer hoeft te bladeren.
   Weigert Simulise dat, dan blijft het gewoon per 25 werken.

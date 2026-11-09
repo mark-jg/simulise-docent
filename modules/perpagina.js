@@ -7,6 +7,12 @@
  * lijst werken. Geeft de server een fout (bijvoorbeeld een maximum), dan probeert het een kleiner
  * aantal en anders het oorspronkelijke verzoek: de pagina werkt dan gewoon zoals altijd.
  * Alleen op /assignments/assigned; er worden geen gegevens bewaard of verstuurd.
+ *
+ * Mijn groepen: staat simDocentGroepen = 1 in localStorage (module beoordelen aan), dan leest dit
+ * script uit hetzelfde antwoord welke groepen er zijn (aggregations.groups: naam en aantal) en bij
+ * welke groep elke rij hoort (door de id's in de rij te vergelijken met die van de groepen). Dat
+ * komt als JSON op <html data-sim-groepen>, voor modules/beoordelen.js. Gegevens van studenten
+ * (het veld user) worden overgeslagen.
  */
 (() => {
   if (window.__sdPerPagina) return;
@@ -42,19 +48,64 @@
     } catch { return false; }
   };
 
+  const leesGroepen = () => {
+    if (!location.pathname.startsWith('/assignments/assigned')) return false;
+    try { return localStorage.getItem('simDocentGroepen') === '1'; } catch { return false; }
+  };
+
+  // Alle tekst-id's in een rij, behalve in de gegevens van personen.
+  const OVERSLAAN = new Set(['user', 'users', 'currentReviewer', 'reviewers', 'author']);
+  const ids = (v, uit = new Set(), d = 0) => {
+    if (d > 6 || v == null) return uit;
+    if (typeof v === 'string' || typeof v === 'number') { if (String(v).length >= 6) uit.add(String(v)); return uit; } // korte waarden (aantallen) niet
+    if (Array.isArray(v)) { v.forEach((x) => ids(x, uit, d + 1)); return uit; }
+    if (typeof v === 'object') for (const [k, x] of Object.entries(v)) if (!OVERSLAAN.has(k)) ids(x, uit, d + 1);
+    return uit;
+  };
+
+  const publiceer = (j) => {
+    for (const x of Array.isArray(j) ? j : [j]) {
+      const aa = x?.data?.assignedAssignments;
+      if (!aa) continue;
+      const groepen = (aa.aggregations?.groups || []).map((g) => {
+        const ac = g.item?.autocompletion || {};
+        const sleutels = [g.key, ac.id, ac.value].filter((s) => s != null && s !== '').map(String);
+        sleutels.push(...sleutels.map((s) => s.replace(/^[a-z_]+:/i, '')));
+        return { key: String(g.key), naam: String(ac.text ?? g.key).slice(0, 80), aantal: g.count ?? null, sleutels: [...new Set(sleutels)] };
+      });
+      const rijen = {};
+      for (const d of aa.data || []) {
+        if (!d?.id) continue;
+        const inRij = ids(d);
+        rijen[d.id] = groepen.filter((g) => g.sleutels.some((s) => inRij.has(s))).map((g) => g.key);
+      }
+      document.documentElement.setAttribute('data-sim-groepen', JSON.stringify({
+        groepen: groepen.map(({ key, naam, aantal }) => ({ key, naam, aantal })), rijen,
+      }));
+      window.postMessage({ type: 'sd-groepen' }, location.origin);
+    }
+  };
+
   const origFetch = window.fetch;
+  const metGroepen = (res, init) => {
+    if (leesGroepen() && init.body.includes(OPERATIE)) res.clone().json().then(publiceer, () => {});
+    return res;
+  };
+
   window.fetch = async function (input, init) {
     const aantal = gewenst();
     const url = typeof input === 'string' ? input : input?.url || '';
-    if (!aantal || !/\/graphql(\?|$)/.test(url) || !init || typeof init.body !== 'string') return origFetch.apply(this, arguments);
-    for (const n of [aantal, 100].filter((n, i, a) => n > 25 && a.indexOf(n) === i)) {
-      const body = pasAan(init.body, n);
-      if (!body) break;
-      try {
-        const res = await origFetch.call(this, input, { ...init, body });
-        if (await goed(res)) return res;
-      } catch { /* volgende poging */ }
+    if ((!aantal && !leesGroepen()) || !/\/graphql(\?|$)/.test(url) || !init || typeof init.body !== 'string') return origFetch.apply(this, arguments);
+    if (aantal) {
+      for (const n of [aantal, 100].filter((n, i, a) => n > 25 && a.indexOf(n) === i)) {
+        const body = pasAan(init.body, n);
+        if (!body) break;
+        try {
+          const res = await origFetch.call(this, input, { ...init, body });
+          if (await goed(res)) return metGroepen(res, init);
+        } catch { /* volgende poging */ }
+      }
     }
-    return origFetch.apply(this, arguments);
+    return metGroepen(await origFetch.apply(this, arguments), init);
   };
 })();

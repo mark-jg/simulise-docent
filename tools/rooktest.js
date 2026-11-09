@@ -39,7 +39,8 @@ const NEPPAGINA = `<html><head><style>
 </div></body></html>`;
 
 // Nagebootste Beoordelen-lijst, zelfde opbouw als in Simulise (kolommen in andere volgorde dan standaard).
-const rij = (titel) => `<tr><td class="hidden-xs"><input type="checkbox"></td><td>Student X</td><td><a href="#"><strong>${titel}</strong></a></td><td><p class="badge bg-warning">Te beoordelen</p></td></tr>`;
+const RIJ_ID = (i) => `00000000-0000-4000-8000-00000000000${i}`;
+const rij = (titel, i) => `<tr><td class="hidden-xs"><input type="checkbox"></td><td>Student X</td><td><a href="/@studentx/assignment/${RIJ_ID(i)}/review?group=x"><strong>${titel}</strong></a></td><td><p class="badge bg-warning">Te beoordelen</p></td></tr>`;
 const RIJEN = ['Meetmoment SD Engels M4', 'Meetmoment GA Engels M1 (Cohort 2026)', 'Meetmoment MEP/MIP Engels M1 (Cohort 2026)',
   'PS_1.8: Wie ben ik?', 'MEP 1 - CREA - Brochure/Reisgids', 'Meetmoment MR Nederlands M1', 'Meetmoment SD Nederlands M2'];
 const BEOORDELEN = `<html><head></head><body><aside id="nav"><ul class="nav-main"><li><a href="/dashboard"><i class="fa"></i><span>Dashboard</span></a></li></ul></aside>
@@ -108,8 +109,15 @@ function bouwZip() {
   await ctx.route('https://api.simulise.com/graphql', (r) => {
     const v = JSON.parse(r.request().postData() || '{}').variables || {};
     graphqlVerzoeken.push(`${v.page}/${v.perPage}`);
+    // Groepen zoals Simulise ze meestuurt; rij 1 heeft een groeps-id in de gegevens van de student (moet genegeerd worden).
+    const G = { MEP1A: 'grp-111111', MR1A: 'grp-222222', SD2B: 'grp-333333', GA1A: 'grp-444444' };
+    const perRij = ['SD2B', 'GA1A', 'MEP1A', 'SD2B', null, 'MR1A', 'SD2B'];
     const body = v.perPage > 100 ? { errors: [{ message: 'Maximum number of 100 requested items exceeded' }] }
-      : { data: { assignedAssignments: { paginatorInfo: { total: 33, perPage: v.perPage, currentPage: v.page } } } };
+      : { data: { assignedAssignments: {
+        data: perRij.map((g, i) => ({ id: RIJ_ID(i), status: 'HANDED_IN', user: { id: G.MEP1A, name: 'Piet Jansen' },
+          assignment: { id: `opdr-00000${i}`, title: 'x' }, assignmentConnection: g ? { id: `conn-00000${i}`, connectable: { id: G[g] } } : null })),
+        aggregations: { groups: Object.entries(G).map(([naam, id]) => ({ key: `key-${id}`, item: { autocompletion: { id, text: naam, value: `group:${id}` } }, count: perRij.filter((x) => x === naam).length })) },
+        paginatorInfo: { total: 33, perPage: v.perPage, currentPage: v.page } } } };
     return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
   });
   await ctx.route((url) => !/^(chrome-extension:|https:\/\/ma\.simulise\.com|https:\/\/api\.simulise\.com\/graphql|https:\/\/api\.github\.com|https:\/\/github\.com)/.test(url.href),
@@ -233,6 +241,24 @@ function bouwZip() {
   check(z.length === 4 && !z.some((t) => /SD|GA/.test(t)) && z.includes('Meetmoment MEP/MIP Engels M1 (Cohort 2026)') && z.includes('Meetmoment MR Nederlands M1'),
     `Mijn opleidingen: meetmomenten SD en GA verborgen, eigen en gewone opdrachten zichtbaar (${z.join(' | ')})`);
   check((await info()) === '3 van 7 verborgen op deze pagina', `aantal verborgen zichtbaar ("${await info()}")`);
+
+  // Mijn groepen
+  await sim.click('#sim-docent-beoordelen button[data-modus="groepen"]'); await sim.waitForTimeout(300);
+  check((await info()) === 'Kies je groepen bij Instellingen.', `Mijn groepen zonder keuze vraagt om groepen ("${await info()}")`);
+  await sim.click('#sim-docent-beoordelen button:has-text("Instellingen")');
+  const vinkjes = sim.locator('#sim-docent-beoordelen .groepen input');
+  check(await vinkjes.count() === 4 && (await sim.textContent('#sim-docent-beoordelen .groepen')).includes('MEP1A(1)'), `groepen uit Simulise met aantallen (${await sim.textContent('#sim-docent-beoordelen .groepen')})`);
+  await sim.click('#sim-docent-beoordelen button:has-text("Kies de groepen van mijn opleidingen")'); await sim.waitForTimeout(400);
+  const gekozen = await popup.evaluate(() => chrome.storage.sync.get('bdGroepen').then((s) => s.bdGroepen));
+  check(JSON.stringify(gekozen) === JSON.stringify(['key-grp-111111', 'key-grp-222222']), `opleidingscodes kiezen MEP1A en MR1A (${JSON.stringify(gekozen)})`);
+  z = await zichtbaar();
+  check(z.join(' | ') === 'Meetmoment MEP/MIP Engels M1 (Cohort 2026) | MEP 1 - CREA - Brochure/Reisgids | Meetmoment MR Nederlands M1',
+    `Mijn groepen: alleen rijen van MEP1A en MR1A, plus de rij zonder groep (${z.join(' | ')})`);
+  check((await info()) === '4 van 7 verborgen op deze pagina · 1 zonder groep (zichtbaar)', `telling bij Mijn groepen ("${await info()}")`);
+  await sim.locator('#sim-docent-beoordelen .groepen label:has-text("SD2B") input').check(); await sim.waitForTimeout(400);
+  check((await zichtbaar()).length === 6, 'groep SD2B aanvinken toont ook die rijen');
+  await sim.click('#sim-docent-beoordelen button:has-text("Instellingen")'); // weer dicht
+  await sim.click('#sim-docent-beoordelen button[data-modus="mijn"]'); await sim.waitForTimeout(300);
   await sim.click('#sim-docent-beoordelen button[data-modus="alles"]'); await sim.waitForTimeout(300);
   check((await zichtbaar()).length === 7, 'Alles: alle rijen zichtbaar');
   await sim.click('#sim-docent-beoordelen button[data-modus="mijn"]'); await sim.waitForTimeout(300);

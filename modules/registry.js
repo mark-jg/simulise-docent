@@ -22,9 +22,10 @@ globalThis.SD_DEFAULTS = {
   hideSupport: true,  // module hulpknop
   search: true,       // module zoeken
   grading: true,      // module beoordelen
-  bdModus: 'mijn',    // filter Beoordelen: 'alles' of 'mijn'
+  bdModus: 'mijn',    // filter Beoordelen: 'alles', 'mijn' (opleidingen) of 'groepen'
   bdOpleidingen: 'MEP, MIP, MR',
   bdUitsluiten: '',
+  bdGroepen: [],      // Beoordelen: gekozen groepen (sleutels uit Simulise) voor Mijn groepen
   bdEenPagina: true,  // Beoordelen: hele lijst op één pagina (modules/perpagina.js)
   navToggle: true,    // module zijbalk
   navMini: false,     // zijbalk ingeklapt
