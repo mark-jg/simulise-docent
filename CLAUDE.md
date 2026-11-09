@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.10.2)
+## Huidige staat (v0.11.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -146,7 +146,9 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   `.nav-user a[href="/notifications"] .badge` (gebruikersmenu) en het tabblad Meldingen op
   /notifications; kop `#notifications-dropdown .panel-heading strong`. `#notifications-dropdown` is
   een `li.hidden-xs` zonder class `.dropdown`. De lijst in het menu wordt pas geladen als je het
-  opent (eerst een spinner). Of `text` in GraphQL HTML met `<b>` is of platte tekst, is nog niet
+  opent (eerst een spinner). Voet van het menu: `div.panel-footer` met tandwiel (instellingen), een
+  link met `i.fa-check` (vermoedelijk "alles gelezen"; meldingen.js gebruikt die voor de knop
+  "Alles als gelezen markeren", eerst op tooltip, anders op het vinkje) en "Bekijk alle meldingen...". Of `text` in GraphQL HTML met `<b>` is of platte tekst, is nog niet
   gezien; meldingen.js kan beide. `notifications(first: 200, unread: true)` gaf een GraphQL-fout
   (path viewer.notifications, viewer null); waarschijnlijk een maximum. teller.js probeert daarom
   200, 100, 50 en zet wat het deed in `window.__sdTellerStatus` (zichtbaar in het netwerkrapport).

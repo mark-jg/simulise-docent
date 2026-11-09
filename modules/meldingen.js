@@ -29,6 +29,10 @@ SD.register({
     .info { color: var(--sim-text-2, #5b6470); font-size: 12px; }
     button { all: unset; cursor: pointer; color: var(--sim-accent-text, #0b6f5e); font-size: 12px; text-decoration: underline; }
     button[disabled] { color: var(--sim-text-3, #8a93a0); cursor: default; text-decoration: none; }
+    .spacer { flex: 1; }
+    button.gelezen { text-decoration: none; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--sim-border-2, #d4d9df);
+      color: var(--sim-text-2, #5b6470); font-weight: 600; }
+    button.gelezen:hover { border-color: var(--sim-accent, #0e8a74); color: var(--sim-accent-text, #0b6f5e); }
     button:focus-visible { outline: 2px solid var(--sim-accent, #0e8a74); outline-offset: 2px; }
   `,
 
@@ -212,7 +216,10 @@ SD.register({
       toon.onclick = () => { this.tijdelijk = !this.tijdelijk; this.run(); };
       const meer = document.createElement('button'); meer.className = 'meer';
       meer.onclick = () => this.meerLaden(meer);
-      bar.append(info, toon, meer);
+      const gelezen = document.createElement('button'); gelezen.className = 'gelezen'; gelezen.textContent = 'Alles als gelezen markeren';
+      gelezen.onclick = () => this.allesGelezen(gelezen);
+      const spacer = document.createElement('span'); spacer.className = 'spacer';
+      bar.append(info, toon, meer, spacer, gelezen);
       shadow.append(style, bar);
       tijdlijn.before(this.host);
     }
@@ -224,12 +231,37 @@ SD.register({
         + (geladen ? ` · ${geladen} toegevoegd van volgende pagina's` : '');
       toon.textContent = 'Toon even alles'; toon.hidden = !weg;
     }
+    const gelezen = root.querySelector('.gelezen');
+    if (!gelezen.disabled) gelezen.hidden = !this.gelezenKnop();
     if (!meer.disabled) {
       const laatste = this.laatstePagina();
       const volgende = this.volgende ?? this.huidigePagina() + 1;
       meer.hidden = !laatste || volgende > laatste;
       meer.textContent = `Volgende pagina's doorzoeken (${volgende} van ${laatste})`;
     }
+  },
+
+  /* De eigen knop van Simulise in het meldingenmenu (onderaan, met een vinkje): "alles gelezen".
+   * Eerst op tooltip ("gelezen"/"read"), anders de link met het vinkje-icoon in de voet van het menu. */
+  gelezenKnop() {
+    const links = [...document.querySelectorAll('#notifications-dropdown .panel-footer a')];
+    const tip = (a) => a.getAttribute('data-original-title') || a.getAttribute('title') || a.getAttribute('aria-label') || '';
+    return links.find((a) => /gelezen|gelezen markeren|read/i.test(tip(a))) || links.find((a) => a.querySelector('i.fa-check')) || null;
+  },
+
+  allesGelezen(knop) {
+    const simKnop = this.gelezenKnop();
+    if (!simKnop) return;
+    const tip = simKnop.getAttribute('data-original-title') || simKnop.getAttribute('title') || '';
+    const totaal = this.teller?.totaal ?? parseInt(document.querySelector(this.TELLERS[0])?.dataset.simOrigineel || document.querySelector(this.TELLERS[0])?.textContent, 10);
+    const vraag = `Alle ${Number.isFinite(totaal) ? totaal + ' ' : ''}ongelezen meldingen in Simulise als gelezen markeren?\n\n`
+      + 'Dit geldt ook voor de meldingen die nu verborgen zijn, en is niet terug te draaien.\n'
+      + `(Dit gebruikt de knop ${tip ? `"${tip}"` : 'met het vinkje'} onderaan het meldingenmenu van Simulise.)`;
+    if (!confirm(vraag)) return;
+    knop.disabled = true;
+    knop.textContent = 'Bezig…';
+    simKnop.click();
+    setTimeout(() => location.reload(), 1500); // daarna de lijst en de teller opnieuw laden
   },
 
   huidigePagina() { return parseInt(new URL(location.href).searchParams.get('page'), 10) || 1; },

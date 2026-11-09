@@ -101,6 +101,8 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.11.0: knop "Alles als gelezen markeren" op de pagina Meldingen. Vraagt eerst om bevestiging en gebruikt
+  dan de eigen knop van Simulise (het vinkje onderaan het meldingenmenu).
 - 0.10.2: meldingenteller telt alle ongelezen meldingen, ook als Simulise ze maar per 100 geeft: de
   volgende pagina's worden ook opgehaald (tot 10). Dan staat er een exact getal in plaats van "34+".
 - 0.10.1: meldingenteller: als Simulise 200 meldingen in één keer weigert, probeert de extensie 100 en

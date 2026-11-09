@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Simulise Docent",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "description": "Thema's en docent-tools voor Simulise (ma.simulise.com). Draait lokaal; controleert alleen GitHub op updates.",
   "permissions": [
     "storage",

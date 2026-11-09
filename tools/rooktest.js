@@ -19,7 +19,13 @@ const MENU = ['<b>Piet Jansen</b> heeft opdracht <b>Meetmoment SD Engels M4</b> 
 // Meldingenpagina: tijdlijn, door de server gemaakt, 3 pagina's.
 const MELDPAGINAS = { 1: ['SD Engels M4', 'MEP/MIP Engels M1', 'GA Engels M1', null, 'SD Nederlands M2', 'MR Nederlands M1'],
   2: ['GA Engels M2', 'MEP/MIP Rekenen M1', null, 'SD Engels M1'], 3: [null, 'GA Nederlands M1'] };
-const MELDINGENPAGINA = (n) => `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox">
+const MELDINGENPAGINA = (n) => `<html><head></head><body>
+<header class="header navbar"><ul class="nav navbar-nav navbar-right nav-user"><li id="notifications-dropdown" class="hidden-xs"><a class="dropdown-toggle" href="#"><span class="badge badge-sm up bg-danger count">117</span></a>
+<section class="dropdown-menu aside-xl"><section class="panel bg-white"><div class="panel-heading"><strong>Je hebt 117 ongelezen meldingen.</strong></div><div class="list-group"></div>
+<div class="panel-footer text-sm b-t"><a class="pull-right" href="/profile/settings?panel=notifications"><i class="fa fa-fw fa-cog"></i></a>
+<a class="pull-right m-r-sm" href="#" data-original-title="Markeer alles als gelezen" onclick="event.preventDefault(); document.documentElement.dataset.testAllesGelezen = 'ja';"><i class="fa fa-fw fa-check"></i></a>
+<a href="/notifications">Bekijk alle meldingen...</a></div></section></section></li></ul></header>
+<aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox">
 <section id="content-wrapper" class="scrollable wrapper"><div class="wrapper"><div class="timeline">
 <article class="timeline-item active"><div class="timeline-caption"><div class="panel"><div class="panel-body h4 font-thin">Meldingen van <b>Docent</b></div></div></div></article>
 ${MELDPAGINAS[n].map((m, i) => `<article class="timeline-item${i % 2 ? ' alt' : ''}"><div class="timeline-caption"><div class="panel"><div class="panel-body">
@@ -309,6 +315,16 @@ function bouwZip() {
   check(!(await sim.isVisible('#sim-docent-meldingen .meer')), 'knop verdwijnt na de laatste pagina');
   await sim.click('#sim-docent-meldingen .toon'); await sim.waitForTimeout(200);
   check((await artZichtbaar()) === 12, '"Toon even alles" op de meldingenpagina');
+  // Alles als gelezen: eerst bevestigen; annuleren doet niets, bevestigen gebruikt de knop van Simulise
+  let dialoog = '';
+  sim.once('dialog', (d) => { dialoog = d.message(); d.dismiss(); });
+  await sim.click('#sim-docent-meldingen .gelezen'); await sim.waitForTimeout(200);
+  check(dialoog.includes('als gelezen markeren') && dialoog.includes('"Markeer alles als gelezen"') && !(await sim.evaluate(() => document.documentElement.dataset.testAllesGelezen)),
+    `"Alles als gelezen markeren" vraagt eerst om bevestiging; annuleren doet niets ("${dialoog.split('\n')[0]}")`);
+  sim.once('dialog', (d) => d.accept());
+  await sim.click('#sim-docent-meldingen .gelezen'); await sim.waitForTimeout(300);
+  check((await sim.evaluate(() => document.documentElement.dataset.testAllesGelezen)) === 'ja', 'na bevestigen gebruikt hij de knop van Simulise');
+  await sim.waitForTimeout(1600); // de pagina herlaadt
   await zet({ notifFilter: false });
   check((await artZichtbaar()) === 6 && !(await sim.isVisible('#sim-docent-meldingen')), 'module meldingen uitzetten: balk en toegevoegde meldingen weg, pagina zoals Simulise hem gaf');
   await zet({ notifFilter: true });
