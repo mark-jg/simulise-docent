@@ -315,6 +315,13 @@ SD.register({
     };
     const hoofd = document.querySelector('#content') || document.body;
     boom(hoofd, 0, 14);
+    const hoofdRegels = [...regels];
+    // Element onder de muis buiten #content (bijv. een menu in de bovenbalk): ook die omgeving beschrijven.
+    const ROND = '.dropdown-menu, .dropdown, [role=menu], .popover, .modal, header, nav, aside, section, ul';
+    const rond = this.hover && this.hover.isConnected && !hoofd.contains(this.hover)
+      ? (this.hover.closest('.dropdown, .popover, .modal') || this.hover.closest(ROND) || this.hover.parentElement) : null;
+    let rondRegels = null;
+    if (rond) { regels.length = 0; boom(rond, 0, 12); rondRegels = [`${sig(rond)}${tekst(rond) ? `  "${tekst(rond)}"` : ''}`, ...regels.map((r) => `  ${r}`)]; }
 
     const md = [];
     md.push(`# Simulise Docent: ${metTekst ? 'paginarapport' : 'structuurrapport (zonder tekst)'}`);
@@ -371,7 +378,8 @@ SD.register({
       if (linkTypes.size) md.push('## Linkpatronen', '', ...[...linkTypes].sort((a, b) => b[1] - a[1]).slice(0, 40).map(([p, n]) => `- \`${p}\` × ${n}`), '');
     }
 
-    md.push(`## Structuur van \`${hoofd === document.body ? 'body' : '#content'}\``, '', '```', ...regels, '```', '');
+    if (rondRegels) md.push(`## Structuur rond het element onder de muis: \`${this.selectorFor(rond)}\``, '', '```', ...rondRegels, '```', '');
+    md.push(`## Structuur van \`${hoofd === document.body ? 'body' : '#content'}\``, '', '```', ...hoofdRegels, '```', '');
     const nav = document.querySelector('aside#nav');
     if (nav) { regels.length = 0; boom(nav, 0, 4); md.push('## Structuur van `aside#nav`', '', '```', ...regels.slice(0, 120), '```', ''); }
 

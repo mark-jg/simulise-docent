@@ -101,6 +101,8 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.8.1: Inspector: het paginarapport (R) beschrijft ook de omgeving van het element onder de muis als
+  dat buiten de pagina-inhoud staat, zoals het meldingenmenu in de bovenbalk.
 - 0.8.0: Beoordelen: "Mijn groepen". Kies bij Instellingen in de filterbalk je groepen (of laat ze kiezen
   op basis van je opleidingscodes); dan zie je alleen de opdrachten van die groepen. Welke groepen er
   zijn en bij welke groep een rij hoort, komt uit wat Simulise zelf al meestuurt. Rijen zonder groep

@@ -15,6 +15,9 @@ const NEPPAGINA = `<html><head><style>
   .support-button { position: fixed; right: 0; bottom: 0; display: block; }
   aside#nav { width: 220px; display: block; }
 </style></head><body>
+<header class="header navbar"><ul class="nav navbar-nav"><li id="notifications-dropdown" class="dropdown open"><a class="dropdown-toggle" href="#">Meldingen</a>
+  <ul class="dropdown-menu"><li class="notification"><a href="/@pjansen/assignment/0f1e2d3c-1111-2222-3333-444455556666/review"><span class="text">Piet Jansen heeft Meetmoment SD Engels M4 ingeleverd</span><small>2 uur geleden</small></a></li>
+  <li class="notification"><a href="#"><span class="text">Nieuwe feedback op PS_1.8: Wie ben ik?</span></a></li></ul></li></ul></header>
 <aside id="nav"><ul class="nav-main">
   <li><a href="/dashboard"><i class="fa fa-home"></i><span>Dashboard</span></a></li>
   <li><a href="/assignments/assigned"><i class="fa fa-check"></i><span>Beoordelen</span></a></li>
@@ -215,6 +218,11 @@ function bouwZip() {
   check(rap.naam === 'simulise-rapport-groups-id-assignments.md', `bestandsnaam zonder id's (${rap.naam})`);
   check(rap.tekst.includes('/@{gebruiker}/assignment/{uuid}/review') && rap.tekst.includes('@[gebruiker]'), 'gebruikersnamen (@...) vervangen in links en tekst');
   fs.writeFileSync(path.join(os.tmpdir(), 'sd-voorbeeldrapport.md'), rap.tekst);
+  await sim.hover('#notifications-dropdown li.notification >> nth=0');
+  const menu = await leesDownload('r');
+  check(menu.tekst.includes('Structuur rond het element onder de muis: `#notifications-dropdown`') && menu.tekst.includes('Meetmoment SD Engels M4') && menu.tekst.includes('li.notification × 2'),
+    'rapport beschrijft ook het menu onder de muis (buiten #content)');
+  check(!/Piet|Jansen|pjansen/.test(menu.tekst), 'menu-rapport zonder namen');
   const str = await leesDownload('s');
   check(!/MEP1A|Reflectie|Student 1/.test(str.tekst) && str.tekst.includes('table.table.table-index'), 'S: structuurrapport zonder tekst');
   await sim.keyboard.press('Escape');
