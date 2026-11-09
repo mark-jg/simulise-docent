@@ -147,6 +147,9 @@ SD.register({
     'Vandaag Gisteren Morgen Week Maand Jaar Periode Maandag Dinsdag Woensdag Donderdag Vrijdag Zaterdag Zondag ' +
     'Januari Februari Maart April Mei Juni Juli Augustus September Oktober November December ' +
     'Simulise Mediacollege Amsterdam MCA Teams Microsoft Excel Overzicht Voortgang Resultaat Resultaten Cijfer Cijfers ' +
+    'Meetmoment Nederlands Engels Rekenen Burgerschap Loopbaan Spreken Schrijven Lezen Luisteren Gesprekken Professional Skills ' +
+    'Vakvaardigheden Cohort Nulmeting Brochure Reisgids Fashion Vloggenreeks Startvlog Vrijheid Gelijkheid Omschrijving Reflecties ' +
+    'Algemeen Inhoudelijk Rubrics Toekenning Niet Voldaan Sjablonen Community Bestanden Opdrachttitel ' +
     'The All My Group Groups Assignment Assignments Assessment Assessments Handed In Being Processed Asked Show Hide Next Previous Page Of')
     .split(' ')),
 
@@ -158,7 +161,7 @@ SD.register({
       namen.set(t, `Student ${namen.size + 1}`);
     };
     // Plekken waar Simulise personen toont: links naar personen, avatars, elementen met "name"/"student"/"user" in de class.
-    const persoonLink = /\/(users?|students?|persons?|profile|profiles|people)\/|\/portfolio\/.+/i;
+    const persoonLink = /^\/@|\/(users?|students?|persons?|profile|profiles|people)\/|\/portfolio\/.+/i;
     for (const a of document.querySelectorAll('a[href]')) if (persoonLink.test(new URL(a.href, location.href).pathname)) voegToe(a.textContent);
     for (const img of document.querySelectorAll('img[alt], img[title]')) { voegToe(img.alt); voegToe(img.title); }
     for (const el of document.querySelectorAll('[class*="name" i], [class*="student" i], [class*="user" i], [class*="avatar" i]')) {
@@ -175,6 +178,7 @@ SD.register({
     const masker = (s) => {
       if (!s) return s;
       s = s.replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '[e-mail]');
+      s = s.replace(/(^|[^\w])@[\w.-]+/g, '$1@[gebruiker]');
       if (bekend) s = s.replace(bekend, (m) => namen.get(m));
       s = s.replace(/\b\d{6,9}\b/g, '[nummer]');
       s = s.replace(naamPatroon, (m) => m.split(/\s+/).every((w) => SAFE.has(w) || !/^[A-ZÀ-Þ]/.test(w)) ? m : '[naam]');
@@ -187,7 +191,12 @@ SD.register({
   /* URL zonder persoonsgegevens: getallen in het pad worden {id}, alleen "veilige" waarden in de query. */
   schoneUrl(href) {
     const u = new URL(href, location.href);
-    const pad = u.pathname.replace(/\d+/g, '{id}');
+    // Simulise zet gebruikersnamen in het pad (/@gebruiker/...): die zijn persoonsgegevens.
+    // Lange id's (uuid's) worden {id}, losse getallen ook.
+    const pad = u.pathname
+      .replace(/\/@[^/]+/g, '/@{gebruiker}')
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '{uuid}')
+      .replace(/\d+/g, '{id}');
     const q = [...u.searchParams].map(([k, v]) => {
       const veilig = /^[A-Za-z_:,.\-]{0,80}$/.test(v) && (v.includes(':') || v.includes(',') || /^[A-Z_]+$/.test(v) || /^[a-z_-]+$/.test(v));
       return `${k}=${/^\d+$/.test(v) ? '{id}' : veilig ? v : '…'}`;

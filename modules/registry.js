@@ -7,6 +7,7 @@
  */
 globalThis.SD_MODULES = [
   { id: 'thema', naam: 'Thema', uitleg: 'Opmaak en thema\'s voor Simulise', key: 'enabled' },
+  { id: 'beoordelen', naam: 'Filter in Beoordelen', uitleg: 'Meetmomenten van andere opleidingen verbergen; instellingen in de filterbalk', key: 'grading' },
   { id: 'zoeken', naam: 'Zoeken (Cmd+K)', uitleg: 'Snel naar menu-items en groepen springen; Ctrl+K op Windows', key: 'search' },
   { id: 'zijbalk', naam: 'Zijbalk inklappen', uitleg: 'Knop linksonder om de zijbalk tot iconen in te klappen', key: 'navToggle' },
   // dev: alleen in de ontwikkelaarsmodus (eigen schakelaar onderaan de popup)
@@ -20,6 +21,10 @@ globalThis.SD_DEFAULTS = {
   compact: false,
   hideSupport: true,  // module hulpknop
   search: true,       // module zoeken
+  grading: true,      // module beoordelen
+  bdModus: 'mijn',    // filter Beoordelen: 'alles' of 'mijn'
+  bdOpleidingen: 'MEP, MIP, MR',
+  bdUitsluiten: '',
   navToggle: true,    // module zijbalk
   navMini: false,     // zijbalk ingeklapt
   updateCheck: true,  // updatepagina

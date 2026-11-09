@@ -24,6 +24,7 @@ const NEPPAGINA = `<html><head><style>
   <a href="/groups/101">MEP1A</a> <a href="/groups/102/assignments?filters=status:actionable">MIP1B</a>
   <a href="/groups/103/assignments?filters=status:actionable">12</a>
   <a href="/users/555">Student Jansen</a> <a href="/portfolio/students/556">Student Pietersen</a>
+  <a href="/@pjansen/assignment/0f1e2d3c-1111-2222-3333-444455556666/review?group=x">Opdracht bekijken</a> <span class="description">@kdevries</span>
   <table class="table table-index"><thead><tr><th>Student</th><th>Opdracht</th><th>Groep</th><th>Status</th></tr></thead><tbody>
     <tr class="row-actionable"><td><a href="/users/557">Sanne de Vries</a></td><td>Reflectie stage</td><td>MEP1A</td><td>HANDED_IN</td></tr>
     <tr><td><span class="student-name">Mohammed El Amrani</span> <small>m.elamrani@student.example.nl</small></td><td>Meetmoment periode 2</td><td>MR1A</td><td>nr 1234567</td></tr>
@@ -36,6 +37,21 @@ const NEPPAGINA = `<html><head><style>
   <ul class="nav-tabs"><li class="active"><a href="#">tab</a></li></ul>
   <div class="bg-white">wit</div><input class="form-control">
 </div></body></html>`;
+
+// Nagebootste Beoordelen-lijst, zelfde opbouw als in Simulise (kolommen in andere volgorde dan standaard).
+const rij = (titel) => `<tr><td class="hidden-xs"><input type="checkbox"></td><td>Student X</td><td><a href="#"><strong>${titel}</strong></a></td><td><p class="badge bg-warning">Te beoordelen</p></td></tr>`;
+const RIJEN = ['Meetmoment SD Engels M4', 'Meetmoment GA Engels M1 (Cohort 2026)', 'Meetmoment MEP/MIP Engels M1 (Cohort 2026)',
+  'PS_1.8: Wie ben ik?', 'MEP 1 - CREA - Brochure/Reisgids', 'Meetmoment MR Nederlands M1', 'Meetmoment SD Nederlands M2'];
+const BEOORDELEN = `<html><head></head><body><aside id="nav"><ul class="nav-main"><li><a href="/dashboard"><i class="fa"></i><span>Dashboard</span></a></li></ul></aside>
+<div id="content"><div class="vbox"><div class="vbox"><header class="header header-md"><div class="header-title"><p class="header-text"><span class="header-text-first-item"><span>Beoordelen</span></span></p></div></header>
+<section id="scrollable-page-wrapper"><div class="row"><div class="col-12 col-lg-data"><div class="relative"><div class="table-responsive">
+<table class="table table-v-a-m table-index"><thead><tr><th class="hidden-xs"><input type="checkbox"></th><th class="drag-handle"><div class="text-nowrap"><a href="#">Toegewezen aan</a></div></th>
+<th class="drag-handle"><div class="text-nowrap"><a href="#">Opdracht titel</a></div></th><th class="drag-handle"><div class="text-nowrap"><a href="#">Status</a></div></th></tr></thead>
+<tbody>${RIJEN.map(rij).join('')}</tbody></table></div></div></div></div></section></div></div></div></body></html>`;
+const UUID = '0a1b2c3d-1111-4222-8333-444455556666';
+const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
+<div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/groups"><span>Groepen</span></a></span><span class="text-muted">/</span><span>MR1A</span></p></div>
+<ul class="nav nav-tabs"><li><a href="/groups/school/${UUID}/community"><span>Community</span></a></li></ul></header></section></div></body></html>`;
 
 const ext = path.resolve(process.argv[2] || path.join(__dirname, '..'));
 const fouten = [];
@@ -61,7 +77,11 @@ function bouwZip() {
   });
   const zip = bouwZip();
   const ZIP_URL = 'https://github.com/mark-jg/simulise-docent/releases/download/v9.9.9/simulise-docent-v9.9.9.zip';
-  await ctx.route('https://ma.simulise.com/**', (r) => r.fulfill({ contentType: 'text/html', body: NEPPAGINA }));
+  await ctx.route('https://ma.simulise.com/**', (r) => {
+    const p = new URL(r.request().url()).pathname;
+    const body = p.startsWith('/assignments/assigned') ? BEOORDELEN : p.startsWith('/groups/school/') ? GROEPSPAGINA : NEPPAGINA;
+    return r.fulfill({ contentType: 'text/html', body });
+  });
   await ctx.route('https://api.github.com/repos/mark-jg/simulise-docent/releases/latest', (r) => r.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({ tag_name: 'v9.9.9', html_url: 'https://github.com/mark-jg/simulise-docent/releases/tag/v9.9.9',
@@ -87,7 +107,7 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
-  check(await popup.locator('#modules input').count() === 4, 'popup toont aan/uit per module');
+  check(await popup.locator('#modules input').count() === 5, 'popup toont aan/uit per module');
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -119,8 +139,8 @@ function bouwZip() {
   check(!(await sim.isVisible(zoekveld)), 'Esc sluit het zoekvenster');
   await sim.keyboard.press('Control+K');
   await sim.fill(zoekveld, 'mip1b');
-  await Promise.all([sim.waitForURL('**/groups/102'), sim.keyboard.press('Enter')]);
-  check(sim.url().endsWith('/groups/102'), 'Enter opent de gekozen groep');
+  await Promise.all([sim.waitForURL('**/groups/102/assignments'), sim.keyboard.press('Enter')]);
+  check(sim.url().endsWith('/groups/102/assignments'), 'Enter opent de opdrachten van de gekozen groep');
   await sim.waitForTimeout(300);
 
   // Zijbalk inklappen
@@ -155,17 +175,52 @@ function bouwZip() {
     return { naam: dl.suggestedFilename(), tekst: fs.readFileSync(await dl.path(), 'utf8') };
   };
   const rap = await leesDownload('r');
-  const lek = ['Sanne', 'Vries', 'Mohammed', 'Amrani', 'Lotte', 'Berg', 'Jansen', 'Pietersen', '@', '1234567', '/users/557', '/users/555'].filter((w) => rap.tekst.includes(w));
+  const lek = ['Sanne', 'Vries', 'Mohammed', 'Amrani', 'Lotte', 'Berg', 'Jansen', 'Pietersen', 'pjansen', 'kdevries', 'student.example', '1234567', '/users/557', '/users/555', '0f1e2d3c'].filter((w) => rap.tekst.includes(w));
   check(lek.length === 0, `rapport bevat geen namen, e-mail of nummers${lek.length ? ` (gelekt: ${lek.join(', ')})` : ''}`);
   const nodig = ['MEP1A', 'MIP1A', 'Reflectie stage', 'HANDED_IN', 'table-index', 'row-actionable', 'Student 1', '/users/{id}', '/groups/{id}/assignments?filters=status:actionable'].filter((w) => !rap.tekst.includes(w));
   check(nodig.length === 0, `rapport bevat structuur, groepen en statussen${nodig.length ? ` (mist: ${nodig.join(', ')})` : ''}`);
-  check(rap.naam === 'simulise-rapport-groups-id.md', `bestandsnaam zonder id's (${rap.naam})`);
+  check(rap.naam === 'simulise-rapport-groups-id-assignments.md', `bestandsnaam zonder id's (${rap.naam})`);
+  check(rap.tekst.includes('/@{gebruiker}/assignment/{uuid}/review') && rap.tekst.includes('@[gebruiker]'), 'gebruikersnamen (@...) vervangen in links en tekst');
   fs.writeFileSync(path.join(os.tmpdir(), 'sd-voorbeeldrapport.md'), rap.tekst);
   const str = await leesDownload('s');
   check(!/MEP1A|Reflectie|Student 1/.test(str.tekst) && str.tekst.includes('table.table.table-index'), 'S: structuurrapport zonder tekst');
   await sim.keyboard.press('Escape');
   check(!(await sim.isVisible(balk)), 'Esc stopt de Inspector');
   await popup.uncheck('#developer'); await sim.waitForTimeout(300);
+
+  // Groep met uuid-adres onthouden via de kop van de groepspagina
+  await sim.goto(`https://ma.simulise.com/groups/school/${UUID}/assignments`); await sim.waitForTimeout(400);
+  const groepen = await popup.evaluate(() => chrome.storage.local.get('sdGroups').then((s) => s.sdGroups));
+  check(groepen[`school/${UUID}`] === 'MR1A' && groepen[101] === 'MEP1A' && !Object.values(groepen).includes('Community'), `groep met uuid onthouden uit de kop (${JSON.stringify(groepen)})`);
+
+  // Filter in Beoordelen
+  await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN'); await sim.waitForTimeout(500);
+  const zichtbaar = () => sim.$$eval('table.table-index tbody tr', (rs) => rs.filter((r) => r.offsetParent !== null).map((r) => r.querySelector('strong').textContent));
+  const info = () => sim.textContent('#sim-docent-beoordelen .info');
+  check(await sim.isVisible('#sim-docent-beoordelen .bar'), 'filterbalk boven de Beoordelen-lijst');
+  let z = await zichtbaar();
+  check(z.length === 4 && !z.some((t) => /SD|GA/.test(t)) && z.includes('Meetmoment MEP/MIP Engels M1 (Cohort 2026)') && z.includes('Meetmoment MR Nederlands M1'),
+    `Mijn opleidingen: meetmomenten SD en GA verborgen, eigen en gewone opdrachten zichtbaar (${z.join(' | ')})`);
+  check((await info()) === '3 van 7 verborgen op deze pagina', `aantal verborgen zichtbaar ("${await info()}")`);
+  await sim.click('#sim-docent-beoordelen button[data-modus="alles"]'); await sim.waitForTimeout(300);
+  check((await zichtbaar()).length === 7, 'Alles: alle rijen zichtbaar');
+  await sim.click('#sim-docent-beoordelen button[data-modus="mijn"]'); await sim.waitForTimeout(300);
+  await sim.click('#sim-docent-beoordelen .toon'); await sim.waitForTimeout(100);
+  check((await zichtbaar()).length === 7, '"Toon even alles" laat tijdelijk alles zien');
+  await sim.click('#sim-docent-beoordelen .toon'); await sim.waitForTimeout(100);
+  check((await zichtbaar()).length === 4, '"Filter weer aan" verbergt weer');
+  await sim.click('#sim-docent-beoordelen button:has-text("Instellingen")');
+  await sim.fill('#sim-docent-beoordelen #sd-bdUitsluiten', 'brochure'); await sim.press('#sim-docent-beoordelen #sd-bdUitsluiten', 'Tab'); await sim.waitForTimeout(400);
+  z = await zichtbaar();
+  check(z.length === 3 && !z.some((t) => t.includes('Brochure')), `uitsluitwoord "brochure" verbergt die opdracht (${z.join(' | ')})`);
+  // Simulise bouwt de tabel opnieuw op (bijv. andere pagina): filter moet opnieuw werken
+  await sim.evaluate((titels) => { document.querySelector('table.table-index tbody').innerHTML = titels.map((t) => `<tr><td></td><td>Student Y</td><td><a href="#"><strong>${t}</strong></a></td><td></td></tr>`).join(''); },
+    ['Meetmoment SD Engels M2', 'Meetmoment MEP/MIP Rekenen M1', 'Opdracht X']);
+  await sim.waitForTimeout(800);
+  check((await zichtbaar()).length === 2 && (await info()) === '1 van 3 verborgen op deze pagina', 'filter werkt ook na het opnieuw opbouwen van de tabel');
+  await zet({ grading: false });
+  check((await zichtbaar()).length === 3 && !(await sim.isVisible('#sim-docent-beoordelen')), 'module uitzetten: filterbalk weg en alles zichtbaar');
+  await zet({ grading: true, bdUitsluiten: '' });
 
   const versie = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8')).version;
   check((await popup.textContent('#ver')) === `v${versie}`, `popup toont versie v${versie}`);
@@ -215,7 +270,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 7, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 8, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();

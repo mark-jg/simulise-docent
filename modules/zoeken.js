@@ -1,7 +1,7 @@
 /* Zoeken (roadmap 2.5): Cmd+K (Ctrl+K) opent een zoekvenster om snel te springen naar
  * menu-items, groepen en opdrachten van de extensie (zoals de zijbalk inklappen).
  *
- * Privacy: alleen links uit het hoofdmenu (aside#nav) en groepslinks (/groups/<nummer>) worden
+ * Privacy: alleen links uit het hoofdmenu (aside#nav) en groepslinks (/groups/school/<uuid>) worden
  * opgenomen. Groepsnamen (klasnamen) worden lokaal onthouden in chrome.storage.local, zodat je
  * ook groepen vindt die niet op de huidige pagina staan. Studentpagina's en -namen nooit.
  */
@@ -25,7 +25,8 @@ SD.register({
   init(SD) {
     this.SD = SD;
     this.groups = {};
-    chrome.storage.local.get({ sdGroups: {} }).then(({ sdGroups }) => { this.groups = sdGroups || {}; });
+    // Eerst de onthouden groepen inlezen; harvest wacht hierop, anders overschrijft hij ze.
+    this._geladen = chrome.storage.local.get({ sdGroups: {} }).then(({ sdGroups }) => { this.groups = { ...(sdGroups || {}), ...this.groups }; });
     this._key = (e) => {
       if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
         e.preventDefault(); e.stopPropagation();
@@ -47,14 +48,30 @@ SD.register({
     this.SD = null;
   },
 
-  /* Groepslinks op de pagina onthouden: { id: naam }. Alleen links met een leesbare naam. */
-  harvest() {
+  /* Groepen onthouden: { sleutel: naam }. De sleutel is het pad na /groups/, in Simulise meestal
+   * school/<uuid> (oudere links: een nummer). Alleen links met een leesbare naam, plus de kop van een
+   * groepspagina ("Groepen / MEP1A"). */
+  GROEP: /^\/groups\/((?:school\/)?(?:[0-9a-f]{8}-[0-9a-f-]{27}|\d+))(\/|$)/i,
+
+  async harvest() {
+    await this._geladen;
+    if (!this.SD) return;
     let changed = false;
-    for (const a of document.querySelectorAll('a[href*="/groups/"]')) {
-      const m = new URL(a.href, location.href).pathname.match(/^\/groups\/(\d+)(\/|$)/);
-      const naam = a.textContent.replace(/\s+/g, ' ').trim();
-      if (!m || !/[a-z]/i.test(naam) || naam.length > 60) continue;
-      if (this.groups[m[1]] !== naam) { this.groups[m[1]] = naam; changed = true; }
+    const zet = (sleutel, naam) => {
+      naam = (naam || '').replace(/\s+/g, ' ').trim();
+      if (!/[a-z]/i.test(naam) || naam.length > 60 || this.groups[sleutel] === naam) return;
+      this.groups[sleutel] = naam; changed = true;
+    };
+    for (const a of document.querySelectorAll('#content a[href*="/groups/"], aside#nav a[href*="/groups/"]')) {
+      if (a.closest('.nav-tabs')) continue; // tabbladen Community, Opdrachten... zijn geen groepsnamen
+      const m = new URL(a.href, location.href).pathname.match(this.GROEP);
+      if (m) zet(m[1], a.textContent);
+    }
+    const hier = location.pathname.match(this.GROEP);
+    const kop = document.querySelector('#content .header-text');
+    if (hier && kop) {
+      const delen = [...kop.querySelectorAll(':scope > span')].map((s) => s.textContent.trim()).filter((t) => t && t !== '/');
+      if (delen.length >= 2 && /^groepen$/i.test(delen[0])) zet(hier[1], delen[delen.length - 1]);
     }
     const ids = Object.keys(this.groups);
     if (ids.length > this.MAX_GROUPS) { for (const id of ids.slice(0, ids.length - this.MAX_GROUPS)) delete this.groups[id]; changed = true; }
@@ -72,7 +89,7 @@ SD.register({
       out.push({ naam, soort: 'Menu', url: new URL(href, location.href).href });
     }
     for (const [id, naam] of Object.entries(this.groups).sort((a, b) => a[1].localeCompare(b[1], 'nl'))) {
-      out.push({ naam, soort: 'Groep', url: `${location.origin}/groups/${id}` });
+      out.push({ naam, soort: 'Groep', url: `${location.origin}/groups/${id}/assignments` });
       out.push({ naam: `${naam}: te beoordelen`, soort: 'Groep', url: `${location.origin}/groups/${id}/assignments?filters=status:actionable` });
     }
     for (const [, c] of this.SD.commands) out.push({ naam: c.naam, soort: 'Opdracht', run: c.run });

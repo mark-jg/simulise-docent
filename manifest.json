@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Simulise Docent",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Thema's en docent-tools voor Simulise (ma.simulise.com). Draait lokaal; controleert alleen GitHub op updates.",
   "permissions": [
     "storage",
@@ -44,6 +44,7 @@
         "modules/registry.js",
         "modules/core.js",
         "modules/thema.js",
+        "modules/beoordelen.js",
         "modules/zoeken.js",
         "modules/zijbalk.js",
         "modules/inspector.js",

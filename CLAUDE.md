@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.3.0)
+## Huidige staat (v0.6.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -24,7 +24,9 @@ tools/rooktest.js   rooktest headless Chromium, Simulise en GitHub nagebootst
 theme.css       Alle opmaak. Tokens per thema bovenin, daarna generieke regels.
 modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.js (SD.register/start),
                 thema.js (data-sim-theme / -dark / -compact op <html>), hulpknop.js (data-sim-hide-support),
-                zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/<id>, groepsnamen in
+                beoordelen.js (filterbalk op /assignments/assigned: Alles / Mijn opleidingen +
+                uitsluitwoorden; instellingen bdModus, bdOpleidingen, bdUitsluiten),
+                zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/school/<uuid>, groepsnamen in
                 chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
                 inspector.js (alleen als `developer` aan staat; Alt+I, R = rapport met namen vervangen,
                 S = alleen structuur). Modules met `dev: true` in registry staan onder Ontwikkelaarsmodus.
@@ -40,7 +42,7 @@ Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Do
 staan in `DARK` in modules/thema.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, search, navToggle, navMini, updateCheck, developer }`.
+Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, grading, bdModus, bdOpleidingen, bdUitsluiten, search, navToggle, navMini, updateCheck, developer }`.
 `enabled` is de aan/uit van module thema, `hideSupport` die van module hulpknop (namen uit v0.2
 bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`, en in manifest.json.
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de
@@ -67,6 +69,43 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   Inspector-knop van de Magister-extensie. Wordt nu verborgen in theme.css; dezelfde hulp zit
   in het gebruikersmenu.
 
+## Wat we weten uit de Inspector-rapporten (Beoordelen, beoordeelscherm, groepsopdrachten)
+
+- **Persoonsgegevens in URL's**: profielen en inleveringen staan onder `/@<gebruikersnaam>/...`
+  (bijv. `/@<gebruiker>/assignment/<uuid>/review`). Gebruikersnamen zijn van namen afgeleid: nooit
+  opslaan, loggen of in code/documentatie zetten. De Inspector maskeert ze als `@{gebruiker}`.
+- **Groepen**: `/groups/school/<uuid>/{community,files,students,teachers,assignments,templates,settings}`.
+  Kop: `p.header-text` met spans "Groepen" / "/" / "<groepsnaam>".
+- **Beoordelen** (`/assignments/assigned?filters=status:BEING_PROCESSED,FEEDBACK_ASKED,HANDED_IN`):
+  `#content table.table.table-v-a-m.table-index`, 25 rijen per pagina, paginering met knoppen
+  onder de tabel, tekst "1-25 van de N record(s)" in `div.panel-footer.table-footer`.
+  Kolommen (versleepbaar via `th.drag-handle`, aan/uit via het tandwiel-dropdown): checkbox,
+  Opdracht titel (`td > a > strong`), Toegewezen aan, Ingeleverd op, Deadline, Status
+  (`p.badge.bg-warning` "Te beoordelen" + `p.text-muted` "Door: Mij"/"Door: <naam>").
+  Kolommen dus op koptekst zoeken, niet op positie. Geen groepskolom; de reviewlink heeft wel
+  `group=<...>&filter_source=GROUP_ASSIGNMENTS` in de query.
+  Eigen filterpaneel van Simulise (off-canvas `div.col-off-canvas`, knop "Filters" in de kop):
+  statussen Te beantwoorden, Te beoordelen, Wordt beoordeeld, Mee bezig, Opnieuw inleveren,
+  Afgerond (met aantallen), selectize-filters Groep / Student / Opdracht, filter opslaan, sortering.
+  Of een groepsfilter in de URL komt is nog niet bekeken.
+  Titels van meetmomenten bevatten de opleiding: "Meetmoment SD Engels M4", "Meetmoment GA ...",
+  "Meetmoment MEP/MIP Engels M1 (Cohort 2026)".
+- **Beoordeelscherm** (`/@<gebruiker>/assignment/<uuid>/review`): links `div.review-group-panel` met
+  `div.groups-table > a.item` per student (`div.user-status.bg-backport-{success,blank,warning,danger}`,
+  geselecteerde student = `div.selected.item`); midden `h1` titel, Omschrijving, Reflecties
+  (`div.wrapper-reflection`, rubric-niveaus), Feedback (`textarea`); onderin
+  `div.fixed-bottom-bar.assignment-status-bar` met opties Opdracht teruggeven / Beoordeling
+  toekennen ("Minimaal 1 rubric moet ingevuld zijn.") / Afronden zonder beoordeling, knop
+  `button.ladda-button` "Afronden & volgende" en de deadline. Modal "Rubrics toekenning"
+  (`.rubrics-review`) toont per rubric "N criteria nog niet beoordeeld" en een vue-slider.
+- **Opdrachten van een groep** (`/groups/school/<uuid>/assignments`): matrix
+  `table.table-bordered.rotated-header`, kolommen = studenten (`th.rotated`), rijen = opdrachten
+  (`a.divider-plan > mark` titel, aantal beoordelaars), cellen `td[data-status=FINISHED|NOT_STARTED|...]`.
+  Filter `select#group-assignments-filter` (selectize) met voorvoegsels Status:, Leerlijn:, Rubric:,
+  Student:, Reviewer:, Opdracht:; statussen o.a. Actie nodig, Ingeleverd en verwerkt, Wordt aan
+  gewerkt, Niet begonnen, Te laat, Wordt verwerkt.
+- Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
+
 ## Open punten / bekende issues
 
 - Lege band onder de topbar: huidige fix zit op
@@ -76,25 +115,14 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
 - Dark mode op Bootstrap 3: modals, selectize en de Help Scout-widget hebben mogelijk nog
   hardcoded wit.
 
-## Volgende stap: module "Beoordelen" (v0.3)
+## Volgende stappen (zie ROADMAP.md)
 
-Wacht op Inspector-rapporten van: (1) Beoordelen-lijst, (2) één opdracht in beoordeling,
-(3) opdrachtenpagina van één groep. Dan bouwen:
-
-1. **Filter in Beoordelen** (prioriteit): filterbalk boven de lijst met
-   "Mijn groepen" (MEP1A, MEP2A, MIP1A, MIP1B, MR1A), "Verberg meetmomenten", "Alles".
-   Plus beheerbare uitsluitwoorden in het popup. Verborgen aantal zichtbaar houden
-   ("12 verborgen"). Zelfde regels toepassen op de Beoordelen-tegel op het dashboard.
-   Filteren op rij-inhoud (groep, titel, type), niet op id's. MutationObserver voor
-   re-renders en paginering. Check of Simulise groep/opleiding in de URL-filters ondersteunt.
-2. **Beoordeelqueue over alle groepen**: samenvoegen van de per-groep actionable-lijsten tot
-   één lijst (student, opdracht, groep, ingeleverd op, wachttijd).
-3. **Beoordeelscherm**: statusbalk met welke rubrics in te vullen zijn en wat afronden doet
-   met het competentiediagram; "volgende student"-knop binnen één opdracht.
-4. Later: Cmd+K zoeken, export naar Excel, studentkant (startscherm "wat moet ik nu doen").
-
-Modulestructuur staat (v0.3.0): elke feature wordt een module in `modules/`. De Beoordelen-filter
-wordt module `beoordelen` met eigen aan/uit en uitsluitwoorden in de popup.
+1. Filter in Beoordelen (2.1) staat in v0.6.0. Nog open: dezelfde regels op de Beoordelen-tegel
+   van het dashboard (rapport van het dashboard nodig), en "Mijn groepen" (via `group=` in de
+   reviewlinks of het eigen Groep-filter van Simulise, als dat in de URL komt).
+2. Beoordeelqueue over alle groepen (2.2).
+3. Beoordeelscherm (2.3/2.4): statusbalk met open rubrics/criteria, volgende student. De structuur
+   staat hierboven.
 
 ## Regels
 

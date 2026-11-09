@@ -32,7 +32,7 @@ Status: ✅ klaar · 🔧 in ontwikkeling · ⏳ gepland · 💡 idee · ⛔ bui
 
 | # | Item | Status | Opmerking |
 |---|------|--------|-----------|
-| 2.1 | **Filter in Beoordelen**: Mijn groepen / Verberg meetmomenten / Alles | ⏳ v0.3, prioriteit | Beheerbare uitsluitwoorden in popup; verborgen aantal zichtbaar; zelfde regels op dashboardtegel |
+| 2.1 | **Filter in Beoordelen**: Mijn groepen / Verberg meetmomenten / Alles | 🔧 v0.6, prioriteit | Klaar: Alles / Mijn opleidingen (meetmomenten op opleidingscode in de titel), uitsluitwoorden, verborgen aantal, "toon even alles". Nog: dashboardtegel, "Mijn groepen" |
 | 2.2 | Beoordeelqueue over alle groepen heen | ⏳ v0.3 | Per-groep actionable-lijsten samenvoegen: student, opdracht, groep, ingeleverd op, wachttijd |
 | 2.3 | Beoordeelscherm met statusbalk | ⏳ | Welke rubrics mag je invullen, wat doet afronden met het competentiediagram, hoeveel criteria nog leeg |
 | 2.4 | "Volgende student"-knop binnen één opdracht | ⏳ | Hele klas achter elkaar nakijken |
@@ -76,7 +76,13 @@ testaccount.
 
 ---
 
-## Benodigde input voor v0.3
+## Benodigde input (bijgewerkt na v0.6)
+
+Ontvangen: Beoordelen-lijst, beoordeelscherm, opdrachten van een groep. Nog nodig:
+- Dashboard (voor de Beoordelen-tegel).
+- Controleren of de URL verandert als je in Simulise zelf een Groep-filter aanzet in Beoordelen.
+
+## Oorspronkelijk gevraagd voor v0.3
 
 Inspector-rapporten (Simulise Docent > Ontwikkelaarsmodus > Alt+I > R) van:
 1. Beoordelen, de lijst, met minimaal één rij van een meetmoment van een andere opleiding en één eigen opdracht

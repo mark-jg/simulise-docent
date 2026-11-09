@@ -73,7 +73,7 @@ Simulise-pagina, met de knop **Inspector starten** in de popup, of via Cmd+K.
 Privacy: namen die Simulise als persoon toont (links naar personen, avatars, elementen met
 "name"/"student"/"user" in de class) worden "Student 1", "Student 2"; andere namen van twee of
 meer woorden met hoofdletter worden [naam]; e-mailadressen [e-mail]; nummers van 6 tot 9 cijfers
-[nummer]; getallen in URL's {id}. Een losse voornaam zonder achternaam ergens in de tekst wordt
+[nummer]; gebruikersnamen (@...) @[gebruiker] en in links /@{gebruiker}; getallen in URL's {id}. Een losse voornaam zonder achternaam ergens in de tekst wordt
 niet altijd herkend: kijk een rapport daarom even na voordat je het deelt, of gebruik S.
 
 ## Nieuwe versie uitbrengen
@@ -95,6 +95,10 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.6.0: filter in Beoordelen. Boven de lijst staat een balk met Alles / Mijn opleidingen: meetmomenten
+  van andere opleidingen (bijv. SD, GA) worden verborgen, met het aantal erbij en "Toon even alles".
+  Opleidingen en uitsluitwoorden stel je in via Instellingen in die balk. Inspector: gebruikersnamen
+  (@...) in links en tekst worden nu ook vervangen. Zoeken vindt groepen met hun echte adres.
 - 0.5.0: ontwikkelaarsmodus met Inspector (Alt+I of de knop in de popup): selectors opzoeken en
   paginarapporten maken voor Claude. Namen van studenten, e-mailadressen en studentnummers worden
   vervangen voordat het rapport wordt opgeslagen. S maakt een rapport met alleen de structuur.
