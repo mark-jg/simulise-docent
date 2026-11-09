@@ -24,6 +24,11 @@ const NEPPAGINA = `<html><head><style>
   <a href="/groups/101">MEP1A</a> <a href="/groups/102/assignments?filters=status:actionable">MIP1B</a>
   <a href="/groups/103/assignments?filters=status:actionable">12</a>
   <a href="/users/555">Student Jansen</a> <a href="/portfolio/students/556">Student Pietersen</a>
+  <table class="table table-index"><thead><tr><th>Student</th><th>Opdracht</th><th>Groep</th><th>Status</th></tr></thead><tbody>
+    <tr class="row-actionable"><td><a href="/users/557">Sanne de Vries</a></td><td>Reflectie stage</td><td>MEP1A</td><td>HANDED_IN</td></tr>
+    <tr><td><span class="student-name">Mohammed El Amrani</span> <small>m.elamrani@student.example.nl</small></td><td>Meetmoment periode 2</td><td>MR1A</td><td>nr 1234567</td></tr>
+    <tr><td>Lotte van der Berg</td><td>Portfolio bijwerken</td><td>MIP1A</td><td>FEEDBACK_ASKED</td></tr>
+  </tbody></table>
   <a class="support-button" href="#">Hulp nodig?</a>
   <div class="modal-content">modal</div><div class="popover">popover</div>
   <div class="selectize-dropdown">selectize</div><div class="well">well</div>
@@ -133,6 +138,35 @@ function bouwZip() {
   check(!(await sim.isVisible('#sim-docent-zijbalk button')) && !(await sim.isVisible(zoekveld)), 'modules zoeken en zijbalk uitzetten werkt');
   await zet({ navToggle: true, search: true });
 
+  // Inspector (alleen in ontwikkelaarsmodus)
+  const balk = '#sim-docent-inspector .bar';
+  await sim.keyboard.press('Alt+KeyI');
+  check(!(await sim.isVisible(balk)), 'Inspector werkt niet zonder ontwikkelaarsmodus');
+  await popup.reload();
+  check(await popup.isHidden('#inspect'), 'popup: knop Inspector verborgen zonder ontwikkelaarsmodus');
+  await popup.check('#developer'); await sim.waitForTimeout(300);
+  check(await popup.isVisible('#inspect'), 'popup: ontwikkelaarsmodus toont de knop Inspector starten');
+  await sim.keyboard.press('Alt+KeyI');
+  check(await sim.isVisible(balk), 'Alt+I start de Inspector');
+  await sim.hover('td:has-text("MEP1A")');
+  check((await sim.textContent('#sim-docent-inspector .sel')).includes('table.table.table-index'), `selector onder de muis (${await sim.textContent('#sim-docent-inspector .sel')})`);
+  const leesDownload = async (toets) => {
+    const [dl] = await Promise.all([sim.waitForEvent('download'), sim.keyboard.press(toets)]);
+    return { naam: dl.suggestedFilename(), tekst: fs.readFileSync(await dl.path(), 'utf8') };
+  };
+  const rap = await leesDownload('r');
+  const lek = ['Sanne', 'Vries', 'Mohammed', 'Amrani', 'Lotte', 'Berg', 'Jansen', 'Pietersen', '@', '1234567', '/users/557', '/users/555'].filter((w) => rap.tekst.includes(w));
+  check(lek.length === 0, `rapport bevat geen namen, e-mail of nummers${lek.length ? ` (gelekt: ${lek.join(', ')})` : ''}`);
+  const nodig = ['MEP1A', 'MIP1A', 'Reflectie stage', 'HANDED_IN', 'table-index', 'row-actionable', 'Student 1', '/users/{id}', '/groups/{id}/assignments?filters=status:actionable'].filter((w) => !rap.tekst.includes(w));
+  check(nodig.length === 0, `rapport bevat structuur, groepen en statussen${nodig.length ? ` (mist: ${nodig.join(', ')})` : ''}`);
+  check(rap.naam === 'simulise-rapport-groups-id.md', `bestandsnaam zonder id's (${rap.naam})`);
+  fs.writeFileSync(path.join(os.tmpdir(), 'sd-voorbeeldrapport.md'), rap.tekst);
+  const str = await leesDownload('s');
+  check(!/MEP1A|Reflectie|Student 1/.test(str.tekst) && str.tekst.includes('table.table.table-index'), 'S: structuurrapport zonder tekst');
+  await sim.keyboard.press('Escape');
+  check(!(await sim.isVisible(balk)), 'Esc stopt de Inspector');
+  await popup.uncheck('#developer'); await sim.waitForTimeout(300);
+
   const versie = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8')).version;
   check((await popup.textContent('#ver')) === `v${versie}`, `popup toont versie v${versie}`);
   check(await popup.locator('input[name="theme"]').count() > 0, 'popup toont thema\'s');
@@ -181,7 +215,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 6, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 7, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();

@@ -11,7 +11,10 @@
   small { color: #6b7280; }
   hr { border: 0; border-top: 1px solid #e4e7eb; margin: 10px 0; }
   .themes { display: flex; flex-direction: column; }
-  #modules label { align-items: flex-start; }
+  #modules label, label:has(#developer) { align-items: flex-start; }
+  label:has(#developer) small { display: block; font-size: 11px; line-height: 1.3; }
+  button.dev { font: inherit; font-size: 12px; font-weight: 600; margin: 4px 0 0 26px; padding: 5px 10px; border: 1px solid #d4d9df; border-radius: 6px; background: #fff; cursor: pointer; }
+  button.dev:hover { border-color: #0e8a74; color: #0b6f5e; }
   #modules small { display: block; font-size: 11px; line-height: 1.3; }
   .head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 12px; }
   .head h1 { margin: 0; }
@@ -48,6 +51,9 @@
   <div class="themes" id="themes"></div>
   <hr>
   <label><input type="checkbox" id="compact"> Compacte weergave</label>
+  <hr>
+  <label><input type="checkbox" id="developer"> <span>Ontwikkelaarsmodus<small>Inspector (Alt+I): selectors en paginarapporten zonder namen</small></span></label>
+  <button id="inspect" class="dev" hidden>Inspector starten</button>
   <div class="foot"><a href="#" id="updCheck">Controleer op updates</a></div>
   <script src="modules/registry.js"></script>
   <script src="popup.js"></script>

@@ -64,6 +64,7 @@ testaccount.
 | 4.4 | Echte iconen in plaats van placeholders | ✅ v0.4 | `scripts/make-icons.py`, zelfde stijl als de Magister-extensie |
 | 4.5 | Updates via GitHub Releases, zelf bijwerken vanuit de extensie | ✅ v0.2.1 | Zelfde mechanisme als de Magister-extensie |
 | 4.6 | Rooktest in headless Chromium (Simulise en GitHub nagebootst) | ✅ v0.2.1 | `node tools/rooktest.js` |
+| 4.7 | Eigen Inspector in Simulise Docent (ontwikkelaarsmodus, Alt+I) | ✅ v0.5 | Rapporten met namen vervangen; de Magister-Inspector draait alleen op magister.net |
 
 ## 5. Buiten scope van de extensie
 
@@ -77,7 +78,7 @@ testaccount.
 
 ## Benodigde input voor v0.3
 
-Inspector-rapporten (HTML + screenshot) van:
+Inspector-rapporten (Simulise Docent > Ontwikkelaarsmodus > Alt+I > R) van:
 1. Beoordelen, de lijst, met minimaal één rij van een meetmoment van een andere opleiding en één eigen opdracht
 2. Eén opdracht in beoordeling
 3. Opdrachtenpagina van één groep (`/groups/{id}/assignments`)

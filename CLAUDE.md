@@ -6,9 +6,10 @@ geen testaccount of testklas; alles wordt getest op zijn eigen docentaccount.
 
 Mapnaam: `simulise-docent`. Extensienaam in Chrome: "Simulise Docent".
 
-Zusterproject: "Docent Tools voor Magister" (aparte extensie, zelfde maker). Daar zit een
-"Inspector" in die pagina-rapporten (outerHTML + screenshot) oplevert; die wordt ook op Simulise
-gebruikt door het Simulise-domein aan de `matches` toe te voegen.
+Zusterproject: "Docent Tools voor Magister" (aparte extensie, zelfde maker, mark-jg/magister-docent).
+Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simulise gebruik je de
+Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
+`simulise-rapport-<pad>.md` met namen al vervangen.
 
 ## Huidige staat (v0.3.0)
 
@@ -25,6 +26,8 @@ modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.
                 thema.js (data-sim-theme / -dark / -compact op <html>), hulpknop.js (data-sim-hide-support),
                 zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/<id>, groepsnamen in
                 chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
+                inspector.js (alleen als `developer` aan staat; Alt+I, R = rapport met namen vervangen,
+                S = alleen structuur). Modules met `dev: true` in registry staan onder Ontwikkelaarsmodus.
                 core.js biedt ook SD.addCommand (voor Cmd+K), SD.ready, SD.shadowHost en SD.observe.
                 Eigen UI altijd in een shadow root, met de --sim-*-tokens (die erven door).
 content.js      Start de modules (SD.start())
@@ -37,7 +40,7 @@ Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Do
 staan in `DARK` in modules/thema.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, search, navToggle, navMini, updateCheck }`.
+Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, search, navToggle, navMini, updateCheck, developer }`.
 `enabled` is de aan/uit van module thema, `hideSupport` die van module hulpknop (namen uit v0.2
 bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`, en in manifest.json.
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de

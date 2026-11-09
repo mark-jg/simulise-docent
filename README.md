@@ -36,7 +36,7 @@ vanzelf.
 ## Bestanden
 - `theme.css`  alle opmaak, met tokens per thema bovenin
 - `modules/`  modulelijst (`registry.js`), kern (`core.js`) en de modules zelf (`thema.js`, `zoeken.js`,
-  `zijbalk.js`, `hulpknop.js`)
+  `zijbalk.js`, `inspector.js`, `hulpknop.js`)
 - `scripts/make-icons.py`  maakt de iconen in `icons/` (`python3 scripts/make-icons.py icons`, vereist Pillow)
 - `content.js` start de modules
 - `ROADMAP.md`  roadmap en backlog
@@ -61,6 +61,21 @@ Maak `modules/<naam>.js` met `SD.register({ id, init, update, destroy })`, zet e
 - Lege band onder de topbar: fix zit op `#content > .vbox > .vbox > header.header-md`. Nog te bevestigen.
 - Alleen het dashboard is gestyled op basis van een echt rapport.
 
+## Ontwikkelaarsmodus en Inspector
+Zet onderaan de popup **Ontwikkelaarsmodus** aan. Daarna start je de Inspector met **Alt+I** op een
+Simulise-pagina, met de knop **Inspector starten** in de popup, of via Cmd+K.
+- Beweeg over een element: onderin staat de CSS-selector. Klik om die te kopiëren.
+- **R**: paginarapport (koppen, tabellen met de eerste rijen, filters en knoppen, linkpatronen en de
+  structuur van de pagina). Wordt gedownload als `.md` en gekopieerd; stuur het naar Claude.
+- **S**: alleen de structuur (tags en classes), zonder enige tekst. Voor als je twijfelt.
+- **Esc**: stoppen.
+
+Privacy: namen die Simulise als persoon toont (links naar personen, avatars, elementen met
+"name"/"student"/"user" in de class) worden "Student 1", "Student 2"; andere namen van twee of
+meer woorden met hoofdletter worden [naam]; e-mailadressen [e-mail]; nummers van 6 tot 9 cijfers
+[nummer]; getallen in URL's {id}. Een losse voornaam zonder achternaam ergens in de tekst wordt
+niet altijd herkend: kijk een rapport daarom even na voordat je het deelt, of gebruik S.
+
 ## Nieuwe versie uitbrengen
 Releases gaan automatisch: zodra er op `main` een nieuw versienummer in `manifest.json` staat,
 maakt GitHub Actions de tag `vX.Y.Z`, de zip `simulise-docent-vX.Y.Z.zip` en de release.
@@ -80,6 +95,9 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.5.0: ontwikkelaarsmodus met Inspector (Alt+I of de knop in de popup): selectors opzoeken en
+  paginarapporten maken voor Claude. Namen van studenten, e-mailadressen en studentnummers worden
+  vervangen voordat het rapport wordt opgeslagen. S maakt een rapport met alleen de structuur.
 - 0.4.0: zoeken met Cmd+K (Ctrl+K op Windows): spring naar menu-items, groepen en de opdrachten om te
   beoordelen per groep. Zijbalk inklappen tot iconen met tooltips (knop linksonder, ook via Cmd+K).
   Nieuwe iconen. Beide nieuwe onderdelen zijn modules met een eigen aan/uit in de popup.

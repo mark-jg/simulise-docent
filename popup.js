@@ -12,7 +12,7 @@ const DEFAULTS = globalThis.SD_DEFAULTS;
 
 // Aan/uit per module, uit modules/registry.js.
 const modList = document.getElementById('modules');
-for (const m of globalThis.SD_MODULES) {
+for (const m of globalThis.SD_MODULES.filter((m) => !m.dev)) {
   const label = document.createElement('label');
   label.innerHTML = `<input type="checkbox" data-key="${m.key}"> <span>${m.naam}<small>${m.uitleg}</small></span>`;
   modList.appendChild(label);
@@ -28,6 +28,8 @@ for (const t of THEMES) {
 }
 
 chrome.storage.sync.get(DEFAULTS, (s) => {
+  document.getElementById('developer').checked = s.developer === true;
+  document.getElementById('inspect').hidden = s.developer !== true;
   document.querySelectorAll('#modules input').forEach((el) => { el.checked = s[el.dataset.key] !== false; });
   document.getElementById('compact').checked = s.compact;
   const el = document.querySelector(`input[name="theme"][value="${s.theme}"]`);
@@ -63,4 +65,16 @@ document.getElementById('updCheck').addEventListener('click', async (e) => {
   if (!info) { note('Controleren mislukt.'); return; }
   renderUpdate(info);
   note(info.error ? `Kon GitHub niet bereiken: ${info.error}.` : info.available ? '' : info.latest ? `Je hebt de nieuwste versie (${current}).` : 'Er is nog geen release gepubliceerd.');
+});
+
+/* ---------- Ontwikkelaarsmodus ---------- */
+document.getElementById('developer').addEventListener('change', (e) => {
+  chrome.storage.sync.set({ developer: e.target.checked });
+  document.getElementById('inspect').hidden = !e.target.checked;
+});
+document.getElementById('inspect').addEventListener('click', async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  const ok = tab && await chrome.tabs.sendMessage(tab.id, { type: 'sd-inspector' }).then(() => true, () => false);
+  if (ok) window.close();
+  else note('Open eerst een Simulise-tabblad (en herlaad het als de extensie net is bijgewerkt).');
 });
