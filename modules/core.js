@@ -9,6 +9,33 @@
     settings: { ...globalThis.SD_DEFAULTS },
     root: document.documentElement,
     register(mod) { modules.set(mod.id, { ...mod, active: false }); },
+    /* Opdrachten voor het zoekvenster (Cmd+K), zoals "Zijbalk in- of uitklappen". */
+    commands: new Map(),
+    addCommand(id, naam, run) { SD.commands.set(id, { naam, run }); },
+    removeCommand(id) { SD.commands.delete(id); },
+    /* Voert fn uit zodra <body> bestaat (content scripts starten bij document_start). */
+    ready(fn) {
+      if (document.body) fn();
+      else document.addEventListener('DOMContentLoaded', fn, { once: true });
+    },
+    /* Eigen UI in een shadow root, zodat de CSS van Simulise (Bootstrap) er niet aan zit. */
+    shadowHost(id, css) {
+      const host = document.createElement('div');
+      host.id = id;
+      const shadow = host.attachShadow({ mode: 'open' });
+      const style = document.createElement('style');
+      style.textContent = css;
+      shadow.append(style);
+      document.body.append(host);
+      return { host, shadow };
+    },
+    /* MutationObserver met vertraging, voor pagina's die Vue opnieuw opbouwt. */
+    observe(fn, wait = 500) {
+      let t;
+      const mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(fn, wait); });
+      mo.observe(document.body, { childList: true, subtree: true });
+      return () => { clearTimeout(t); mo.disconnect(); };
+    },
     isOn(id) {
       const meta = globalThis.SD_MODULES.find((m) => m.id === id);
       return meta ? SD.settings[meta.key] !== false : true;

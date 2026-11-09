@@ -22,18 +22,22 @@ scripts/release.sh, .github/workflows/release.yml   nieuw versienummer op main =
 tools/rooktest.js   rooktest headless Chromium, Simulise en GitHub nagebootst
 theme.css       Alle opmaak. Tokens per thema bovenin, daarna generieke regels.
 modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.js (SD.register/start),
-                thema.js (data-sim-theme / -dark / -compact op <html>), hulpknop.js (data-sim-hide-support)
+                thema.js (data-sim-theme / -dark / -compact op <html>), hulpknop.js (data-sim-hide-support),
+                zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/<id>, groepsnamen in
+                chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
+                core.js biedt ook SD.addCommand (voor Cmd+K), SD.ready, SD.shadowHost en SD.observe.
+                Eigen UI altijd in een shadow root, met de --sim-*-tokens (die erven door).
 content.js      Start de modules (SD.start())
 popup.html/.js  Aan/uit per module (uit registry), themakeuze, compact, updatemelding
 ROADMAP.md      Roadmap en backlog met status per item; bijwerken als iets klaar is
-icons/          placeholder-iconen
+icons/          iconen, gemaakt met scripts/make-icons.py
 ```
 
 Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Donkere thema's
 staan in `DARK` in modules/thema.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, updateCheck }`.
+Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, search, navToggle, navMini, updateCheck }`.
 `enabled` is de aan/uit van module thema, `hideSupport` die van module hulpknop (namen uit v0.2
 bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`, en in manifest.json.
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de

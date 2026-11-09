@@ -441,6 +441,19 @@ html[data-sim-theme]:not([data-sim-theme="off"]) button:focus-visible { outline:
 /* Module hulpknop: overlapt de Inspector van de Magister-extensie. Dezelfde hulp zit in het gebruikersmenu. */
 html[data-sim-hide-support] .support-button { display: none !important; }
 
+/* ---------- Module zijbalk: ingeklapt tot iconen ---------- */
+/* Tekst onzichtbaar via font-size 0 (zonder de DOM van Vue aan te passen); iconen krijgen hun maat terug. */
+html[data-sim-nav-mini] aside#nav { width: 64px !important; min-width: 64px !important; max-width: 64px !important; box-sizing: border-box; overflow: hidden; }
+html[data-sim-nav-mini] aside#nav .nav-main > li > a {
+  font-size: 0 !important; text-align: center; padding-left: 0 !important; padding-right: 0 !important; white-space: nowrap;
+}
+html[data-sim-nav-mini] aside#nav .nav-main > li > a i { font-size: 17px !important; margin: 0 !important; width: auto !important; }
+html[data-sim-nav-mini] aside#nav .nav-main > li > a .badge,
+html[data-sim-nav-mini] aside#nav .nav-main > li > a .label,
+html[data-sim-nav-mini] aside#nav .nav-main > li > ul,
+html[data-sim-nav-mini] aside#nav .nav-main .line,
+html[data-sim-nav-mini] aside#nav .footer { display: none !important; }
+
 /* ---------- Compacte weergave ---------- */
 html[data-sim-compact] .panel-heading { padding: 10px 14px !important; }
 html[data-sim-compact] .panel-footer { padding: 7px 14px !important; }

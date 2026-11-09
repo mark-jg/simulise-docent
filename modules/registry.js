@@ -6,6 +6,8 @@
  */
 globalThis.SD_MODULES = [
   { id: 'thema', naam: 'Thema', uitleg: 'Opmaak en thema\'s voor Simulise', key: 'enabled' },
+  { id: 'zoeken', naam: 'Zoeken (Cmd+K)', uitleg: 'Snel naar menu-items en groepen springen; Ctrl+K op Windows', key: 'search' },
+  { id: 'zijbalk', naam: 'Zijbalk inklappen', uitleg: 'Knop linksonder om de zijbalk tot iconen in te klappen', key: 'navToggle' },
   { id: 'hulpknop', naam: 'Hulpknop verbergen', uitleg: 'Zwevende knop "Hulp nodig?" weg; hulp blijft in het gebruikersmenu', key: 'hideSupport' },
 ];
 
@@ -14,5 +16,8 @@ globalThis.SD_DEFAULTS = {
   theme: 'auto',
   compact: false,
   hideSupport: true,  // module hulpknop
+  search: true,       // module zoeken
+  navToggle: true,    // module zijbalk
+  navMini: false,     // zijbalk ingeklapt
   updateCheck: true,  // updatepagina
 };

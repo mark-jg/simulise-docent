@@ -35,7 +35,9 @@ vanzelf.
 
 ## Bestanden
 - `theme.css`  alle opmaak, met tokens per thema bovenin
-- `modules/`  modulelijst (`registry.js`), kern (`core.js`) en de modules zelf (`thema.js`, `hulpknop.js`)
+- `modules/`  modulelijst (`registry.js`), kern (`core.js`) en de modules zelf (`thema.js`, `zoeken.js`,
+  `zijbalk.js`, `hulpknop.js`)
+- `scripts/make-icons.py`  maakt de iconen in `icons/` (`python3 scripts/make-icons.py icons`, vereist Pillow)
 - `content.js` start de modules
 - `ROADMAP.md`  roadmap en backlog
 - `popup.html` / `popup.js`  modules aan/uit, themakeuze, compacte weergave, updates
@@ -78,6 +80,9 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.4.0: zoeken met Cmd+K (Ctrl+K op Windows): spring naar menu-items, groepen en de opdrachten om te
+  beoordelen per groep. Zijbalk inklappen tot iconen met tooltips (knop linksonder, ook via Cmd+K).
+  Nieuwe iconen. Beide nieuwe onderdelen zijn modules met een eigen aan/uit in de popup.
 - 0.3.2: bijwerken gebeurt nu helemaal in de popup, zonder apart tabblad. Alleen als het kiezen van de
   extensiemap vanuit de popup niet lukt, opent de updatepagina.
 - 0.3.1: de updatepagina toont wanneer er voor het laatst is gecontroleerd. Eerste update via "Nu bijwerken".

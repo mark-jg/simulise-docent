@@ -13,7 +13,17 @@ const WIT = ['.modal-content', '.popover', '.selectize-dropdown', '.well', '.lis
 const NEPPAGINA = `<html><head><style>
   ${WIT.join(',')} { background: #fff; color: #333; }
   .support-button { position: fixed; right: 0; bottom: 0; display: block; }
-</style></head><body><div id="nav"></div><div id="content">
+  aside#nav { width: 220px; display: block; }
+</style></head><body>
+<aside id="nav"><ul class="nav-main">
+  <li><a href="/dashboard"><i class="fa fa-home"></i><span>Dashboard</span></a></li>
+  <li><a href="/assignments/assigned"><i class="fa fa-check"></i><span>Beoordelen</span></a></li>
+  <li><a href="/groups"><i class="fa fa-users"></i><span>Groepen</span></a></li>
+</ul></aside>
+<div id="content">
+  <a href="/groups/101">MEP1A</a> <a href="/groups/102/assignments?filters=status:actionable">MIP1B</a>
+  <a href="/groups/103/assignments?filters=status:actionable">12</a>
+  <a href="/users/555">Student Jansen</a> <a href="/portfolio/students/556">Student Pietersen</a>
   <a class="support-button" href="#">Hulp nodig?</a>
   <div class="modal-content">modal</div><div class="popover">popover</div>
   <div class="selectize-dropdown">selectize</div><div class="well">well</div>
@@ -72,7 +82,7 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
-  check(await popup.locator('#modules input').count() === 2, 'popup toont aan/uit per module');
+  check(await popup.locator('#modules input').count() === 4, 'popup toont aan/uit per module');
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -86,6 +96,42 @@ function bouwZip() {
   check((await attr()) === 'off', 'thema uitzetten zet data-sim-theme op off');
   await zet({ enabled: true, theme: 'auto', hideSupport: true });
   check((await attr()) !== 'off', 'thema weer aan');
+
+  // Zoeken (Cmd+K / Ctrl+K)
+  const zoekveld = '#sim-docent-zoeken input';
+  const resultaten = () => sim.locator('#sim-docent-zoeken li').allTextContents();
+  await sim.keyboard.press('Control+K');
+  check(await sim.isVisible(zoekveld), 'Ctrl+K opent het zoekvenster');
+  await sim.fill(zoekveld, 'mep');
+  check((await resultaten()).some((r) => r.startsWith('MEP1A: te beoordelen')), 'zoeken vindt groep MEP1A');
+  await sim.fill(zoekveld, 'beoor');
+  check((await resultaten())[0]?.startsWith('Beoordelen'), 'zoeken vindt menu-item Beoordelen');
+  await sim.fill(zoekveld, 'jansen');
+  check((await resultaten()).join() === 'Niets gevonden.', 'zoeken neemt geen studentlinks op');
+  const opgeslagen = await popup.evaluate(() => chrome.storage.local.get('sdGroups').then((s) => s.sdGroups));
+  check(JSON.stringify(opgeslagen) === JSON.stringify({ 101: 'MEP1A', 102: 'MIP1B' }), `alleen groepsnamen onthouden (${JSON.stringify(opgeslagen)})`);
+  await sim.keyboard.press('Escape');
+  check(!(await sim.isVisible(zoekveld)), 'Esc sluit het zoekvenster');
+  await sim.keyboard.press('Control+K');
+  await sim.fill(zoekveld, 'mip1b');
+  await Promise.all([sim.waitForURL('**/groups/102'), sim.keyboard.press('Enter')]);
+  check(sim.url().endsWith('/groups/102'), 'Enter opent de gekozen groep');
+  await sim.waitForTimeout(300);
+
+  // Zijbalk inklappen
+  const navBreedte = () => sim.evaluate(() => document.querySelector('aside#nav').getBoundingClientRect().width);
+  check(await sim.isVisible('#sim-docent-zijbalk button'), 'knop om de zijbalk in te klappen');
+  await sim.click('#sim-docent-zijbalk button'); await sim.waitForTimeout(300);
+  { const b = await navBreedte(); const a = await sim.evaluate(() => document.documentElement.hasAttribute('data-sim-nav-mini')); check(b === 64, `zijbalk ingeklapt tot 64 px (breedte ${b}, attribuut ${a})`); }
+  check((await sim.getAttribute('aside#nav a[href="/groups"]', 'title')) === '☺Groepen'.slice(1) || (await sim.getAttribute('aside#nav a[href="/groups"]', 'title'))?.includes('Groepen'), 'menu-items krijgen een tooltip');
+  await sim.keyboard.press('Control+K');
+  await sim.fill(zoekveld, 'zijbalk');
+  await sim.keyboard.press('Enter'); await sim.waitForTimeout(300);
+  check((await navBreedte()) > 200, 'Cmd+K-opdracht klapt de zijbalk weer uit');
+  await zet({ navToggle: false, search: false });
+  await sim.keyboard.press('Control+K');
+  check(!(await sim.isVisible('#sim-docent-zijbalk button')) && !(await sim.isVisible(zoekveld)), 'modules zoeken en zijbalk uitzetten werkt');
+  await zet({ navToggle: true, search: true });
 
   const versie = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8')).version;
   check((await popup.textContent('#ver')) === `v${versie}`, `popup toont versie v${versie}`);
@@ -135,7 +181,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 4, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 6, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();

@@ -36,9 +36,9 @@ Status: ✅ klaar · 🔧 in ontwikkeling · ⏳ gepland · 💡 idee · ⛔ bui
 | 2.2 | Beoordeelqueue over alle groepen heen | ⏳ v0.3 | Per-groep actionable-lijsten samenvoegen: student, opdracht, groep, ingeleverd op, wachttijd |
 | 2.3 | Beoordeelscherm met statusbalk | ⏳ | Welke rubrics mag je invullen, wat doet afronden met het competentiediagram, hoeveel criteria nog leeg |
 | 2.4 | "Volgende student"-knop binnen één opdracht | ⏳ | Hele klas achter elkaar nakijken |
-| 2.5 | Sneltoetsen en Cmd+K (groepen, opdrachten, studenten) | 💡 | |
+| 2.5 | Sneltoetsen en Cmd+K (groepen, opdrachten, studenten) | 🔧 v0.4 | Cmd+K/Ctrl+K: menu-items, groepen (+ "te beoordelen") en extensie-opdrachten. Studenten bewust niet (privacy); opdrachten volgen met de Beoordelen-rapporten |
 | 2.6 | Export groepsoverzicht naar Excel | 💡 | Sluit aan op bestaande voortgangsrapporten uit leerlijndiagrammen |
-| 2.7 | Zijbalk inklappen naar alleen iconen met tooltips | 💡 | L2 |
+| 2.7 | Zijbalk inklappen naar alleen iconen met tooltips | 🔧 v0.4 | Module zijbalk, knop linksonder en via Cmd+K. Nog bevestigen in Simulise of breedte en iconen kloppen |
 | 2.8 | Dashboard: groepen bovenaan met openstaande beoordelingen als grote getallen | 💡 | L2, hangt samen met 1.8 |
 | 2.9 | Student-op-één-pagina: portfolio, leerlijnen, opdrachten | 💡 | L3 |
 
@@ -61,7 +61,7 @@ testaccount.
 | 4.1 | Modulestructuur `modules/<naam>.js` met aan/uit per module in popup | ✅ v0.3 | `modules/registry.js` + `core.js`; modules thema en hulpknop |
 | 4.2 | Inspector in Magister-extensie: eigen plek (sneltoets + popup-knop) in plaats van zwevende knop | 💡 | Voorkomt overlap met site-elementen |
 | 4.3 | Gedeelde codebasis met Magister-extensie (één repo, gedeelde utils) | 💡 | Alleen als er echt dubbel werk ontstaat |
-| 4.4 | Echte iconen in plaats van placeholders | 💡 | |
+| 4.4 | Echte iconen in plaats van placeholders | ✅ v0.4 | `scripts/make-icons.py`, zelfde stijl als de Magister-extensie |
 | 4.5 | Updates via GitHub Releases, zelf bijwerken vanuit de extensie | ✅ v0.2.1 | Zelfde mechanisme als de Magister-extensie |
 | 4.6 | Rooktest in headless Chromium (Simulise en GitHub nagebootst) | ✅ v0.2.1 | `node tools/rooktest.js` |
 
