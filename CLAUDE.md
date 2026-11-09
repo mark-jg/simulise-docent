@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.8.0)
+## Huidige staat (v0.9.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -28,6 +28,9 @@ modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.
                 Mijn groepen + uitsluitwoorden + Alles op één pagina; bdModus (alles/mijn/groepen),
                 bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen; zet localStorage simDocentPerPage
                 en simDocentGroepen voor perpagina.js),
+                meldingen.js (meldingenmenu + /notifications filteren met dezelfde regels; volgende
+                pagina's doorzoeken; zet localStorage simDocentMeldingen), regels.js (SD.regels: gedeelde
+                regels opleidingscodes/uitsluitwoorden voor beoordelen en meldingen),
                 zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/school/<uuid>, groepsnamen in
                 chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
                 inspector.js (alleen als `developer` aan staat; Alt+I, R = rapport met namen vervangen,
@@ -46,7 +49,7 @@ Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Do
 staan in `DARK` in modules/thema.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, grading, bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen, search, navToggle, navMini, updateCheck, developer }`.
+Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, grading, bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen, notifFilter, search, navToggle, navMini, updateCheck, developer }`.
 `enabled` is de aan/uit van module thema, `hideSupport` die van module hulpknop (namen uit v0.2
 bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`, en in manifest.json.
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de
@@ -127,6 +130,15 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   Resultaat als JSON op `<html data-sim-groepen>` + postMessage `sd-groepen`. Nog niet op de echte
   Simulise bevestigd welk veld de groep bevat (waarschijnlijk `assignmentConnection.connectable.id`);
   komen alle rijen als "zonder groep", dan klopt de koppeling niet.
+- **Meldingen**: menu `#notifications-dropdown > section.dropdown-menu > section.panel` met
+  `div.panel-heading` ("Je hebt N ongelezen meldingen.") en `div.list-group > a.media.list-group-item`
+  (href `/notification/<id>/process`), gevuld via GraphQL `getLatestUnreadNotification`
+  (`notifications(first: 5, unread: true)` letterlijk in de query; velden id, text, icon, owner,
+  permalink, createdAt). Pagina `/notifications`: door de server gemaakt (geen JSON), `div.timeline` met
+  `article.timeline-item` (eerste = `.active` kop, daarna afwisselend `.alt`), tekst in
+  `a.h5.font-thin` met `<b>`-delen, archiveerknop `a[href=/notification/<id>/archive][data-method=POST]`,
+  15 per pagina, `ul.pagination` met `?page=N`. Teksten: "<b>naam</b> heeft opdracht <b>titel</b>
+  ingeleverd." en "<b>titel</b> van <b>naam</b> staat klaar om beoordeeld te worden".
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
 
 ## Open punten / bekende issues

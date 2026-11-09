@@ -101,6 +101,10 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.9.0: filter in Meldingen. In het meldingenmenu en op de pagina Meldingen worden meldingen over
+  meetmomenten van andere opleidingen (en met je uitsluitwoorden) verborgen, met dezelfde instellingen
+  als in Beoordelen. Het menu haalt meer meldingen op, zodat er 5 relevante overblijven. Op de pagina
+  Meldingen zoekt "Volgende pagina's doorzoeken" verder en voegt de relevante meldingen toe.
 - 0.8.1: Inspector: het paginarapport (R) beschrijft ook de omgeving van het element onder de muis als
   dat buiten de pagina-inhoud staat, zoals het meldingenmenu in de bovenbalk.
 - 0.8.0: Beoordelen: "Mijn groepen". Kies bij Instellingen in de filterbalk je groepen (of laat ze kiezen

@@ -8,6 +8,25 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// Meldingen zoals in het menu van Simulise (titel van de opdracht in <b>); nepnamen.
+const MENU = ['<b>Piet Jansen</b> heeft opdracht <b>Meetmoment SD Engels M4</b> ingeleverd.',
+  '<b>Meetmoment GA Engels M1 (Cohort 2026)</b> van <b>Sanne de Vries</b> staat klaar om beoordeeld te worden',
+  '<b>Kees Bakker</b> heeft opdracht <b>Meetmoment MEP/MIP Engels M1 (Cohort 2026)</b> ingeleverd.',
+  'Nieuwe feedback op <b>PS_1.8: Wie ben ik?</b>',
+  '<b>Meetmoment SD Nederlands M2</b> van <b>Ali Bouzid</b> staat klaar om beoordeeld te worden',
+  '<b>Meetmoment MR Nederlands M1</b> van <b>Kees Bakker</b> staat klaar om beoordeeld te worden',
+  '<b>Opdracht A</b> ingeleverd.', '<b>Opdracht B</b> ingeleverd.', '<b>Opdracht C</b> ingeleverd.'];
+// Meldingenpagina: tijdlijn, door de server gemaakt, 3 pagina's.
+const MELDPAGINAS = { 1: ['SD Engels M4', 'MEP/MIP Engels M1', 'GA Engels M1', null, 'SD Nederlands M2', 'MR Nederlands M1'],
+  2: ['GA Engels M2', 'MEP/MIP Rekenen M1', null, 'SD Engels M1'], 3: [null, 'GA Nederlands M1'] };
+const MELDINGENPAGINA = (n) => `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox">
+<section id="content-wrapper" class="scrollable wrapper"><div class="wrapper"><div class="timeline">
+<article class="timeline-item active"><div class="timeline-caption"><div class="panel"><div class="panel-body h4 font-thin">Meldingen van <b>Docent</b></div></div></div></article>
+${MELDPAGINAS[n].map((m, i) => `<article class="timeline-item${i % 2 ? ' alt' : ''}"><div class="timeline-caption"><div class="panel"><div class="panel-body">
+<a class="h5 font-thin" href="/notification/${n}${i}/process">${m ? `<b>Meetmoment ${m}</b> van <b>Student Q</b> staat klaar om beoordeeld te worden` : '<b>Student Q</b> heeft opdracht <b>Portfolio</b> ingeleverd.'}</a></div></div></div></article>`).join('')}
+</div><div class="row"><div class="col-lg-12 text-center"><ul class="pagination"><li class="active"><span>1</span></li><li><a href="/notifications?page=2">2</a></li><li><a href="/notifications?page=3">3</a></li></ul></div></div>
+</div></section></section></div></body></html>`;
+
 // Nagebootste Simulise-pagina met Bootstrap 3-onderdelen die standaard hardcoded wit zijn.
 const WIT = ['.modal-content', '.popover', '.selectize-dropdown', '.well', '.list-group-item', '.nav-tabs > li.active > a', '.bg-white', '.form-control'];
 const NEPPAGINA = `<html><head><style>
@@ -16,8 +35,11 @@ const NEPPAGINA = `<html><head><style>
   aside#nav { width: 220px; display: block; }
 </style></head><body>
 <header class="header navbar"><ul class="nav navbar-nav"><li id="notifications-dropdown" class="dropdown open"><a class="dropdown-toggle" href="#">Meldingen</a>
-  <ul class="dropdown-menu"><li class="notification"><a href="/@pjansen/assignment/0f1e2d3c-1111-2222-3333-444455556666/review"><span class="text">Piet Jansen heeft Meetmoment SD Engels M4 ingeleverd</span><small>2 uur geleden</small></a></li>
-  <li class="notification"><a href="#"><span class="text">Nieuwe feedback op PS_1.8: Wie ben ik?</span></a></li></ul></li></ul></header>
+  <section class="dropdown-menu aside-xl"><section class="panel bg-white"><div class="panel-heading b-light bg-light"><strong>Je hebt 118 ongelezen meldingen.</strong></div>
+  <div class="list-group">${MENU.map((h, i) => `<a class="media list-group-item font-thin" href="/notification/${100 + i}/process"><span class="media-body m-b-none"><span>${h}</span><br><small class="text-xs text-muted">· 2 uur geleden</small></span></a>`).join('')}</div>
+  </section></section></li></ul></header>
+<script>fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ operationName: 'getLatestUnreadNotification',
+  query: 'query getLatestUnreadNotification { viewer { id notifications(first: 5, unread: true) { data { id text } paginatorInfo { total } } } }', variables: {} }) });</script>
 <aside id="nav"><ul class="nav-main">
   <li><a href="/dashboard"><i class="fa fa-home"></i><span>Dashboard</span></a></li>
   <li><a href="/assignments/assigned"><i class="fa fa-check"></i><span>Beoordelen</span></a></li>
@@ -94,7 +116,8 @@ function bouwZip() {
   const zip = bouwZip();
   const ZIP_URL = 'https://github.com/mark-jg/simulise-docent/releases/download/v9.9.9/simulise-docent-v9.9.9.zip';
   await ctx.route('https://ma.simulise.com/**', (r) => {
-    const p = new URL(r.request().url()).pathname;
+    const u = new URL(r.request().url()), p = u.pathname;
+    if (p === '/notifications') return r.fulfill({ contentType: 'text/html', body: MELDINGENPAGINA(parseInt(u.searchParams.get('page'), 10) || 1) });
     if (p === '/api/vroeg') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ rows: [{ name: 'Piet Jansen' }], per_page: 25, total: 34 }) });
     if (p === '/api/graphql') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { assigned: { total: 34, items: [{ title: 'Meetmoment SD Engels M4', student: { name: 'Piet Jansen', username: 'pjansen' } }] } } }) });
     if (p === '/assignments/assigned/data') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: [{ id: 5, title: 'Opdracht X', user: { name: 'Piet Jansen' } }], current_page: 2, per_page: 25, total: 34 }) });
@@ -109,8 +132,14 @@ function bouwZip() {
   await ctx.route(ZIP_URL, (r) => r.fulfill({ contentType: 'application/zip', body: zip }));
   // Nagebootste GraphQL-server: weigert meer dan 100 rijen, zoals een server met een maximum.
   const graphqlVerzoeken = [];
+  const meldVerzoeken = [];
   await ctx.route('https://api.simulise.com/graphql', (r) => {
-    const v = JSON.parse(r.request().postData() || '{}').variables || {};
+    const verzoek = JSON.parse(r.request().postData() || '{}');
+    if (verzoek.operationName === 'getLatestUnreadNotification') {
+      meldVerzoeken.push(verzoek.query.match(/notifications\(first: (\d+)/)?.[1]);
+      return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ data: { viewer: { notifications: { data: [], paginatorInfo: { total: 118 } } } } }) });
+    }
+    const v = verzoek.variables || {};
     graphqlVerzoeken.push(`${v.page}/${v.perPage}`);
     // Groepen zoals Simulise ze meestuurt; rij 1 heeft een groeps-id in de gegevens van de student (moet genegeerd worden).
     const G = { MEP1A: 'grp-111111', MR1A: 'grp-222222', SD2B: 'grp-333333', GA1A: 'grp-444444' };
@@ -147,7 +176,7 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
-  check(await popup.locator('#modules input').count() === 5, 'popup toont aan/uit per module');
+  check(await popup.locator('#modules input').count() === 6, 'popup toont aan/uit per module');
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -161,6 +190,13 @@ function bouwZip() {
   check((await attr()) === 'off', 'thema uitzetten zet data-sim-theme op off');
   await zet({ enabled: true, theme: 'auto', hideSupport: true });
   check((await attr()) !== 'off', 'thema weer aan');
+
+  // Meldingen in het menu
+  const menuZichtbaar = () => sim.$$eval('#notifications-dropdown a.list-group-item', (as) => as.filter((a) => a.offsetParent !== null).map((a) => a.querySelectorAll('b')[a.querySelectorAll('b').length > 1 && !a.textContent.startsWith('Meetmoment') ? 1 : 0].textContent));
+  let mz = await menuZichtbaar();
+  check(mz.join(' | ') === 'Meetmoment MEP/MIP Engels M1 (Cohort 2026) | PS_1.8: Wie ben ik? | Meetmoment MR Nederlands M1 | Opdracht A | Opdracht B',
+    `menu: meetmomenten SD en GA verborgen, 5 relevante zichtbaar (${mz.join(' | ')})`);
+  check((await sim.textContent('#notifications-dropdown .sim-docent-menunoot')) === '3 van de 9 nieuwste meldingen verborgen (andere opleidingen).', 'menu: melding hoeveel er verborgen zijn');
 
   // Zoeken (Cmd+K / Ctrl+K)
   const zoekveld = '#sim-docent-zoeken input';
@@ -218,16 +254,34 @@ function bouwZip() {
   check(rap.naam === 'simulise-rapport-groups-id-assignments.md', `bestandsnaam zonder id's (${rap.naam})`);
   check(rap.tekst.includes('/@{gebruiker}/assignment/{uuid}/review') && rap.tekst.includes('@[gebruiker]'), 'gebruikersnamen (@...) vervangen in links en tekst');
   fs.writeFileSync(path.join(os.tmpdir(), 'sd-voorbeeldrapport.md'), rap.tekst);
-  await sim.hover('#notifications-dropdown li.notification >> nth=0');
+  await sim.hover('#notifications-dropdown a.list-group-item >> nth=2');
   const menu = await leesDownload('r');
-  check(menu.tekst.includes('Structuur rond het element onder de muis: `#notifications-dropdown`') && menu.tekst.includes('Meetmoment SD Engels M4') && menu.tekst.includes('li.notification × 2'),
+  check(menu.tekst.includes('Structuur rond het element onder de muis: `#notifications-dropdown`') && menu.tekst.includes('Meetmoment SD Engels M4') && menu.tekst.includes('a.media.list-group-item.font-thin[href=/notification/{id}/process] × 9'),
     'rapport beschrijft ook het menu onder de muis (buiten #content)');
-  check(!/Piet|Jansen|pjansen/.test(menu.tekst), 'menu-rapport zonder namen');
+  const menuLek = ['Piet', 'Jansen', 'pjansen', 'Sanne', 'Kees', 'Bakker', 'Bouzid'].filter((w) => menu.tekst.includes(w));
+  check(!menuLek.length, `menu-rapport zonder namen${menuLek.length ? ` (gelekt: ${menuLek.join(', ')})` : ''}`);
   const str = await leesDownload('s');
   check(!/MEP1A|Reflectie|Student 1/.test(str.tekst) && str.tekst.includes('table.table.table-index'), 'S: structuurrapport zonder tekst');
   await sim.keyboard.press('Escape');
   check(!(await sim.isVisible(balk)), 'Esc stopt de Inspector');
   await popup.uncheck('#developer'); await sim.waitForTimeout(300);
+
+  check(meldVerzoeken.includes('40'), `menu vraagt meer meldingen op (verzoeken met first: ${meldVerzoeken.join(', ')})`);
+
+  // Meldingenpagina
+  await sim.goto('https://ma.simulise.com/notifications'); await sim.waitForTimeout(500);
+  const artZichtbaar = () => sim.$$eval('#content .timeline > article.timeline-item:not(.active)', (as) => as.filter((a) => a.offsetParent !== null).length);
+  const meldInfo = () => sim.textContent('#sim-docent-meldingen .info');
+  check((await artZichtbaar()) === 3 && (await meldInfo()) === '3 van 6 meldingen verborgen (andere opleidingen)', `meldingenpagina: 3 van 6 verborgen (${await artZichtbaar()} zichtbaar, "${await meldInfo()}")`);
+  await sim.click('#sim-docent-meldingen .meer'); await sim.waitForTimeout(800);
+  check((await artZichtbaar()) === 6 && (await meldInfo()) === "6 van 12 meldingen verborgen (andere opleidingen) · 6 toegevoegd van volgende pagina's",
+    `volgende pagina's doorzocht en relevante toegevoegd (${await artZichtbaar()} zichtbaar, "${await meldInfo()}")`);
+  check(!(await sim.isVisible('#sim-docent-meldingen .meer')), 'knop verdwijnt na de laatste pagina');
+  await sim.click('#sim-docent-meldingen .toon'); await sim.waitForTimeout(200);
+  check((await artZichtbaar()) === 12, '"Toon even alles" op de meldingenpagina');
+  await zet({ notifFilter: false });
+  check((await artZichtbaar()) === 6 && !(await sim.isVisible('#sim-docent-meldingen')), 'module meldingen uitzetten: balk en toegevoegde meldingen weg, pagina zoals Simulise hem gaf');
+  await zet({ notifFilter: true });
 
   // Groep met uuid-adres onthouden via de kop van de groepspagina
   await sim.goto(`https://ma.simulise.com/groups/school/${UUID}/assignments`); await sim.waitForTimeout(400);
@@ -353,7 +407,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 10, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 12, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();

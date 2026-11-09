@@ -97,7 +97,7 @@ SD.register({
     return null;
   },
 
-  lijst(tekst) { return String(tekst || '').split(/[,;\n]/).map((w) => w.trim()).filter(Boolean); },
+  lijst(tekst) { return SD.regels.lijst(tekst); },
 
   /* Groepen en de koppeling rij -> groep, van modules/perpagina.js. */
   groepData() {
@@ -125,19 +125,12 @@ SD.register({
   reden(titel, groepen) {
     const s = this.SD.settings;
     if (s.bdModus === 'alles') return null;
-    const t = titel.toLowerCase();
-    if (this.lijst(s.bdUitsluiten).some((w) => t.includes(w.toLowerCase()))) return 'uitsluitwoord';
+    if (SD.regels.uitsluit(titel, s)) return 'uitsluitwoord';
     if (s.bdModus === 'groepen') {
       const mijn = new Set(s.bdGroepen || []);
       return mijn.size && groepen.length && !groepen.some((g) => mijn.has(g)) ? 'andere groep' : null;
     }
-    if (/^\s*meetmoment\b/i.test(titel)) {
-      const mijn = this.lijst(s.bdOpleidingen).map((w) => w.toLowerCase());
-      if (mijn.length) {
-        const woorden = t.split(/[\s/()_,.:-]+/).filter(Boolean);
-        if (!mijn.some((m) => woorden.includes(m) || t.includes(` ${m} `))) return 'andere opleiding';
-      }
-    }
+    if (SD.regels.andereOpleiding(titel, s)) return 'andere opleiding';
     return null;
   },
 

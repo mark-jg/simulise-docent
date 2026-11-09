@@ -13,6 +13,10 @@
  * welke groep elke rij hoort (door de id's in de rij te vergelijken met die van de groepen). Dat
  * komt als JSON op <html data-sim-groepen>, voor modules/beoordelen.js. Gegevens van studenten
  * (het veld user) worden overgeslagen.
+ *
+ * Meldingenmenu: staat simDocentMeldingen = N (module meldingen aan), dan vraagt het verzoek
+ * getLatestUnreadNotification (overal in de bovenbalk) N meldingen op in plaats van 5, zodat er na
+ * het filteren nog genoeg overblijven. Bij een fout: het oorspronkelijke verzoek.
  */
 (() => {
   if (window.__sdPerPagina) return;
@@ -86,6 +90,20 @@
     }
   };
 
+  const MELD = 'getLatestUnreadNotification';
+  const meldAantal = () => { try { return parseInt(localStorage.getItem('simDocentMeldingen'), 10) || 0; } catch { return 0; } };
+  const meerMeldingen = (body, n) => {
+    if (typeof body !== 'string' || !body.includes(MELD)) return null;
+    let j; try { j = JSON.parse(body); } catch { return null; }
+    let geraakt = false;
+    const een = (v) => {
+      if (v?.operationName !== MELD || typeof v.query !== 'string') return;
+      v.query = v.query.replace(/notifications\(\s*first:\s*(\d+)/, (m, k) => (Number(k) < n ? ((geraakt = true), `notifications(first: ${n}`) : m));
+    };
+    Array.isArray(j) ? j.forEach(een) : een(j);
+    return geraakt ? JSON.stringify(j) : null;
+  };
+
   const origFetch = window.fetch;
   const metGroepen = (res, init) => {
     if (leesGroepen() && init.body.includes(OPERATIE)) res.clone().json().then(publiceer, () => {});
@@ -95,6 +113,14 @@
   window.fetch = async function (input, init) {
     const aantal = gewenst();
     const url = typeof input === 'string' ? input : input?.url || '';
+    const mn = meldAantal();
+    if (mn && init && typeof init.body === 'string' && init.body.includes(MELD) && /\/graphql(\?|$)/.test(url)) {
+      const body = meerMeldingen(init.body, mn);
+      if (body) {
+        try { const res = await origFetch.call(this, input, { ...init, body }); if (await goed(res)) return res; } catch { /* origineel */ }
+      }
+      return origFetch.apply(this, arguments);
+    }
     if ((!aantal && !leesGroepen()) || !/\/graphql(\?|$)/.test(url) || !init || typeof init.body !== 'string') return origFetch.apply(this, arguments);
     if (aantal) {
       for (const n of [aantal, 100].filter((n, i, a) => n > 25 && a.indexOf(n) === i)) {
