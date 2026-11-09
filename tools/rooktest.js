@@ -34,10 +34,11 @@ const NEPPAGINA = `<html><head><style>
   .support-button { position: fixed; right: 0; bottom: 0; display: block; }
   aside#nav { width: 220px; display: block; }
 </style></head><body>
-<header class="header navbar"><ul class="nav navbar-nav"><li id="notifications-dropdown" class="dropdown open"><a class="dropdown-toggle" href="#">Meldingen</a>
-  <section class="dropdown-menu aside-xl"><section class="panel bg-white"><div class="panel-heading b-light bg-light"><strong>Je hebt 118 ongelezen meldingen.</strong></div>
+<header class="header navbar"><ul class="nav navbar-nav navbar-right nav-user"><li id="notifications-dropdown" class="open"><a class="dropdown-toggle" href="#"><i class="fa fa-inbox"></i><span class="badge badge-sm up bg-danger count">117</span></a>
+  <section class="dropdown-menu aside-xl"><section class="panel bg-white"><div class="panel-heading b-light bg-light"><strong>Je hebt 117 ongelezen meldingen.</strong></div>
   <div class="list-group">${MENU.map((h, i) => `<a class="media list-group-item font-thin" href="/notification/${100 + i}/process"><span class="media-body m-b-none"><span>${h}</span><br><small class="text-xs text-muted">· 2 uur geleden</small></span></a>`).join('')}</div>
-  </section></section></li></ul></header>
+  </section></section></li>
+  <li class="dropdown"><a class="dropdown-toggle" href="#">Docent</a><ul class="dropdown-menu"><li><a href="/notifications">Meldingen <span class="badge bg-danger pull-right">117</span></a></li></ul></li></ul></header>
 <script>fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ operationName: 'getLatestUnreadNotification',
   query: 'query getLatestUnreadNotification { viewer { id notifications(first: 5, unread: true) { data { id text } paginatorInfo { total } } } }', variables: {} }) });</script>
 <aside id="nav"><ul class="nav-main">
@@ -133,8 +134,15 @@ function bouwZip() {
   // Nagebootste GraphQL-server: weigert meer dan 100 rijen, zoals een server met een maximum.
   const graphqlVerzoeken = [];
   const meldVerzoeken = [];
+  let tellerVerzoeken = 0;
   await ctx.route('https://api.simulise.com/graphql', (r) => {
     const verzoek = JSON.parse(r.request().postData() || '{}');
+    if (verzoek.operationName === 'sdDocentTeller') {
+      tellerVerzoeken++;
+      const items = [...MENU, 'Kees Bakker heeft opdracht Portfolio M1 ingeleverd.', 'Piet Jansen heeft opdracht Meetmoment SD Engels M2 ingeleverd.'];
+      return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
+        body: JSON.stringify({ data: { viewer: { notifications: { data: items.map((text, i) => ({ id: `m${i}`, text })), paginatorInfo: { total: items.length } } } } }) });
+    }
     if (verzoek.operationName === 'getLatestUnreadNotification') {
       meldVerzoeken.push(verzoek.query.match(/notifications\(first: (\d+)/)?.[1]);
       return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ data: { viewer: { notifications: { data: [], paginatorInfo: { total: 118 } } } } }) });
@@ -197,6 +205,21 @@ function bouwZip() {
   check(mz.join(' | ') === 'Meetmoment MEP/MIP Engels M1 (Cohort 2026) | PS_1.8: Wie ben ik? | Meetmoment MR Nederlands M1 | Opdracht A | Opdracht B',
     `menu: meetmomenten SD en GA verborgen, 5 relevante zichtbaar (${mz.join(' | ')})`);
   check((await sim.textContent('#notifications-dropdown .sim-docent-menunoot')) === '3 van de 9 nieuwste meldingen verborgen (andere opleidingen).', 'menu: melding hoeveel er verborgen zijn');
+
+  // Teller: alleen relevante ongelezen meldingen
+  await sim.reload(); await sim.waitForTimeout(1300);
+  const belletje = '#notifications-dropdown > a.dropdown-toggle .badge';
+  check((await sim.textContent(belletje)) === '7' && (await sim.textContent('.nav-user a[href="/notifications"] .badge')) === '7',
+    `teller toont 7 relevante in plaats van 117 (belletje "${await sim.textContent(belletje)}", ${tellerVerzoeken} verzoek(en))`);
+  check((await sim.getAttribute(belletje, 'title')).includes('11 in totaal'), `tooltip met het echte totaal ("${await sim.getAttribute(belletje, 'title')}")`);
+  check((await sim.textContent('#notifications-dropdown .panel-heading strong')) === 'Je hebt 7 ongelezen meldingen voor jouw opleidingen (van de 11).', 'kop van het menu aangepast');
+  const voor = tellerVerzoeken;
+  await sim.evaluate((sel) => { document.querySelector(sel).textContent = '12'; }, belletje); // Simulise werkt de teller bij
+  await sim.waitForTimeout(1800);
+  check((await sim.textContent(belletje)) === '7' && tellerVerzoeken === voor + 1, `nieuwe waarde van Simulise: opnieuw geteld (${tellerVerzoeken - voor} verzoek, belletje "${await sim.textContent(belletje)}")`);
+  await zet({ notifFilter: false });
+  check((await sim.textContent(belletje)) === '12', 'module meldingen uit: teller van Simulise terug');
+  await zet({ notifFilter: true });
 
   // Zoeken (Cmd+K / Ctrl+K)
   const zoekveld = '#sim-docent-zoeken input';
@@ -407,7 +430,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 12, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 13, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();

@@ -9,6 +9,11 @@
  * op de pagina zelf, met een balk erboven; "Volgende pagina's doorzoeken" haalt volgende pagina's op
  * (met je eigen sessie) en voegt de relevante meldingen toe.
  * De titel van de opdracht staat in een <b> in de melding. Er wordt niets bewaard.
+ *
+ * Teller: modules/teller.js (in de pagina) vraagt de ongelezen meldingen op (tot 200) en stuurt ze
+ * hierheen (postMessage sd-teller). Hier wordt geteld welke relevant zijn; dat getal komt op het
+ * belletje, in het gebruikersmenu, het tabblad Meldingen en de kop van het menu. Het echte totaal
+ * staat in de tooltip. Werkt Simulise de teller zelf bij, dan wordt opnieuw opgevraagd.
  */
 SD.register({
   id: 'meldingen',
@@ -28,14 +33,29 @@ SD.register({
   `,
 
   zetVlag(aan) {
-    try { aan ? localStorage.setItem('simDocentMeldingen', String(this.OPHALEN)) : localStorage.removeItem('simDocentMeldingen'); } catch { /* geen opslag */ }
+    try {
+      if (aan) { localStorage.setItem('simDocentMeldingen', String(this.OPHALEN)); localStorage.setItem('simDocentTeller', '1'); }
+      else { localStorage.removeItem('simDocentMeldingen'); localStorage.removeItem('simDocentTeller'); }
+    } catch { /* geen opslag */ }
   },
+
+  TELLERS: ['#notifications-dropdown > a.dropdown-toggle .badge', '.nav-user a[href="/notifications"] .badge', '#content .nav-tabs a[href="/notifications"] .badge'],
+  KOP: '#notifications-dropdown .panel-heading strong',
 
   init(SD) {
     this.SD = SD;
     this.zetVlag(true);
     this.tijdelijk = false;
     this.volgende = null; // volgende paginanummer om te doorzoeken
+    this.teller = null;   // { totaal, relevant, volledig }
+    this._bericht = (e) => {
+      if (e.source !== window || e.data?.type !== 'sd-teller' || !this.SD) return;
+      const { totaal, items = [], max } = e.data;
+      const relevant = items.filter((x) => !this.tekstReden(x.text)).length;
+      this.teller = { totaal, relevant, volledig: totaal == null || totaal <= items.length || items.length < max };
+      this.pasTellerAan();
+    };
+    window.addEventListener('message', this._bericht);
     SD.ready(() => {
       if (!this.SD) return;
       this.run();
@@ -47,6 +67,13 @@ SD.register({
 
   destroy() {
     this.zetVlag(false);
+    window.removeEventListener('message', this._bericht);
+    for (const el of document.querySelectorAll('[data-sim-origineel]')) {
+      el.textContent = el.dataset.simOrigineel;
+      el.style.removeProperty('display');
+      if (el.dataset.simTitel != null) el.title = el.dataset.simTitel;
+      delete el.dataset.simOrigineel; delete el.dataset.simTeller; delete el.dataset.simTitel;
+    }
     this._stop?.();
     for (const el of document.querySelectorAll('[data-sim-melding]')) { el.style.removeProperty('display'); el.removeAttribute('data-sim-melding'); }
     document.querySelectorAll('.sim-docent-menunoot, [data-sim-geladen]').forEach((el) => el.remove());
@@ -57,10 +84,58 @@ SD.register({
 
   /* Reden om een melding te verbergen, of null. */
   reden(el) {
+    return this.redenVan(el.textContent, [...el.querySelectorAll('b')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+  },
+
+  redenVan(tekst, titels) {
     const s = this.SD.settings;
-    if (SD.regels.uitsluit(el.textContent, s)) return 'uitsluitwoord';
-    const titels = [...el.querySelectorAll('b')].map((b) => b.textContent.replace(/\s+/g, ' ').trim());
+    if (SD.regels.uitsluit(tekst, s)) return 'uitsluitwoord';
     return titels.some((t) => SD.regels.andereOpleiding(t, s)) ? 'andere opleiding' : null;
+  },
+
+  /* Zelfde, voor de tekst uit GraphQL (met of zonder HTML). Zonder <b> wordt de titel van het
+   * meetmoment uit de zin gehaald: "... opdracht Meetmoment GA Engels M1 (Cohort 2026) ingeleverd." */
+  tekstReden(tekst) {
+    if (/<[a-z]/i.test(tekst)) {
+      const d = new DOMParser().parseFromString(tekst, 'text/html');
+      return this.redenVan(d.body.textContent, [...d.querySelectorAll('b, strong')].map((b) => b.textContent.replace(/\s+/g, ' ').trim()));
+    }
+    const m = tekst.match(/meetmoment\b.*?(?=\s+(?:van|ingeleverd|staat|is)\b|\.?\s*$)/i);
+    return this.redenVan(tekst, m ? [m[0].trim()] : []);
+  },
+
+  /* ---------- Teller ---------- */
+  pasTellerAan() {
+    if (!this.teller) return;
+    const { totaal, relevant, volledig } = this.teller;
+    const waarde = `${relevant}${volledig ? '' : '+'}`;
+    const uitleg = `${relevant}${volledig ? '' : '+'} ongelezen voor jouw opleidingen; ${totaal ?? '?'} in totaal (Simulise Docent)`;
+    const zet = (el, tekst) => {
+      const nu = el.textContent.trim();
+      if (nu !== el.dataset.simTeller) {
+        // Simulise heeft de waarde (opnieuw) gezet: onthouden, en opnieuw tellen als het totaal veranderde.
+        el.dataset.simOrigineel = el.textContent;
+        if (el.dataset.simTitel == null) el.dataset.simTitel = el.title || '';
+        const getal = parseInt(nu.replace(/\D+/g, ' ').trim().split(' ')[0], 10);
+        if (Number.isFinite(getal) && totaal != null && getal !== totaal) this.vraagTeller();
+        el.textContent = tekst;
+        el.dataset.simTeller = tekst;
+      }
+      el.title = uitleg;
+    };
+    for (const sel of this.TELLERS) {
+      for (const el of document.querySelectorAll(sel)) {
+        zet(el, waarde);
+        if (relevant === 0 && volledig) el.style.setProperty('display', 'none', 'important'); else el.style.removeProperty('display');
+      }
+    }
+    const kop = document.querySelector(this.KOP);
+    if (kop) zet(kop, `Je hebt ${waarde} ongelezen meldingen voor jouw opleidingen (van de ${totaal ?? '?'}).`);
+  },
+
+  vraagTeller() {
+    clearTimeout(this._vraagT);
+    this._vraagT = setTimeout(() => window.postMessage({ type: 'sd-teller-vraag' }, location.origin), 1000);
   },
 
   zet(el, reden) {
@@ -75,6 +150,7 @@ SD.register({
     if (!this.SD) return;
     this.menu();
     this.pagina();
+    this.pasTellerAan();
   },
 
   /* ---------- Menu in de bovenbalk ---------- */

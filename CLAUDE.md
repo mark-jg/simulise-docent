@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.9.0)
+## Huidige staat (v0.10.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -29,7 +29,10 @@ modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.
                 bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen; zet localStorage simDocentPerPage
                 en simDocentGroepen voor perpagina.js),
                 meldingen.js (meldingenmenu + /notifications filteren met dezelfde regels; volgende
-                pagina's doorzoeken; zet localStorage simDocentMeldingen), regels.js (SD.regels: gedeelde
+                pagina's doorzoeken; teller met alleen relevante ongelezen meldingen; zet localStorage
+                simDocentMeldingen en simDocentTeller), teller.js (world MAIN: vraagt ongelezen
+                meldingen op met de headers van het eerste GraphQL-verzoek van de app, postMessage
+                sd-teller; opnieuw bij sd-teller-vraag), regels.js (SD.regels: gedeelde
                 regels opleidingscodes/uitsluitwoorden voor beoordelen en meldingen),
                 zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/school/<uuid>, groepsnamen in
                 chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
@@ -139,6 +142,12 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   `a.h5.font-thin` met `<b>`-delen, archiveerknop `a[href=/notification/<id>/archive][data-method=POST]`,
   15 per pagina, `ul.pagination` met `?page=N`. Teksten: "<b>naam</b> heeft opdracht <b>titel</b>
   ingeleverd." en "<b>titel</b> van <b>naam</b> staat klaar om beoordeeld te worden".
+  Teller: `#notifications-dropdown > a.dropdown-toggle > span.badge.badge-sm.up.bg-danger.count`, ook
+  `.nav-user a[href="/notifications"] .badge` (gebruikersmenu) en het tabblad Meldingen op
+  /notifications; kop `#notifications-dropdown .panel-heading strong`. `#notifications-dropdown` is
+  een `li.hidden-xs` zonder class `.dropdown`. De lijst in het menu wordt pas geladen als je het
+  opent (eerst een spinner). Of `text` in GraphQL HTML met `<b>` is of platte tekst, is nog niet
+  gezien; meldingen.js kan beide.
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
 
 ## Open punten / bekende issues

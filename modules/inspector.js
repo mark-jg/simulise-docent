@@ -319,7 +319,7 @@ SD.register({
     // Element onder de muis buiten #content (bijv. een menu in de bovenbalk): ook die omgeving beschrijven.
     const ROND = '.dropdown-menu, .dropdown, [role=menu], .popover, .modal, header, nav, aside, section, ul';
     const rond = this.hover && this.hover.isConnected && !hoofd.contains(this.hover)
-      ? (this.hover.closest('.dropdown, .popover, .modal') || this.hover.closest(ROND) || this.hover.parentElement) : null;
+      ? (this.hover.closest('.dropdown, .popover, .modal, [id*="dropdown" i]') || this.hover.closest(ROND) || this.hover.parentElement) : null;
     let rondRegels = null;
     if (rond) { regels.length = 0; boom(rond, 0, 12); rondRegels = [`${sig(rond)}${tekst(rond) ? `  "${tekst(rond)}"` : ''}`, ...regels.map((r) => `  ${r}`)]; }
 

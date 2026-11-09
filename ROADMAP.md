@@ -41,7 +41,7 @@ Status: ✅ klaar · 🔧 in ontwikkeling · ⏳ gepland · 💡 idee · ⛔ bui
 | 2.7 | Zijbalk inklappen naar alleen iconen met tooltips | 🔧 v0.4 | Module zijbalk, knop linksonder en via Cmd+K. Nog bevestigen in Simulise of breedte en iconen kloppen |
 | 2.8 | Dashboard: groepen bovenaan met openstaande beoordelingen als grote getallen | 💡 | L2, hangt samen met 1.8 |
 | 2.9 | Student-op-één-pagina: portfolio, leerlijnen, opdrachten | 💡 | L3 |
-| 2.10 | Meldingen filteren (menu en /notifications) op opleiding en uitsluitwoorden | ✅ v0.9 | Zelfde regels als 2.1; menu haalt 40 op en toont 5 relevante; pagina: volgende pagina's doorzoeken |
+| 2.10 | Meldingen filteren (menu en /notifications) op opleiding en uitsluitwoorden | ✅ v0.9 | Zelfde regels als 2.1; menu haalt 40 op en toont 5 relevante; pagina: volgende pagina's doorzoeken; teller telt alleen relevante (v0.10) |
 
 ## 3. Studentkant (L1/L2)
 
