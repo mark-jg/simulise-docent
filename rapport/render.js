@@ -51,9 +51,14 @@
     const opleidingen = (g.opleidingen || []).map((o) => {
       const conf = rolVan(o.naam, profiel) || { rol: norm(o.naam), titel: o.naam, kop: String(o.naam).toUpperCase() };
       const doel = periode?.doel?.[conf.rol] ?? 1;
-      const cats = conf.categorieen || null;
+      // Categorieën uit het profiel; anders, als Simulise ze meegeeft (de vaardigheid van een leerlijn), die.
+      let cats = conf.categorieen || null;
+      if (!cats && o.leerlijnen.some((l) => l.categorie)) {
+        cats = [...new Map(o.leerlijnen.filter((l) => l.categorie).map((l) => [l.categorie, { naam: l.categorie, kleur: l.kleur || GRIJS, leerlijnen: [] }])).values()];
+      }
+      const past = (n, naam) => { const a = norm(n), b = norm(naam); return a === b || b.startsWith(a) || b.endsWith(a) || b.includes(` ${a}`) || a.startsWith(b); };
       let lijnen = o.leerlijnen.map((ll, i) => {
-        const cat = cats ? cats.find((c) => (c.leerlijnen || []).some((n) => norm(n) === norm(ll.naam) || norm(ll.naam).startsWith(norm(n)))) : null;
+        const cat = cats ? (cats.find((c) => (c.leerlijnen || []).some((n) => past(n, ll.naam))) || cats.find((c) => ll.categorie && norm(c.naam) === norm(ll.categorie)) || null) : null;
         const kleur = ll.kleur || cat?.kleur || GRIJS;
         const vorigeStap = vorige && profiel.weergave?.vergelijk !== false ? stapOp(ll, vorige.tot) : null;
         const beoordeeld = ll.stap > 0 || ll.beoordeeldNiet || !!ll.datum;
@@ -61,10 +66,13 @@
         if (cats) { status = ll.stap > 0 ? 'Behaald' : beoordeeld ? 'Nog niet behaald' : 'Geen beoordeling'; soort = ll.stap > 0 ? 'ok' : beoordeeld ? 'niet' : 'leeg'; }
         else if (ll.stap >= doel) { status = ll.bovenVerwachting ? 'Boven verwachting' : 'Op koers'; soort = ll.bovenVerwachting ? 'boven' : 'ok'; }
         else { status = beoordeeld ? 'Nog niet behaald' : 'Geen beoordeling'; soort = beoordeeld ? 'niet' : 'leeg'; }
-        return { ...ll, nr: i + 1, kleur, cat: cat?.naam || null, vorigeStap, status, soort };
+        // Omschrijving van de stap waar het nu om gaat (de doelstap, of de volgende als die al behaald is), uit het profiel.
+        const omStap = ll.stap >= doel ? Math.min(ll.stap + 1, o.maxStap || ll.stap + 1) : doel;
+        const omschrijving = ll.omschrijving || (conf.stappen?.[i + 1]?.[omStap] ? `Stap ${omStap}: ${conf.stappen[i + 1][omStap]}` : (conf.stappen?.[i + 1]?.[doel] ? `Stap ${doel}: ${conf.stappen[i + 1][doel]}` : ''));
+        return { ...ll, nr: i + 1, kleur, cat: cat?.naam || null, vorigeStap, status, soort, omschrijving };
       });
       if (cats) { // in de volgorde van de categorieën
-        const volg = (ll) => { const ci = cats.findIndex((c) => c.naam === ll.cat); const li = ci >= 0 ? cats[ci].leerlijnen.findIndex((n) => norm(ll.naam).startsWith(norm(n))) : 999; return (ci < 0 ? 99 : ci) * 1000 + li; };
+        const volg = (ll) => { const ci = cats.findIndex((c) => c.naam === ll.cat); const li = ci >= 0 ? (cats[ci].leerlijnen || []).findIndex((n) => past(n, ll.naam)) : 999; return (ci < 0 ? 99 : ci) * 1000 + (li < 0 ? 500 + ll.nr : li); };
         lijnen = lijnen.slice().sort((a, b) => volg(a) - volg(b));
       }
       const catStand = cats ? cats.map((c) => {

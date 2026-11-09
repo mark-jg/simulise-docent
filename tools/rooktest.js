@@ -97,6 +97,25 @@ setTimeout(() => {
     variables: { userId: 'pjansen', educationId: 'e1' } }) });
 }, 700);</script></body></html>`;
 const UUID = '0a1b2c3d-1111-4222-8333-444455556666';
+const APP_GQL = `<script>fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-test': 'app' }, body: JSON.stringify({ operationName: 'appStart', query: 'query appStart { viewer { id } }', variables: {} }) });</script>`;
+const PROFIEL = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section id="scrollable-page-wrapper"><div class="p-0">
+<div class="s-card col-span-2"><div class="panel panel-default"><div class="panel-heading p-sm"><div class="row"><p class="h3 font-thin"><div>Opleidingen</div></p></div></div><div class="row"><canvas></canvas></div></div></div>
+</div></section></div>${APP_GQL}</body></html>`;
+const GROEPEN = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><table class="table table-v-a-m table-index"><tbody>
+<tr><td><a href="/groups/school/${'0a1b2c3d-1111-4222-8333-444455556666'}/community"><strong>MEP1A</strong></a></td><td><div class="btn-group m-t-none"><button class="btn btn-sm btn-info dropdown-toggle">v</button>
+<ul class="dropdown-menu"><li><a href="/groups/school/${'0a1b2c3d-1111-4222-8333-444455556666'}/students">Studenten</a></li></ul></div></td></tr></tbody></table></div>${APP_GQL}</body></html>`;
+const STUDENTEN = `<html><head></head><body><div id="content"><table><tr><td><a href="/@studenta">Anna Test</a></td></tr><tr><td><a href="/@studentb">Bram Test</a></td></tr><tr><td><a href="/@studenta/assignments">opdrachten</a></td></tr></table></div></body></html>`;
+// Leerlijndiagram zoals Simulise het geeft (verzonnen student).
+const FASE = (phase, behaald, score, datum) => ({ id: `f${phase}`, phase, weights: [{ level: -1, title: 'Niet beoordeeld' }, { level: 0, title: 'Nog niet aangetoond' }, { level: 1, title: 'Op koers' }, { level: 2, title: 'Boven verwachting' }],
+  reviews: datum ? [{ id: 'r', color: '#000', score, title: `Beoordeling ${datum}: x`, maxScore: 3, scoreName: 'x' }] : [], currentScore: datum ? score : null, reviewProgress: null, reviewsAchieved: behaald ? 1 : 0, reviewsRequired: 1 });
+const ASPECT = (name, color, fasen) => ({ id: name, aspect: { id: name, name, skill: { id: 's', color } }, phases: [4, 3, 2, 1].map((p) => fasen[p] || FASE(p, false, null, null)) });
+const DIAGRAM = { 'e-beroeps': { id: 'd', phaseCount: 4, aspects: [
+  ASPECT('1. Adviseren over mediaproducten', '#2563eb', { 1: FASE(1, true, 2, '02-11-2026') }),
+  ASPECT('2. Voorbereiden van de mediaproductie', '#f97316', { 1: FASE(1, true, 1, '29-10-2026') }),
+  ASPECT('3. Coördineert de mediaproductie', '#16a34a', { 1: FASE(1, true, 1, '04-11-2026') }),
+  ASPECT('4. Professioneel handelen', '#9333ea', { 1: FASE(1, false, 0, '03-11-2026') }),
+  ASPECT('5. Vakvaardigheden', '#0e7490', { 1: FASE(1, true, 1, '20-10-2026'), 2: FASE(2, true, 1, '05-11-2026') })] },
+  'e-bava': { id: 'd2', phaseCount: 5, aspects: [ASPECT('Lezen', '#e8650a', { 1: FASE(1, true, 1, '04-11-2026'), 2: FASE(2, true, 1, '04-11-2026') }), ASPECT('Reading', '#24388f', {})] } };
 const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
 <div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/groups"><span>Groepen</span></a></span><span class="text-muted">/</span><span>MR1A</span></p></div>
 <ul class="nav nav-tabs"><li><a href="/groups/school/${UUID}/community"><span>Community</span></a></li></ul></header></section></div></body></html>`;
@@ -127,6 +146,9 @@ function bouwZip() {
   const ZIP_URL = 'https://github.com/mark-jg/simulise-docent/releases/download/v9.9.9/simulise-docent-v9.9.9.zip';
   await ctx.route('https://ma.simulise.com/**', (r) => {
     const u = new URL(r.request().url()), p = u.pathname;
+    if (p.startsWith('/@')) return r.fulfill({ contentType: 'text/html', body: PROFIEL });
+    if (p === '/groups') return r.fulfill({ contentType: 'text/html', body: GROEPEN });
+    if (/^\/groups\/school\/[^/]+\/students$/.test(p)) return r.fulfill({ contentType: 'text/html', body: STUDENTEN });
     if (p === '/notifications') return r.fulfill({ contentType: 'text/html', body: MELDINGENPAGINA(parseInt(u.searchParams.get('page'), 10) || 1) });
     if (p === '/api/vroeg') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ rows: [{ name: 'Piet Jansen' }], per_page: 25, total: 34 }) });
     if (p === '/api/graphql' && (r.request().postData() || '').includes('getUserEducationDiagram')) return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { user: { id: 'u-77', username: 'pjansen',
@@ -147,9 +169,23 @@ function bouwZip() {
   // Nagebootste GraphQL-server: weigert meer dan 100 rijen, zoals een server met een maximum.
   const graphqlVerzoeken = [];
   const meldVerzoeken = [];
+  const rapportVerzoeken = [];
   let tellerVerzoeken = 0;
   await ctx.route('https://api.simulise.com/graphql', (r) => {
     const verzoek = JSON.parse(r.request().postData() || '{}');
+    const antw = (body) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
+    if (verzoek.operationName === 'appStart') return antw({ data: { viewer: { id: 'v' } } });
+    if (verzoek.operationName === 'sdRapportStudent') {
+      rapportVerzoeken.push(r.request().headers()['x-test'] || '');
+      const namen = { studentx: 'Sam Voorbeeld', studenta: 'Anna Test', studentb: 'Bram Test' };
+      const id = verzoek.variables.id;
+      return antw({ data: { user: { id: `u-${id}`, name: namen[id], username: id, dashboardEducations: [{ id: 'e-bava', name: 'BAVA 4', groups: [{ id: 'g', name: 'MEP1A' }] }, { id: 'e-beroeps', name: 'Mediaproducer / Music Industry Professional', groups: [{ id: 'g', name: 'MEP1A' }] }] } } });
+    }
+    if (verzoek.operationName === 'sdRapportDiagram') {
+      if (verzoek.query.includes('skill { id name color }')) return antw({ errors: [{ message: 'Cannot query field "name" on type "EducationSkill".' }], data: null });
+      if (!String(verzoek.variables.userId).startsWith('u-')) return antw({ errors: [{ message: 'onbekende gebruiker' }], data: { user: null } });
+      return antw({ data: { user: { id: verzoek.variables.userId, diagram: DIAGRAM[verzoek.variables.educationId] } } });
+    }
     if (verzoek.operationName === 'sdDocentTeller') {
       tellerVerzoeken++;
       if (Number(verzoek.query.match(/first: (\d+)/)?.[1]) > 100) {
@@ -204,7 +240,7 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
-  check(await popup.locator('#modules input').count() === 6, 'popup toont aan/uit per module');
+  check(await popup.locator('#modules input').count() === 7, 'popup toont aan/uit per module');
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -460,8 +496,32 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 13, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 15, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
+
+  // Voortgangsrapport vanaf het profiel van een student
+  await sim.goto('https://ma.simulise.com/@studentx'); await sim.waitForTimeout(600);
+  check(await sim.isVisible('.sim-docent-rapportknop'), 'knop Voortgangsrapport op het profiel');
+  const [rapportTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sim-docent-rapportknop')]);
+  await rapportTab.waitForFunction(() => document.body.innerText.includes('Zo sta jij ervoor.'), null, { timeout: 15000 }).catch(() => {});
+  const rapportTekst = await rapportTab.evaluate(() => document.body.innerText);
+  const vandaag = new Date().toISOString().slice(0, 10);
+  check(['Sam Voorbeeld', 'MEP1A', 'BEROEPSLEERLIJNEN', 'BASISVAARDIGHEDEN', 'Boven verwachting', 'Nog niet behaald', 'Stap 2 van 4', 'Ontdekken wat adviseren is'].every((w) => rapportTekst.includes(w)),
+    `rapport uit Simulise-gegevens: stappen, statussen, beide diagrammen (${rapportTekst.slice(0, 80).replace(/\n/g, ' ')}…)`);
+  check(rapportVerzoeken[0] === 'app', 'rapportvragen gaan met de headers van de app');
+  check(rapportTekst.indexOf('BEROEPSLEERLIJNEN') < rapportTekst.indexOf('BASISVAARDIGHEDEN'), 'beroeps eerst, dan BAVA (volgorde van het profiel)');
+  check(!/<script/i.test(await rapportTab.content()), 'rapporttabblad zonder scripts');
+  await rapportTab.close();
+
+  // Voortgangsrapporten voor een hele groep, vanuit het menu op /groups
+  await sim.goto('https://ma.simulise.com/groups'); await sim.waitForTimeout(600);
+  check(await sim.locator('.dropdown-menu .sim-docent-rapport').count() === 1, 'menu-item Voortgangsrapporten in het groepsmenu');
+  const [groepTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.dropdown-menu .sim-docent-rapport')]);
+  await groepTab.waitForFunction(() => document.querySelectorAll('.pagina').length >= 4, null, { timeout: 20000 }).catch(() => {});
+  const groepTekst = await groepTab.evaluate(() => document.body.innerText);
+  check((await groepTab.locator('.pagina').count()) === 4 && groepTekst.includes('Anna Test') && groepTekst.includes('Bram Test') && groepTekst.includes('2 studenten'),
+    `groepsrapport: alle studenten van de groep, elk met eigen pagina's (${await groepTab.locator('.pagina').count()} pagina's)`);
+  await groepTab.close();
 
   // Rapportprofielen en voorvertoning van het voortgangsrapport
   const prof = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);

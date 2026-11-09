@@ -4,7 +4,8 @@
  *
  * Opbouw:
  *   opleidingen[]   rol (beroeps | bava | eigen naam), herken (tekst of regex op de naam van de opleiding
- *                   in Simulise), titel, kop (bovenaan de pagina), categorieen[] (naam, kleur, leerlijnen[])
+ *                   in Simulise), titel, kop (bovenaan de pagina), categorieen[] (naam, kleur, leerlijnen[]),
+ *                   stappen { leerlijnnummer: { stap: omschrijving } }
  *   perioden[]      code, naam, van, tot (JJJJ-MM-DD), moment (bijv. meetmoment), beslis (true = besluit),
  *                   normNaam (bijv. VSA-norm), norm (tekst), doel { rol: stap }, regels[]
  *   regels          { rol, stap, minAantal, verplicht: [leerlijnnummers] }  of
@@ -19,7 +20,17 @@ globalThis.SD_RAPPORT_STANDAARD = {
   naam: 'MEP/MIP 2026-2027',
   bron: 'stroomschema meet- en beslismomenten MEP/MIP 2026-2027',
   opleidingen: [
-    { rol: 'beroeps', herken: 'Mediaproducer|Music Industry|MEP|MIP', titel: 'Beroepsleerlijnen', kop: 'BEROEPSLEERLIJNEN' },
+    {
+      rol: 'beroeps', herken: 'Mediaproducer|Music Industry|MEP|MIP', titel: 'Beroepsleerlijnen', kop: 'BEROEPSLEERLIJNEN',
+      // Omschrijving per leerlijn (nummer) en stap, voor de tabel. Aan te vullen voor de andere stappen.
+      stappen: {
+        1: { 1: 'Ontdekken wat adviseren is en wat de rol van de mediamanager is bij opdrachtgevers.' },
+        2: { 1: 'Begrijpen wat er komt kijken bij de voorbereiding en wat jouw rol daarin is.' },
+        3: { 1: 'Ontdekken wat coördineren is en waarom overzicht houden belangrijk is.' },
+        4: { 1: 'Basisgedrag laten zien: afspraken nakomen, je aan de regels houden en inzet tonen.' },
+        5: { 1: 'Kennismaken met de mediasector en basiskennis en -vaardigheden ontwikkelen.' },
+      },
+    },
     {
       rol: 'bava', herken: 'BAVA|basisvaardig', titel: 'Basisvaardigheden', kop: 'BASISVAARDIGHEDEN',
       categorieen: [
@@ -62,11 +73,11 @@ globalThis.SD_RAPPORT_VOORBEELD = {
     {
       naam: 'Mediaproducer / Music Industry Professional', maxStap: 4,
       leerlijnen: [
-        { naam: '1. Adviseren over mediaproducten', kleur: '#2f6fed', stap: 1, omschrijving: 'Stap 1: Ontdekken wat adviseren is en wat de rol van de mediamanager is bij opdrachtgevers.', datum: '2026-11-02', historie: [{ datum: '2026-11-02', stap: 1 }, { datum: '2026-12-01', stap: 2 }] },
-        { naam: '2. Voorbereiden van de mediaproductie', kleur: '#f07c1b', stap: 1, bovenVerwachting: true, omschrijving: 'Stap 1: Begrijpen wat er komt kijken bij de voorbereiding en wat jouw rol daarin is.', datum: '2026-10-29', historie: [{ datum: '2026-10-29', stap: 1 }] },
-        { naam: '3. Coördineren van de mediaproductie', kleur: '#2aa84a', stap: 1, omschrijving: 'Stap 1: Ontdekken wat coördineren is en waarom overzicht houden belangrijk is.', datum: '2026-11-04', historie: [{ datum: '2026-11-04', stap: 1 }] },
-        { naam: '4. Professioneel handelen', kleur: '#8e44e8', stap: 0, beoordeeldNiet: true, omschrijving: 'Stap 1: Basisgedrag laten zien: afspraken nakomen, je aan de regels houden en inzet tonen.', datum: '2026-11-03', historie: [{ datum: '2026-11-25', stap: 1 }] },
-        { naam: '5. Vakvaardigheden', kleur: '#1b7f9a', stap: 1, omschrijving: 'Stap 1: Kennismaken met de mediasector en basiskennis en -vaardigheden ontwikkelen.', datum: '2026-11-04', historie: [{ datum: '2026-11-04', stap: 1 }] },
+        { naam: '1. Adviseren over mediaproducten', kleur: '#2f6fed', stap: 1, datum: '2026-11-02', historie: [{ datum: '2026-11-02', stap: 1 }, { datum: '2026-12-01', stap: 2 }] },
+        { naam: '2. Voorbereiden van de mediaproductie', kleur: '#f07c1b', stap: 1, bovenVerwachting: true, datum: '2026-10-29', historie: [{ datum: '2026-10-29', stap: 1 }] },
+        { naam: '3. Coördineren van de mediaproductie', kleur: '#2aa84a', stap: 1, datum: '2026-11-04', historie: [{ datum: '2026-11-04', stap: 1 }] },
+        { naam: '4. Professioneel handelen', kleur: '#8e44e8', stap: 0, beoordeeldNiet: true, datum: '2026-11-03', historie: [{ datum: '2026-11-25', stap: 1 }] },
+        { naam: '5. Vakvaardigheden', kleur: '#1b7f9a', stap: 1, datum: '2026-11-04', historie: [{ datum: '2026-11-04', stap: 1 }] },
       ],
     },
     {

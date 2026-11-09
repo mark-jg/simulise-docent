@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.12.0)
+## Huidige staat (v0.13.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -46,8 +46,12 @@ rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel
                 SD_RAPPORT_VOORBEELD: verzonnen student), render.js (SDRapport.bereken/html: A4-rapport met
                 SVG-diagrammen, doelstap uitvergroot, vergelijking vorige periode, categorieën, normen),
                 profielen.html/.js (profielen beheren in chrome.storage.local rpProfielen, live voorbeeld).
-                Nog niet gekoppeld aan Simulise: knoppen op profiel en /groups en het ophalen via
-                getUserEducationDiagram volgen (netwerkrapporten van profiel en studentenpagina nodig).
+                modules/rapporten.js: knop "Voortgangsrapport" op het profiel (kaart Opleidingen) en
+                "Voortgangsrapporten" in het menu per groep op /groups; haalt via modules/gql.js (world MAIN,
+                GraphQL-brug met de headers van de app, postMessage sd-gql / sd-gql-antwoord) de
+                opleidingen (sdRapportStudent) en diagrammen (sdRapportDiagram) op; studenten van een groep
+                uit de HTML van /groups/school/<uuid>/students (links /@gebruiker). Rapport opent in een
+                nieuw tabblad (alleen geheugen).
 content.js      Start de modules (SD.start())
 popup.html/.js  Aan/uit per module (uit registry), themakeuze, compact, updatemelding
 ROADMAP.md      Roadmap en backlog met status per item; bijwerken als iets klaar is
@@ -58,7 +62,7 @@ Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Do
 staan in `DARK` in modules/thema.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, grading, bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen, notifFilter, search, navToggle, navMini, updateCheck, developer }`.
+Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, grading, bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen, notifFilter, reports, search, navToggle, navMini, updateCheck, developer }`.
 `enabled` is de aan/uit van module thema, `hideSupport` die van module hulpknop (namen uit v0.2
 bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`, en in manifest.json.
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de
@@ -171,8 +175,13 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   geeft `user.diagramForEducation(id) { id phaseCount aspects { id aspect { id name skill { id color } }
   phases { id phase weights { level title } reviews { id color ... } currentScore reviewProgress
   reviewsAchieved reviewsRequired } } canViewAspectPage canViewReviewPage }` (5 aspecten x 4 fasen).
-  `user(id:)` werkt met een String (waarschijnlijk de gebruikersnaam of het id). Netwerkrapport toont
-  sinds v0.11.1 de volledige query en voor deze twee operaties ontdane waarden.
+  Volledige query van de app: `phases { id phase weights { level title } reviews { id color score title
+  maxScore scoreName } currentScore reviewProgress reviewsAchieved reviewsRequired }`. Weights: -1 Niet
+  beoordeeld, 0 Nog niet aangetoond, 1 Op koers, 2 Boven verwachting. Review-`title` is "Beoordeling
+  DD-MM-JJJJ: <niveau>" (enige bron van de datum). Een fase is behaald als reviewsAchieved >=
+  reviewsRequired; currentScore is het niveau. Opleidingen bij een MEP/MIP-student: "BAVA 4" en
+  "Mediaproducer / Music Industry Professional". De studentenpagina van een groep doet geen GraphQL
+  voor de lijst (HTML). Of `skill { name }` bestaat is niet bekend; rapporten.js probeert het en valt terug.
 - **/groups**: `userGroupsByType(page, perPage 15, filters, orderBy, only: SCHOOL_GROUP)` met per groep
   `id name fullPath permalink studentsCount teachersCount actionableAssignmentsCount ...`. Tabel
   `table.table-index`, per rij `td > div.btn-group.m-t-none > button.btn.btn-sm.btn-info.dropdown-toggle`

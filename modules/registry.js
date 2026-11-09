@@ -9,6 +9,7 @@ globalThis.SD_MODULES = [
   { id: 'thema', naam: 'Thema', uitleg: 'Opmaak en thema\'s voor Simulise', key: 'enabled' },
   { id: 'beoordelen', naam: 'Filter in Beoordelen', uitleg: 'Meetmomenten van andere opleidingen verbergen; instellingen in de filterbalk', key: 'grading' },
   { id: 'meldingen', naam: 'Filter in Meldingen', uitleg: 'Meldingen over meetmomenten van andere opleidingen verbergen (menu en pagina)', key: 'notifFilter' },
+  { id: 'rapporten', naam: 'Voortgangsrapporten', uitleg: 'Knop op het profiel van een student en in het menu bij Groepen', key: 'reports' },
   { id: 'zoeken', naam: 'Zoeken (Cmd+K)', uitleg: 'Snel naar menu-items en groepen springen; Ctrl+K op Windows', key: 'search' },
   { id: 'zijbalk', naam: 'Zijbalk inklappen', uitleg: 'Knop linksonder om de zijbalk tot iconen in te klappen', key: 'navToggle' },
   // dev: alleen in de ontwikkelaarsmodus (eigen schakelaar onderaan de popup)
@@ -22,6 +23,7 @@ globalThis.SD_DEFAULTS = {
   compact: false,
   hideSupport: true,  // module hulpknop
   notifFilter: true,  // module meldingen
+  reports: true,      // module rapporten
   search: true,       // module zoeken
   grading: true,      // module beoordelen
   bdModus: 'mijn',    // filter Beoordelen: 'alles', 'mijn' (opleidingen) of 'groepen'
