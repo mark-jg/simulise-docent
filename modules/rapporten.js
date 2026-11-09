@@ -100,24 +100,95 @@ SD.register({
     });
   },
 
-  /* Eén student: gegevens ophalen en omzetten naar het model van rapport/render.js. */
-  async student(gebruiker, groepNaam) {
-    const s = await this.gql('sdRapportStudent', this.Q_STUDENT, { id: gebruiker });
-    const user = s.data?.user;
-    if (!user) throw new Error(s.errors?.[0] || 'student niet gevonden');
-    const opleidingen = [];
-    for (const ed of user.dashboardEducations || []) {
+  /* Wat de app zelf op deze pagina vroeg (via modules/gql.js): vraagteksten, variabelen, opleidingen. */
+  appInfo() {
+    return new Promise((klaar) => {
+      const id = `sd-app-${++this.teller}`;
+      const op = (e) => {
+        if (e.source !== window || e.data?.type !== 'sd-gql-app-antwoord' || e.data.id !== id) return;
+        window.removeEventListener('message', op); clearTimeout(t); klaar(e.data.app || {});
+      };
+      const t = setTimeout(() => { window.removeEventListener('message', op); klaar({}); }, 2000);
+      window.addEventListener('message', op);
+      window.postMessage({ type: 'sd-gql-app', id }, location.origin);
+    });
+  },
+
+  /* Hoe de app een student aanduidt, afgekeken op een profiel en onthouden in chrome.storage.local
+   * (rpAppKennis): alleen de tekst van de vragen en het soort id, geen gegevens van studenten. */
+  async leerVanProfiel(gebruiker) {
+    let app = await this.appInfo();
+    for (let i = 0; i < 12 && !(app.opleidingen && app.vragen?.getUserEducationDiagram); i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      app = await this.appInfo();
+    }
+    const soort = (v) => (v == null ? null : v === gebruiker ? 'gebruikersnaam' : app.gebruikerId && v === app.gebruikerId ? 'dashboardId' : 'anders');
+    const kennis = {
+      qOpleidingen: app.vragen?.dashboardTileEducationDiagram || null,
+      qDiagram: app.vragen?.getUserEducationDiagram || null,
+      idSoort: soort(app.variabelen?.dashboardTileEducationDiagram?.id),
+      userIdSoort: soort(app.variabelen?.getUserEducationDiagram?.userId),
+    };
+    if (kennis.qOpleidingen || kennis.qDiagram) {
+      const oud = (await chrome.storage.local.get({ rpAppKennis: {} })).rpAppKennis || {};
+      await chrome.storage.local.set({ rpAppKennis: { ...oud, ...Object.fromEntries(Object.entries(kennis).filter(([, v]) => v)) } });
+    }
+    return { app, kennis };
+  },
+
+  /* Eén student: gegevens ophalen en omzetten naar het model van rapport/render.js.
+   * Op het eigen profiel: precies wat de app vroeg. Elders: de geleerde vragen, anders eigen vragen. */
+  async student(gebruiker, groepNaam, naamUitLijst) {
+    const stappen = [];
+    let opleidingen = null, gebruikerId = null, naam = naamUitLijst || null, groep = groepNaam || '';
+    const kennis = (await chrome.storage.local.get({ rpAppKennis: {} })).rpAppKennis || {};
+    let app = null;
+    const opProfiel = decodeURIComponent((location.pathname.match(/^\/@([^/]+)\/?$/) || [])[1] || '') === gebruiker;
+    if (opProfiel) {
+      ({ app } = await this.leerVanProfiel(gebruiker));
+      if (app.opleidingen) { opleidingen = app.opleidingen; gebruikerId = app.gebruikerId; }
+      naam = naam || document.querySelector('#content .s-card table h3')?.textContent.trim() || null;
+    }
+    const k = { ...kennis, ...(await chrome.storage.local.get({ rpAppKennis: {} })).rpAppKennis };
+    const idVoor = (soort) => (soort === 'dashboardId' ? gebruikerId : gebruiker);
+
+    if (!opleidingen && k.qOpleidingen) {
+      const r = await this.gql('dashboardTileEducationDiagram', k.qOpleidingen, { id: idVoor(k.idSoort === 'dashboardId' ? 'gebruikersnaam' : k.idSoort) });
+      const d = r.data?.dashboard;
+      if (d?.educations) { opleidingen = d.educations; gebruikerId = d.id; } else stappen.push(`opleidingen (vraag van Simulise): ${r.errors?.[0] || 'leeg antwoord'}`);
+    }
+    if (!opleidingen || !naam) {
+      const s = await this.gql('sdRapportStudent', this.Q_STUDENT, { id: gebruiker });
+      const user = s.data?.user;
+      if (user) { opleidingen = opleidingen || user.dashboardEducations; gebruikerId = gebruikerId || user.id; naam = naam || user.name; }
+      else if (!opleidingen) stappen.push(`opleidingen (eigen vraag): ${s.errors?.[0] || 'leeg antwoord'}`);
+    }
+    if (!opleidingen) throw new Error(stappen.join('; ') || 'geen opleidingen gevonden');
+
+    const uit = [];
+    for (const ed of opleidingen) {
+      const pogingen = [];
+      const userIdApp = opProfiel ? app?.variabelen?.getUserEducationDiagram?.userId : null;
+      if (k.qDiagram) {
+        if (userIdApp) pogingen.push(['getUserEducationDiagram', k.qDiagram, userIdApp]);
+        pogingen.push(['getUserEducationDiagram', k.qDiagram, idVoor(k.userIdSoort)]);
+      }
+      pogingen.push(['sdRapportDiagram', this.Q_DIAGRAM(true), gebruikerId], ['sdRapportDiagram', this.Q_DIAGRAM(false), gebruikerId], ['sdRapportDiagram', this.Q_DIAGRAM(false), gebruiker]);
       let diagram = null, fout = null;
-      for (const [userId, skillNaam] of [[user.id, true], [user.id, false], [gebruiker, false]]) {
-        const d = await this.gql('sdRapportDiagram', this.Q_DIAGRAM(skillNaam), { educationId: ed.id, userId });
+      const gedaan = new Set();
+      for (const [op, q, userId] of pogingen) {
+        if (!userId || gedaan.has(`${q}|${userId}`)) continue;
+        gedaan.add(`${q}|${userId}`);
+        const d = await this.gql(op, q, { educationId: ed.id, userId });
         if (d.data?.user?.diagram) { diagram = d.data.user.diagram; break; }
         fout = d.errors?.[0] || fout;
       }
-      if (!diagram) { if (fout) console.warn('[Simulise Docent] diagram', ed.name, fout); continue; }
-      opleidingen.push(this.naarOpleiding(ed.name, diagram));
+      if (!diagram) { stappen.push(`diagram ${ed.name}: ${fout || 'leeg antwoord'}`); continue; }
+      uit.push(this.naarOpleiding(ed.name, diagram));
     }
-    const groep = groepNaam || (user.dashboardEducations || []).flatMap((e) => e.groups || []).map((g) => g?.name).filter(Boolean)[0] || '';
-    return { student: { naam: user.name || gebruiker, groep }, peildatum: new Date().toISOString().slice(0, 10), opleidingen };
+    if (!uit.length) throw new Error(stappen.join('; ') || 'geen leerlijndiagram gevonden');
+    groep = groep || opleidingen.flatMap((e) => e.groups || []).map((g) => g?.name).filter(Boolean)[0] || '';
+    return { student: { naam: naam || gebruiker, groep }, peildatum: new Date().toISOString().slice(0, 10), opleidingen: uit };
   },
 
   datumUit(tekst) {
@@ -191,21 +262,28 @@ SD.register({
     } catch (e) { this.fout(w, e.message || e); }
   },
 
-  /* Studenten van een groep uit de HTML van de studentenpagina (en volgende pagina's daarvan). */
+  /* Studenten van een groep: eerst de studentenpagina, anders de opdrachtenpagina van de groep, waar elke
+   * student een kolom is (th.rotated a[href=/@gebruiker/assignments], naam in .rotated-header-content). */
   async groepsleden(uuid) {
+    const leden = await this.ledenVan(`/groups/school/${uuid}/students`, /^\/@([^/]+)\/?$/);
+    if (leden.length) return leden;
+    return this.ledenVan(`/groups/school/${uuid}/assignments`, /^\/@([^/]+)\/assignments\/?$/, 'th');
+  },
+
+  async ledenVan(start, patroon, binnen = null) {
     const leden = new Map();
-    let url = `/groups/school/${uuid}/students`, n = 0;
+    let url = start, n = 0;
     const gezien = new Set();
     while (url && n < 10 && !gezien.has(url)) {
       gezien.add(url); n++;
       const res = await fetch(url, { credentials: 'same-origin' });
-      if (!res.ok) throw new Error(`studentenpagina gaf ${res.status}`);
+      if (!res.ok) break;
       const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
       const inhoud = doc.querySelector('#content') || doc.body;
-      for (const a of inhoud.querySelectorAll('a[href^="/@"], a[href*="simulise.com/@"]')) {
-        const m = new URL(a.getAttribute('href'), location.href).pathname.match(/^\/@([^/]+)\/?$/);
+      for (const a of inhoud.querySelectorAll(`${binnen ? `${binnen} ` : ''}a[href*="/@"]`)) {
+        const m = new URL(a.getAttribute('href'), location.href).pathname.match(patroon);
         if (!m) continue;
-        const naam = (a.textContent || a.title || '').replace(/\s+/g, ' ').trim();
+        const naam = (a.querySelector('.rotated-header-content')?.textContent || a.textContent || a.getAttribute('data-original-title') || a.title || '').replace(/\s+/g, ' ').trim();
         if (!leden.has(m[1]) || (!leden.get(m[1]) && naam)) leden.set(m[1], naam);
       }
       const volgende = [...inhoud.querySelectorAll('ul.pagination a[rel="next"], ul.pagination li.active + li a')][0];
@@ -221,21 +299,25 @@ SD.register({
     try {
       const profiel = await this.profiel();
       const leden = await this.groepsleden(uuid);
-      if (!leden.length) throw new Error('geen studenten gevonden op de studentenpagina van deze groep');
+      if (!leden.length) throw new Error('geen studenten gevonden op de studenten- en opdrachtenpagina van deze groep');
       const klaar = [], fouten = [];
       let volgende = 0, gedaan = 0;
       const werker = async () => {
         while (volgende < leden.length) {
           const lid = leden[volgende++];
           try {
-            const g = this.sorteer(await this.student(lid.gebruiker, groepNaam), profiel);
-            if (g.opleidingen.length) klaar.push(g); else fouten.push(lid.naam || '?');
-          } catch { fouten.push(lid.naam || '?'); }
+            const g = this.sorteer(await this.student(lid.gebruiker, groepNaam, lid.naam), profiel);
+            if (g.opleidingen.length) klaar.push(g); else fouten.push('geen diagram');
+          } catch (e) { fouten.push(String(e.message || e)); }
           this.voortgang(w, `Gegevens ophalen uit Simulise… ${++gedaan} van ${leden.length} studenten`);
         }
       };
       await Promise.all(Array.from({ length: Math.min(this.MAX_TEGELIJK, leden.length) }, werker));
-      if (!klaar.length) throw new Error('voor geen enkele student een leerlijndiagram gevonden');
+      if (!klaar.length) {
+        const kennis = (await chrome.storage.local.get({ rpAppKennis: {} })).rpAppKennis || {};
+        throw new Error(`voor geen enkele student een leerlijndiagram gevonden (${fouten[0] || 'onbekend'}).`
+          + (kennis.qDiagram ? '' : ' Tip: open eerst één keer het profiel van een student met het diagram en maak daar een rapport; daarna weet de extensie hoe Simulise de gegevens ophaalt.'));
+      }
       klaar.sort((a, b) => a.student.naam.localeCompare(b.student.naam, 'nl'));
       let html = SDRapport.html(klaar, profiel, titel);
       if (fouten.length) html = html.replace('</div>', `<span style="color:#ffb37a">Zonder diagram: ${fouten.length}</span></div>`);

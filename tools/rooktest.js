@@ -98,13 +98,21 @@ setTimeout(() => {
 }, 700);</script></body></html>`;
 const UUID = '0a1b2c3d-1111-4222-8333-444455556666';
 const APP_GQL = `<script>fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-test': 'app' }, body: JSON.stringify({ operationName: 'appStart', query: 'query appStart { viewer { id } }', variables: {} }) });</script>`;
+const APP_PROFIEL = `<script>
+const q = (operationName, query, variables) => fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-test': 'app' }, body: JSON.stringify({ operationName, query, variables }) });
+setTimeout(() => {
+  q('dashboardTileEducationDiagram', 'query dashboardTileEducationDiagram($id: String!) { dashboard: user(id: $id) { id username educations: dashboardEducations { id name groups { ... on SchoolGroup { id name } } isDefault } } }', { id: location.pathname.slice(2) });
+  q('getUserEducationDiagram', 'query getUserEducationDiagram($educationId: ID!, $userId: String!) { user(id: $userId) { id diagram: diagramForEducation(id: $educationId) { id phaseCount aspects { id aspect { id name skill { id color } } phases { id phase weights { level title } reviews { id color score title maxScore scoreName } currentScore reviewProgress reviewsAchieved reviewsRequired } } } username } }', { educationId: 'e-bava', userId: 'u-' + location.pathname.slice(2) });
+}, 200);</script>`;
 const PROFIEL = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section id="scrollable-page-wrapper"><div class="p-0">
+<div class="s-card"><div class="panel panel-default"><table class="table"><tr><td><h3 class="font-thin">Sam Voorbeeld</h3></td></tr></table></div></div>
 <div class="s-card col-span-2"><div class="panel panel-default"><div class="panel-heading p-sm"><div class="row"><p class="h3 font-thin"><div>Opleidingen</div></p></div></div><div class="row"><canvas></canvas></div></div></div>
-</div></section></div>${APP_GQL}</body></html>`;
+</div></section></div>${APP_GQL}${APP_PROFIEL}</body></html>`;
 const GROEPEN = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><table class="table table-v-a-m table-index"><tbody>
 <tr><td><a href="/groups/school/${'0a1b2c3d-1111-4222-8333-444455556666'}/community"><strong>MEP1A</strong></a></td><td><div class="btn-group m-t-none"><button class="btn btn-sm btn-info dropdown-toggle">v</button>
 <ul class="dropdown-menu"><li><a href="/groups/school/${'0a1b2c3d-1111-4222-8333-444455556666'}/students">Studenten</a></li></ul></div></td></tr></tbody></table></div>${APP_GQL}</body></html>`;
-const STUDENTEN = `<html><head></head><body><div id="content"><table><tr><td><a href="/@studenta">Anna Test</a></td></tr><tr><td><a href="/@studentb">Bram Test</a></td></tr><tr><td><a href="/@studenta/assignments">opdrachten</a></td></tr></table></div></body></html>`;
+// Studentenpagina zonder profiel-links (zoals bij Simulise bleek); de studenten staan als kolommen op de opdrachtenpagina.
+const STUDENTEN = `<html><head></head><body><div id="content"><div class="student-lijst" data-vue="1"></div></div></body></html>`;
 // Leerlijndiagram zoals Simulise het geeft (verzonnen student).
 const FASE = (phase, behaald, score, datum) => ({ id: `f${phase}`, phase, weights: [{ level: -1, title: 'Niet beoordeeld' }, { level: 0, title: 'Nog niet aangetoond' }, { level: 1, title: 'Op koers' }, { level: 2, title: 'Boven verwachting' }],
   reviews: datum ? [{ id: 'r', color: '#000', score, title: `Beoordeling ${datum}: x`, maxScore: 3, scoreName: 'x' }] : [], currentScore: datum ? score : null, reviewProgress: null, reviewsAchieved: behaald ? 1 : 0, reviewsRequired: 1 });
@@ -118,7 +126,9 @@ const DIAGRAM = { 'e-beroeps': { id: 'd', phaseCount: 4, aspects: [
   'e-bava': { id: 'd2', phaseCount: 5, aspects: [ASPECT('Lezen', '#e8650a', { 1: FASE(1, true, 1, '04-11-2026'), 2: FASE(2, true, 1, '04-11-2026') }), ASPECT('Reading', '#24388f', {})] } };
 const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
 <div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/groups"><span>Groepen</span></a></span><span class="text-muted">/</span><span>MR1A</span></p></div>
-<ul class="nav nav-tabs"><li><a href="/groups/school/${UUID}/community"><span>Community</span></a></li></ul></header></section></div></body></html>`;
+<ul class="nav nav-tabs"><li><a href="/groups/school/${UUID}/community"><span>Community</span></a></li></ul></header>
+<table class="table table-bordered rotated-header"><thead><tr><th></th><th class="text-center rotated"><div class="rotated-header-container"><a href="/@studenta/assignments"><div class="rotated-header-content">Anna Test</div></a></div></th>
+<th class="text-center rotated"><div class="rotated-header-container"><a href="/@studentb/assignments"><div class="rotated-header-content">Bram Test</div></a></div></th></tr></thead></table></section></div></body></html>`;
 
 const ext = path.resolve(process.argv[2] || path.join(__dirname, '..'));
 const fouten = [];
@@ -175,11 +185,17 @@ function bouwZip() {
     const verzoek = JSON.parse(r.request().postData() || '{}');
     const antw = (body) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
     if (verzoek.operationName === 'appStart') return antw({ data: { viewer: { id: 'v' } } });
-    if (verzoek.operationName === 'sdRapportStudent') {
-      rapportVerzoeken.push(r.request().headers()['x-test'] || '');
-      const namen = { studentx: 'Sam Voorbeeld', studenta: 'Anna Test', studentb: 'Bram Test' };
+    const OPLEIDINGEN = [{ id: 'e-bava', name: 'BAVA 4', groups: [{ id: 'g', name: 'MEP1A' }], isDefault: true }, { id: 'e-beroeps', name: 'Mediaproducer / Music Industry Professional', groups: [{ id: 'g', name: 'MEP1A' }], isDefault: false }];
+    // Zoals bij het echte Simulise: de eigen studentvraag van de extensie wordt geweigerd.
+    if (verzoek.operationName === 'sdRapportStudent') return antw({ errors: [{ message: 'This action is unauthorized.' }], data: { user: null } });
+    if (verzoek.operationName === 'dashboardTileEducationDiagram') {
       const id = verzoek.variables.id;
-      return antw({ data: { user: { id: `u-${id}`, name: namen[id], username: id, dashboardEducations: [{ id: 'e-bava', name: 'BAVA 4', groups: [{ id: 'g', name: 'MEP1A' }] }, { id: 'e-beroeps', name: 'Mediaproducer / Music Industry Professional', groups: [{ id: 'g', name: 'MEP1A' }] }] } } });
+      return antw({ data: { dashboard: { id: `u-${id}`, username: id, educations: OPLEIDINGEN } } });
+    }
+    if (verzoek.operationName === 'getUserEducationDiagram') {
+      if (verzoek.variables.educationId === 'e-beroeps') rapportVerzoeken.push(r.request().headers()['x-test'] || '');
+      if (!String(verzoek.variables.userId).startsWith('u-')) return antw({ errors: [{ message: 'This action is unauthorized.' }], data: { user: null } });
+      return antw({ data: { user: { id: verzoek.variables.userId, diagram: DIAGRAM[verzoek.variables.educationId], username: 'x' } } });
     }
     if (verzoek.operationName === 'sdRapportDiagram') {
       if (verzoek.query.includes('skill { id name color }')) return antw({ errors: [{ message: 'Cannot query field "name" on type "EducationSkill".' }], data: null });
@@ -508,7 +524,10 @@ function bouwZip() {
   const vandaag = new Date().toISOString().slice(0, 10);
   check(['Sam Voorbeeld', 'MEP1A', 'BEROEPSLEERLIJNEN', 'BASISVAARDIGHEDEN', 'Boven verwachting', 'Nog niet behaald', 'Stap 2 van 4', 'Ontdekken wat adviseren is'].every((w) => rapportTekst.includes(w)),
     `rapport uit Simulise-gegevens: stappen, statussen, beide diagrammen (${rapportTekst.slice(0, 80).replace(/\n/g, ' ')}…)`);
-  check(rapportVerzoeken[0] === 'app', 'rapportvragen gaan met de headers van de app');
+  check(rapportVerzoeken.length >= 1 && rapportVerzoeken.every((h) => h === 'app'), `diagram van de tweede opleiding opgevraagd met de vraag en headers van de app (${rapportVerzoeken.length}×)`);
+  const kennis = await popup.evaluate(() => chrome.storage.local.get('rpAppKennis').then((s) => s.rpAppKennis));
+  check(kennis?.idSoort === 'gebruikersnaam' && kennis?.userIdSoort === 'dashboardId' && kennis?.qDiagram?.includes('getUserEducationDiagram') && !JSON.stringify(kennis).includes('studentx'),
+    `geleerd hoe de app een student aanduidt, zonder gebruikersnaam op te slaan (${JSON.stringify({ idSoort: kennis?.idSoort, userIdSoort: kennis?.userIdSoort })})`);
   check(rapportTekst.indexOf('BEROEPSLEERLIJNEN') < rapportTekst.indexOf('BASISVAARDIGHEDEN'), 'beroeps eerst, dan BAVA (volgorde van het profiel)');
   check(!/<script/i.test(await rapportTab.content()), 'rapporttabblad zonder scripts');
   await rapportTab.close();

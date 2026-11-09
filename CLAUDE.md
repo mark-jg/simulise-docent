@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.13.0)
+## Huidige staat (v0.13.1)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -181,7 +181,15 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   DD-MM-JJJJ: <niveau>" (enige bron van de datum). Een fase is behaald als reviewsAchieved >=
   reviewsRequired; currentScore is het niveau. Opleidingen bij een MEP/MIP-student: "BAVA 4" en
   "Mediaproducer / Music Industry Professional". De studentenpagina van een groep doet geen GraphQL
-  voor de lijst (HTML). Of `skill { name }` bestaat is niet bekend; rapporten.js probeert het en valt terug.
+  voor de lijst (HTML), en daar stonden geen links naar /@gebruiker: rapporten.js valt terug op de
+  opdrachtenpagina van de groep (`th.rotated a[href=/@gebruiker/assignments]`, naam in
+  `.rotated-header-content`). Of `skill { name }` bestaat is niet bekend; rapporten.js probeert het.
+  Een eigen vraag `user(id: <gebruikersnaam>) { id name username dashboardEducations ... }` gaf
+  "This action is unauthorized." Daarom kijkt modules/gql.js mee met de vragen van de app
+  (dashboardTileEducationDiagram, getUserEducationDiagram: tekst, variabelen, opleidingen) en
+  hergebruikt rapporten.js die. Het soort id (gebruikersnaam / dashboardId) en de vraagteksten staan in
+  chrome.storage.local.rpAppKennis (geen studentgegevens); het netwerkrapport toont bij id-variabelen
+  alleen het soort («gebruikersnaam uit de url», «uuid»).
 - **/groups**: `userGroupsByType(page, perPage 15, filters, orderBy, only: SCHOOL_GROUP)` met per groep
   `id name fullPath permalink studentsCount teachersCount actionableAssignmentsCount ...`. Tabel
   `table.table-index`, per rij `td > div.btn-group.m-t-none > button.btn.btn-sm.btn-info.dropdown-toggle`

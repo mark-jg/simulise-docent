@@ -101,6 +101,9 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.13.1: voortgangsrapporten: op het profiel gebruikt de extensie nu precies de vragen van Simulise zelf (eerder
+  "This action is unauthorized"), en onthoudt ze hoe, voor de groepsrapporten. De studenten van een groep komen
+  zo nodig van de opdrachtenpagina van de groep. Duidelijkere foutmeldingen.
 - 0.13.0: voortgangsrapporten met echte gegevens. Op het profiel van een student staat bij het diagram de knop
   "Voortgangsrapport"; op Groepen staat in het menu van elke groep "Voortgangsrapporten" voor alle studenten.
   Het rapport opent in een nieuw tabblad, gemaakt met het gekozen rapportprofiel; afdrukken of opslaan als
