@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Simulise Docent",
+  "version": "0.2.0",
+  "description": "Thema's en docent-tools voor Simulise (ma.simulise.com).",
+  "permissions": ["storage"],
+  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "action": {
+    "default_title": "Simulise Docent",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.simulise.com/*"],
+      "css": ["theme.css"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

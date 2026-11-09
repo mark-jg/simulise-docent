@@ -1,0 +1,405 @@
+/* ==========================================================================
+   Simulise Docent, thema-laag: neutraal modern, licht en donker, plus extra thema's
+   Alles hangt aan html[data-sim-theme="naam"]. Bij "off" doet dit bestand niets.
+   Selectors: alleen Bootstrap-classes en id's, geen data-v hashes.
+   ========================================================================== */
+
+/* ---------- Tokens ---------- */
+/* Elk thema is alleen een set variabelen. Donkere thema's hebben daarnaast
+   html[data-sim-dark]; dat zet content.js. Nieuwe thema's: kopieer een blok,
+   geef het een naam en voeg die toe aan THEMES in popup.js (en DARK in content.js). */
+
+html[data-sim-theme] {
+  --sim-radius: 10px;
+  --sim-radius-sm: 6px;
+  --sim-font: inherit;
+  --sim-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+}
+
+/* Neutraal licht */
+html[data-sim-theme="light"] {
+  --sim-bg: #f4f5f7;        --sim-surface: #ffffff;   --sim-surface-2: #f8f9fb;
+  --sim-text: #1e2328;      --sim-text-2: #5b6470;    --sim-text-3: #8a93a0;
+  --sim-border: #e3e6ea;    --sim-border-2: #d4d9df;
+  --sim-accent: #0e8a74;    --sim-accent-soft: #e6f4f1; --sim-accent-text: #0b6f5e;
+  --sim-warn: #d97a06;      --sim-warn-soft: #fdf1e2;
+  --sim-danger: #c93c3c;    --sim-danger-soft: #fbe9e9;
+  --sim-nav-bg: #ffffff;    --sim-nav-text: #3b434d;  --sim-nav-active-bg: #eef1f4;
+}
+
+/* Neutraal donker */
+html[data-sim-theme="dark"] {
+  --sim-bg: #15181c;        --sim-surface: #1c2025;   --sim-surface-2: #22272d;
+  --sim-text: #e6e8eb;      --sim-text-2: #a4acb6;    --sim-text-3: #717a85;
+  --sim-border: #2a3038;    --sim-border-2: #363d47;
+  --sim-accent: #3fc1a7;    --sim-accent-soft: #1d3330; --sim-accent-text: #5fd3bb;
+  --sim-warn: #f0a04b;      --sim-warn-soft: #3a2b17;
+  --sim-danger: #ef6b6b;    --sim-danger-soft: #3b2222;
+  --sim-nav-bg: #1c2025;    --sim-nav-text: #b8c0ca;  --sim-nav-active-bg: #2a3038;
+  --sim-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Discord: diep grijsblauw met blurple accent, zijbalk een tint donkerder */
+html[data-sim-theme="discord"] {
+  --sim-bg: #313338;        --sim-surface: #2b2d31;   --sim-surface-2: #35373c;
+  --sim-text: #dbdee1;      --sim-text-2: #b5bac1;    --sim-text-3: #80848e;
+  --sim-border: #26272b;    --sim-border-2: #3f4147;
+  --sim-accent: #5865f2;    --sim-accent-soft: #3c3f74; --sim-accent-text: #949cf7;
+  --sim-warn: #f0b232;      --sim-warn-soft: #4a3b1a;
+  --sim-danger: #f23f43;    --sim-danger-soft: #4d2325;
+  --sim-nav-bg: #1e1f22;    --sim-nav-text: #949ba4;  --sim-nav-active-bg: #404249;
+  --sim-radius: 8px;        --sim-radius-sm: 4px;
+  --sim-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05);
+  --sim-font: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Tiimo: zacht lila, grote rondingen, vriendelijk, ronde letter */
+html[data-sim-theme="tiimo"] {
+  --sim-bg: #f3effb;        --sim-surface: #ffffff;   --sim-surface-2: #f8f5fe;
+  --sim-text: #2c2545;      --sim-text-2: #6b6388;    --sim-text-3: #9a93b3;
+  --sim-border: #e8e2f5;    --sim-border-2: #d8cff0;
+  --sim-accent: #7c5cff;    --sim-accent-soft: #ebe5ff; --sim-accent-text: #5e3fe0;
+  --sim-warn: #e8903a;      --sim-warn-soft: #fff0e1;
+  --sim-danger: #e05a7a;    --sim-danger-soft: #fde8ee;
+  --sim-nav-bg: #ffffff;    --sim-nav-text: #5a527a;  --sim-nav-active-bg: #f1ecfc;
+  --sim-radius: 18px;       --sim-radius-sm: 12px;
+  --sim-shadow: 0 4px 16px rgba(92, 70, 160, 0.08);
+  --sim-font: "Nunito", "Quicksand", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+}
+
+/* Nord: koel blauwgrijs, kalm */
+html[data-sim-theme="nord"] {
+  --sim-bg: #2e3440;        --sim-surface: #3b4252;   --sim-surface-2: #434c5e;
+  --sim-text: #eceff4;      --sim-text-2: #d8dee9;    --sim-text-3: #8f99ab;
+  --sim-border: #353c4a;    --sim-border-2: #4c566a;
+  --sim-accent: #88c0d0;    --sim-accent-soft: #3a4f5c; --sim-accent-text: #8fcfe0;
+  --sim-warn: #ebcb8b;      --sim-warn-soft: #4a4433;
+  --sim-danger: #bf616a;    --sim-danger-soft: #4a3238;
+  --sim-nav-bg: #2e3440;    --sim-nav-text: #c9d1dd;  --sim-nav-active-bg: #434c5e;
+  --sim-radius: 6px;        --sim-radius-sm: 4px;
+  --sim-shadow: none;
+}
+
+/* Papier: warm en rustig, als een goed gedrukt tijdschrift */
+html[data-sim-theme="paper"] {
+  --sim-bg: #f3efe7;        --sim-surface: #fcfaf5;   --sim-surface-2: #f6f2ea;
+  --sim-text: #2a2622;      --sim-text-2: #6a625a;    --sim-text-3: #9a918a;
+  --sim-border: #e4ddd1;    --sim-border-2: #d3c9ba;
+  --sim-accent: #8a5a2b;    --sim-accent-soft: #f0e6d8; --sim-accent-text: #6f4722;
+  --sim-warn: #b8731c;      --sim-warn-soft: #f7ebd8;
+  --sim-danger: #a8453f;    --sim-danger-soft: #f4e2df;
+  --sim-nav-bg: #ebe5da;    --sim-nav-text: #4a433b;  --sim-nav-active-bg: #dfd7c8;
+  --sim-radius: 4px;        --sim-radius-sm: 3px;
+  --sim-shadow: none;
+  --sim-font: Georgia, "Iowan Old Style", "Charter", serif;
+}
+
+/* Mokka: warm donker met paarse accenten */
+html[data-sim-theme="mocha"] {
+  --sim-bg: #1e1e2e;        --sim-surface: #24243a;   --sim-surface-2: #2a2a40;
+  --sim-text: #cdd6f4;      --sim-text-2: #a6adc8;    --sim-text-3: #7f849c;
+  --sim-border: #313244;    --sim-border-2: #45475a;
+  --sim-accent: #cba6f7;    --sim-accent-soft: #3b3252; --sim-accent-text: #d4b7fa;
+  --sim-warn: #fab387;      --sim-warn-soft: #463528;
+  --sim-danger: #f38ba8;    --sim-danger-soft: #45293a;
+  --sim-nav-bg: #181825;    --sim-nav-text: #a6adc8;  --sim-nav-active-bg: #313244;
+  --sim-radius: 12px;       --sim-radius-sm: 8px;
+  --sim-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+html[data-sim-dark] { color-scheme: dark; }
+
+/* ---------- Basis ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) body,
+html[data-sim-theme]:not([data-sim-theme="off"]) #app,
+html[data-sim-theme]:not([data-sim-theme="off"]) #scrollable-page-wrapper {
+  background: var(--sim-bg) !important;
+  color: var(--sim-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) body,
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn,
+html[data-sim-theme]:not([data-sim-theme="off"]) .form-control {
+  font-family: var(--sim-font) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) a { color: var(--sim-accent-text); }
+html[data-sim-theme]:not([data-sim-theme="off"]) a:hover { color: var(--sim-accent); }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-muted { color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-success { color: var(--sim-accent) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-danger { color: var(--sim-danger) !important; }
+
+/* ---------- Topbar ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) header.header.navbar {
+  background: var(--sim-surface) !important;
+  border-bottom: 1px solid var(--sim-border);
+  box-shadow: none !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) header.header.navbar .navbar-header {
+  background: var(--sim-surface) !important;
+  border-right: 1px solid var(--sim-border);
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .navbar-brand .logo-text { fill: var(--sim-text); }
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-user > li > a { color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-user > li > a:hover,
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-user > li.open > a {
+  color: var(--sim-text) !important;
+  background: var(--sim-nav-active-bg) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-user .avatar img { border-radius: 50%; }
+
+/* ---------- Zijbalk ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav,
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .vbox,
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .footer,
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .lt,
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .bg-dark {
+  background: var(--sim-nav-bg) !important;
+  color: var(--sim-nav-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav { border-right: 1px solid var(--sim-border); }
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .nav-main > li > a {
+  color: var(--sim-nav-text) !important;
+  border-radius: var(--sim-radius-sm);
+  margin: 2px 10px;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background .12s ease;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .nav-main > li > a:hover {
+  background: var(--sim-nav-active-bg) !important;
+  color: var(--sim-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .nav-main > li.active > a {
+  background: var(--sim-accent-soft) !important;
+  color: var(--sim-accent-text) !important;
+  font-weight: 600;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .nav-main > li > a i {
+  color: inherit !important; opacity: .85; width: 20px; margin-right: 6px;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .nav-main .line {
+  border-color: var(--sim-border) !important; background: transparent !important; margin: 10px 18px;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .footer { border-top: 1px solid var(--sim-border); }
+html[data-sim-theme]:not([data-sim-theme="off"]) aside#nav .footer .btn { color: var(--sim-text-3) !important; }
+
+/* ---------- Paginakop ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header-md {
+  background: var(--sim-bg) !important; box-shadow: none !important; border-bottom: 0;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header-md .header-text {
+  color: var(--sim-text); font-size: 20px; font-weight: 600; letter-spacing: -0.01em;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header-md .header-text a { color: var(--sim-text); }
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header-md .header-title-divider { color: var(--sim-text-3); }
+/* Lege band tussen topbar en paginakop; controleer in de praktijk */
+html[data-sim-theme]:not([data-sim-theme="off"]) #content > .vbox > .vbox > header.header-md { margin-top: 0 !important; }
+
+/* ---------- Knoppen ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn {
+  border-radius: var(--sim-radius-sm) !important; box-shadow: none !important; font-weight: 500;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-default {
+  background: var(--sim-surface) !important; border-color: var(--sim-border-2) !important; color: var(--sim-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-info,
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-primary,
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-success:not(.outline),
+html[data-sim-theme]:not([data-sim-theme="off"]) .background-brand-success {
+  background: var(--sim-accent) !important; border-color: var(--sim-accent) !important; color: #fff !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-success.outline {
+  background: transparent !important; border-color: var(--sim-accent) !important; color: var(--sim-accent-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-danger {
+  background: var(--sim-danger) !important; border-color: var(--sim-danger) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-inactive { background: transparent !important; }
+
+/* ---------- Panelen en tegels ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel,
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-default {
+  background: var(--sim-surface) !important;
+  border: 1px solid var(--sim-border) !important;
+  border-radius: var(--sim-radius) !important;
+  box-shadow: var(--sim-shadow) !important;
+  overflow: hidden;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .b-t-md-success,
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel.b-t-0 { border-top: 0 !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-heading {
+  background: var(--sim-surface) !important;
+  border-bottom: 1px solid var(--sim-border) !important;
+  border-radius: 0 !important;
+  padding: 14px 18px !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-heading.no-borders { border-bottom: 1px solid var(--sim-border) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-heading .h3,
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-heading h3 {
+  font-size: 15px !important; font-weight: 600 !important; margin: 0 !important; color: var(--sim-text) !important; letter-spacing: 0;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-heading .h3 a { color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-heading .h3 i { color: var(--sim-accent) !important; font-size: 14px; margin-right: 4px; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-body { color: var(--sim-text); }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-footer {
+  background: var(--sim-surface-2) !important;
+  border-top: 1px solid var(--sim-border) !important;
+  border-radius: 0 !important;
+  padding: 9px 18px !important;
+  font-size: 12.5px !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-footer a { color: var(--sim-text-2) !important; font-weight: 500; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-footer a:hover { color: var(--sim-accent-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel-footer a i { color: var(--sim-text-3) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel .text-center.text-muted em { font-style: normal; color: var(--sim-text-3); }
+
+/* ---------- Tabellen ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) .table,
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-striped-inverse {
+  background: transparent !important; color: var(--sim-text) !important; margin-bottom: 0;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .table > tbody > tr > td,
+html[data-sim-theme]:not([data-sim-theme="off"]) .table > tr > td,
+html[data-sim-theme]:not([data-sim-theme="off"]) .table > thead > tr > th {
+  border-top: 1px solid var(--sim-border) !important;
+  background: transparent !important;
+  padding: 10px 18px !important;
+  vertical-align: middle;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-striped-inverse > tbody > tr:nth-of-type(odd),
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-striped-inverse > tr:nth-of-type(odd) { background: transparent !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .table > tbody > tr:hover > td,
+html[data-sim-theme]:not([data-sim-theme="off"]) .table > tr:hover > td { background: var(--sim-surface-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .table a { color: var(--sim-text); }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel .table tr[style*="background-color"] { background: var(--sim-surface-2) !important; }
+
+/* Indextabellen (groepen, beoordelen) */
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-index thead th {
+  background: var(--sim-surface-2) !important;
+  color: var(--sim-text-2) !important;
+  border-bottom: 1px solid var(--sim-border) !important;
+  border-right: 0 !important;
+  font-weight: 600; font-size: 12px;
+  padding: 10px 8px !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-index thead th a,
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-index thead th a i { color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-index tbody td {
+  background: var(--sim-surface) !important; color: var(--sim-text) !important; border-color: var(--sim-border) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-index tbody tr:not(.row-collapsed):not(.info):hover td { background: var(--sim-surface-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-footer.panel-footer {
+  background: var(--sim-surface) !important; border: 1px solid var(--sim-border) !important;
+}
+
+/* ---------- Avatars, iconen, badges ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) .thumb-bl.avatar .img-icon,
+html[data-sim-theme]:not([data-sim-theme="off"]) .img-icon.group,
+html[data-sim-theme]:not([data-sim-theme="off"]) .img-icon.workgroup,
+html[data-sim-theme]:not([data-sim-theme="off"]) .img-icon.virtualgroup {
+  background: var(--sim-accent-soft) !important; border: 0 !important;
+  color: var(--sim-accent-text) !important; border-radius: var(--sim-radius-sm) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .thumb-bl.avatar .text-danger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  background: var(--sim-danger-soft); border-radius: var(--sim-radius-sm); font-weight: 600;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .badge {
+  border-radius: 999px !important; font-weight: 600 !important; font-size: 11.5px !important;
+  padding: 3px 8px !important; min-width: 26px;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .badge.bg-warning { background: var(--sim-warn-soft) !important; color: var(--sim-warn) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .badge.badge-empty {
+  background: var(--sim-surface-2) !important; color: var(--sim-text-3) !important; border: 1px solid var(--sim-border);
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .label-success {
+  background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important;
+  font-weight: 600; border-radius: 999px; padding: 3px 9px;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .label-warning { background: var(--sim-warn-soft) !important; color: var(--sim-warn) !important; }
+
+/* Profieltegel */
+html[data-sim-theme]:not([data-sim-theme="off"]) .thumb-lg-sm.avatar img { border-radius: 50%; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .thumb-lg-sm.avatar .overlay { display: none; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .panel h3.font-thin {
+  font-weight: 600 !important; font-size: 18px !important; color: var(--sim-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .pie-wrapper .label { color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .pie-wrapper .label span { color: var(--sim-text-3) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .pie-wrapper .shadow { border-color: var(--sim-border) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .pie-wrapper .half-circle { border-color: var(--sim-accent) !important; }
+
+/* Sneltoetsen */
+html[data-sim-theme]:not([data-sim-theme="off"]) .smls-ui .border-color-gray {
+  border-color: var(--sim-border) !important; background: var(--sim-surface);
+  color: var(--sim-text-2); font-size: 12.5px; transition: border-color .12s ease;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .smls-ui .border-color-gray:hover { border-color: var(--sim-border-2) !important; color: var(--sim-text); }
+html[data-sim-theme]:not([data-sim-theme="off"]) .shortcut-thumb { height: 40px !important; border-radius: 8px; margin: 6px auto 8px; }
+html[data-sim-dark] .shortcut-thumb { background: #fff; padding: 3px; }
+
+/* ---------- Dropdowns, alerts, formulieren ---------- */
+html[data-sim-theme]:not([data-sim-theme="off"]) .dropdown-menu {
+  background: var(--sim-surface) !important; border: 1px solid var(--sim-border) !important;
+  border-radius: var(--sim-radius-sm) !important; box-shadow: 0 8px 24px rgba(0,0,0,.12) !important; color: var(--sim-text);
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .dropdown-menu > li > a { color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .dropdown-menu > li > a:hover { background: var(--sim-nav-active-bg) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .dropdown-menu .divider { background: var(--sim-border) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .dropdown-menu .arrow { display: none; }
+
+html[data-sim-theme]:not([data-sim-theme="off"]) .alert { border-radius: var(--sim-radius-sm) !important; border: 1px solid var(--sim-border) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .alert-info { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .alert-warning { background: var(--sim-warn-soft) !important; color: var(--sim-warn) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .alert-danger { background: var(--sim-danger-soft) !important; color: var(--sim-danger) !important; }
+
+html[data-sim-theme]:not([data-sim-theme="off"]) .form-control,
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-input,
+html[data-sim-theme]:not([data-sim-theme="off"]) textarea {
+  background: var(--sim-surface) !important; border: 1px solid var(--sim-border-2) !important;
+  border-radius: var(--sim-radius-sm) !important; color: var(--sim-text) !important; box-shadow: none !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .form-control:focus,
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-input.focus {
+  border-color: var(--sim-accent) !important; box-shadow: 0 0 0 3px var(--sim-accent-soft) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) a:focus-visible,
+html[data-sim-theme]:not([data-sim-theme="off"]) button:focus-visible { outline: 2px solid var(--sim-accent); outline-offset: 2px; }
+
+/* ---------- Hulpknop van Simulise ---------- */
+/* Verborgen: overlapt de Inspector van de Magister-extensie. Dezelfde hulp zit in het gebruikersmenu. */
+html[data-sim-theme] .support-button { display: none !important; }
+
+/* ---------- Compacte weergave ---------- */
+html[data-sim-compact] .panel-heading { padding: 10px 14px !important; }
+html[data-sim-compact] .panel-footer { padding: 7px 14px !important; }
+html[data-sim-compact] .table > tbody > tr > td,
+html[data-sim-compact] .table > tr > td { padding: 7px 14px !important; }
+html[data-sim-compact] aside#nav .nav-main > li > a { padding: 6px 12px; }
+
+/* ---------- Thema-specifieke accenten ---------- */
+html[data-sim-theme="tiimo"] .panel-heading .h3 i {
+  background: var(--sim-accent-soft); padding: 6px; border-radius: 10px; margin-right: 8px;
+}
+html[data-sim-theme="tiimo"] .badge.bg-warning { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
+html[data-sim-theme="tiimo"] aside#nav .nav-main > li.active > a { box-shadow: inset 0 0 0 1.5px var(--sim-accent); }
+
+html[data-sim-theme="discord"] aside#nav .nav-main > li.active > a {
+  background: var(--sim-nav-active-bg) !important; color: #fff !important; position: relative;
+}
+html[data-sim-theme="discord"] aside#nav .nav-main > li.active > a::before {
+  content: ""; position: absolute; left: -10px; top: 8px; bottom: 8px; width: 4px; background: #fff; border-radius: 0 4px 4px 0;
+}
+html[data-sim-theme="discord"] header.header.navbar .navbar-header { background: #1e1f22 !important; }
+
+html[data-sim-theme="paper"] .panel-heading .h3,
+html[data-sim-theme="paper"] #content header.header-md .header-text { font-weight: 700 !important; }
+html[data-sim-theme="paper"] .panel { border-color: var(--sim-border-2) !important; }
+
+html[data-sim-theme="nord"] aside#nav .nav-main > li > a i,
+html[data-sim-theme="mocha"] aside#nav .nav-main > li > a i { opacity: .7; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-sim-theme] * { transition: none !important; }
+}
