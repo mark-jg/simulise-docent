@@ -101,6 +101,9 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.11.1: netwerkrapport (N): GraphQL-vragen staan er volledig in, en bij de verzoeken over leerlijndiagrammen
+  ook de waarden (stappen, scores, niveaus, datums), zonder id's, gebruikersnamen en namen van personen.
+  Nodig voor de voortgangsrapporten.
 - 0.11.0: knop "Alles als gelezen markeren" op de pagina Meldingen. Vraagt eerst om bevestiging en gebruikt
   dan de eigen knop van Simulise (het vinkje onderaan het meldingenmenu).
 - 0.10.2: meldingenteller telt alle ongelezen meldingen, ook als Simulise ze maar per 100 geeft: de

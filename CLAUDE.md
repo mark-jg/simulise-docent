@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.11.0)
+## Huidige staat (v0.11.1)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -159,6 +159,19 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   (`assignedAssignments(filters: $filters, page: 1, first: 5)`, `first: 5` letterlijk in de query;
   `data[] { id state permalink assignment { id icon title } deliveredAt statusMessage }`,
   `paginatorInfo.total`). Bruikbaar voor de Beoordelen-tegel op het dashboard (2.1, nog open).
+- **Leerlijndiagram** (profiel `/@<gebruiker>`): `dashboardTileEducationDiagram($id)` geeft
+  `user.dashboardEducations { id name groups { id name } isDefault isReviewer }` (bij een MEP/MIP-
+  student 2: beroeps en BAVA, vermoedelijk). `getUserEducationDiagram($educationId: ID!, $userId: String!)`
+  geeft `user.diagramForEducation(id) { id phaseCount aspects { id aspect { id name skill { id color } }
+  phases { id phase weights { level title } reviews { id color ... } currentScore reviewProgress
+  reviewsAchieved reviewsRequired } } canViewAspectPage canViewReviewPage }` (5 aspecten x 4 fasen).
+  `user(id:)` werkt met een String (waarschijnlijk de gebruikersnaam of het id). Netwerkrapport toont
+  sinds v0.11.1 de volledige query en voor deze twee operaties ontdane waarden.
+- **/groups**: `userGroupsByType(page, perPage 15, filters, orderBy, only: SCHOOL_GROUP)` met per groep
+  `id name fullPath permalink studentsCount teachersCount actionableAssignmentsCount ...`. Tabel
+  `table.table-index`, per rij `td > div.btn-group.m-t-none > button.btn.btn-sm.btn-info.dropdown-toggle`
+  met een menu (links naar community, students, teachers, assignments, templates, settings).
+  Plek voor "Voortgangsrapporten" (wens van de gebruiker).
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
 
 ## Open punten / bekende issues

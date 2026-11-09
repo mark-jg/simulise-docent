@@ -42,7 +42,7 @@
       const j = JSON.parse(body);
       // GraphQL: naam en eerste regel van de query (schema, geen gegevens) + vorm van de variabelen
       if (j && typeof j === 'object' && 'query' in j) {
-        return { graphql: j.operationName || null, query: String(j.query).replace(/"(?:[^"\\]|\\.)*"/g, '"…"').replace(/\s+/g, ' ').slice(0, 300), variabelen: vorm(j.variables || {}) };
+        return { graphql: j.operationName || null, query: String(j.query).replace(/"(?:[^"\\]|\\.)*"/g, '"…"').replace(/\s+/g, ' ').slice(0, 6000), variabelen: vorm(j.variables || {}) };
       }
       return vorm(j);
     } catch {
@@ -50,13 +50,41 @@
     }
   };
 
+  /* Voor een paar verzoeken over leerlijndiagrammen ook de WAARDEN, maar ontdaan van alles wat naar
+   * personen wijst: id's, gebruikersnamen, avatars, auteurs en beoordelaars, en namen behalve die
+   * van leerlijnen, vaardigheden, opleidingen en groepen. Nodig om het voortgangsrapport te bouwen. */
+  const MET_WAARDEN = new Set(['getUserEducationDiagram', 'dashboardTileEducationDiagram']);
+  const WEG = /^(id|uuid|username|avatar|email|author|authors|reviewer|reviewers|createdBy|updatedBy|owner|firstname|lastname|permalink|image|thumbnail|avatarUrl)$/i;
+  const NAAM_MAG = /^(aspect|aspects|skill|skills|education|educations|groups|group|diagram|phases|phase)$/i;
+  const ontdaan = (v, ouder = '', d = 0) => {
+    if (d > 12) return '…';
+    if (Array.isArray(v)) return v.slice(0, 40).map((x) => ontdaan(x, ouder, d + 1));
+    if (v && typeof v === 'object') {
+      const o = {};
+      for (const [k, x] of Object.entries(v)) {
+        if (WEG.test(k)) continue;
+        if ((k === 'user' || k === 'users') && ouder !== 'data') continue; // personen onder beoordelingen e.d.
+        if (k === 'name' && !NAAM_MAG.test(ouder)) continue; // namen alleen van leerlijnen, opleidingen e.d.
+        o[k] = ontdaan(x, k, d + 1);
+      }
+      return o;
+    }
+    if (typeof v === 'string') return v.length > 160 ? `${v.slice(0, 160)}…` : v;
+    return v;
+  };
+  const operatie = (body) => { try { const j = JSON.parse(body); return j?.operationName || null; } catch { return null; } };
+
   const noteer = (methode, url, body, status, tekst, type) => {
     if (!aan() || log.length >= MAX) return;
-    let antwoord = null;
+    let antwoord = null, waarden = null;
     if (tekst && /json/i.test(type || '') || /^\s*[{[]/.test(tekst || '')) {
-      try { antwoord = vorm(JSON.parse(tekst)); } catch { antwoord = null; }
+      try {
+        const j = JSON.parse(tekst);
+        antwoord = vorm(j);
+        if (typeof body === 'string' && MET_WAARDEN.has(operatie(body))) waarden = ontdaan(j);
+      } catch { antwoord = null; }
     }
-    log.push({ methode, url: String(url), body: parseBody(body), status, type: (type || '').split(';')[0], antwoord, tijd: Date.now() });
+    log.push({ methode, url: String(url), body: parseBody(body), status, type: (type || '').split(';')[0], antwoord, waarden, tijd: Date.now() });
   };
 
   const origFetch = window.fetch;

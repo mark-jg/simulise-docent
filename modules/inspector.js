@@ -251,8 +251,9 @@ SD.register({
     for (const [sleutel, g] of groepen) {
       const r = g.laatste;
       md.push(`## ${sleutel}`, '', `- ${g.n}× · status ${r.status} · ${r.type || 'onbekend type'}`);
-      if (r.body) md.push('- Verzoek:', '```json', JSON.stringify(r.body, null, 2).slice(0, 3000), '```');
+      if (r.body) md.push('- Verzoek:', '```json', JSON.stringify(r.body, null, 2).slice(0, 8000), '```');
       if (r.antwoord) md.push('- Antwoord (opbouw):', '```json', JSON.stringify(r.antwoord, null, 2).slice(0, 6000), '```');
+      if (r.waarden) md.push('- Waarden (zonder id\'s, gebruikersnamen en namen van personen; kijk dit na voor je het deelt):', '```json', JSON.stringify(r.waarden, null, 1).slice(0, 30000), '```');
       md.push('');
     }
     md.push('## Meldingenteller (Simulise Docent)', '');

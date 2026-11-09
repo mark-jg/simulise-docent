@@ -92,6 +92,9 @@ setTimeout(() => {
     query: 'query AssignedAssignments($first: Int, $page: Int) { assigned(first: $first, page: $page, search: "Piet") { total items { title student { name username } } } }',
     variables: { first: 25, page: 2, status: 'HANDED_IN', search: 'Piet Jansen' } }) });
   const x = new XMLHttpRequest(); x.open('GET', '/assignments/assigned/data?page=2&per_page=25&q=pjansen'); x.send();
+  fetch('/api/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ operationName: 'getUserEducationDiagram',
+    query: 'query getUserEducationDiagram($educationId: ID!, $userId: String!) { user(id: $userId) { id diagram: diagramForEducation(id: $educationId) { id phaseCount aspects { id aspect { id name skill { id color __typename } __typename } phases { id phase weights { level title __typename } reviews { id color createdAt author { id name } } currentScore reviewProgress reviewsAchieved reviewsRequired } } } username } }',
+    variables: { userId: 'pjansen', educationId: 'e1' } }) });
 }, 700);</script></body></html>`;
 const UUID = '0a1b2c3d-1111-4222-8333-444455556666';
 const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
@@ -126,6 +129,10 @@ function bouwZip() {
     const u = new URL(r.request().url()), p = u.pathname;
     if (p === '/notifications') return r.fulfill({ contentType: 'text/html', body: MELDINGENPAGINA(parseInt(u.searchParams.get('page'), 10) || 1) });
     if (p === '/api/vroeg') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ rows: [{ name: 'Piet Jansen' }], per_page: 25, total: 34 }) });
+    if (p === '/api/graphql' && (r.request().postData() || '').includes('getUserEducationDiagram')) return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { user: { id: 'u-77', username: 'pjansen',
+      diagram: { id: 'd1', phaseCount: 4, aspects: [{ id: 'a1', aspect: { id: 'as1', name: '1. Adviseren over mediaproducten', skill: { id: 's1', color: '#2f6fed' } },
+        phases: [{ id: 'p1', phase: 1, weights: [{ level: 1, title: 'Voldaan' }, { level: 2, title: 'Boven verwachting' }], reviews: [{ id: 'r1', color: 'GREEN', createdAt: '2026-11-02 10:00:00', author: { id: 'x', name: 'Piet Jansen' } }],
+          currentScore: 1, reviewProgress: 100, reviewsAchieved: 1, reviewsRequired: 1 }] }] } } } }) });
     if (p === '/api/graphql') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { assigned: { total: 34, items: [{ title: 'Meetmoment SD Engels M4', student: { name: 'Piet Jansen', username: 'pjansen' } }] } } }) });
     if (p === '/assignments/assigned/data') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: [{ id: 5, title: 'Opdracht X', user: { name: 'Piet Jansen' } }], current_page: 2, per_page: 25, total: 34 }) });
     const body = p.startsWith('/assignments/assigned') ? BEOORDELEN : p.startsWith('/groups/school/') ? GROEPSPAGINA : NEPPAGINA;
@@ -397,9 +404,9 @@ function bouwZip() {
   await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN'); await sim.waitForTimeout(1300);
   await sim.keyboard.press('Alt+KeyI');
   const net = await leesDownload('n');
-  const netLek = ['Piet', 'Jansen', 'pjansen', 'Meetmoment SD', 'Opdracht X'].filter((w) => net.tekst.includes(w));
+  const netLek = ['Piet', 'Jansen', 'pjansen', 'Meetmoment SD', 'Opdracht X', 'u-77'].filter((w) => net.tekst.includes(w));
   check(netLek.length === 0, `netwerkrapport bevat geen namen of titels${netLek.length ? ` (gelekt: ${netLek.join(', ')})` : ''}`);
-  const netNodig = ['## Meldingenteller', 'first: 200 · HTTP 200 · fouten: Maximum number of 100 requested items exceeded', "first: 100 · HTTP 200 · 121 meldingen (2 pagina's), totaal 121, tekst met HTML: ja", 'vanaf het laden van de pagina', 'GET /api/vroeg?per_page=25', 'xmlhttprequest · `/api/vroeg?per_page=25`', 'fetch · `/api/graphql`',
+  const netNodig = ['reviewsAchieved reviewsRequired } } } username } }', '"name": "1. Adviseren over mediaproducten"', '"title": "Boven verwachting"', '"createdAt": "2026-11-02 10:00:00"', '"reviewsRequired": 1', '## Meldingenteller', 'first: 200 · HTTP 200 · fouten: Maximum number of 100 requested items exceeded', "first: 100 · HTTP 200 · 121 meldingen (2 pagina's), totaal 121, tekst met HTML: ja", 'vanaf het laden van de pagina', 'GET /api/vroeg?per_page=25', 'xmlhttprequest · `/api/vroeg?per_page=25`', 'fetch · `/api/graphql`',
     'div[data-options]', '"student": "string"', 'AssignedAssignments', '"first": 25', '"page": 2', 'HANDED_IN', '"total": 34', 'per_page=25', '"username"', 'GET /assignments/assigned/data?page=2&per_page=25&q=…'].filter((w) => !net.tekst.includes(w));
   check(netNodig.length === 0, `netwerkrapport toont adressen, paginering en veldnamen${netNodig.length ? ` (mist: ${netNodig.join(', ')})` : ''}`);
   await sim.keyboard.press('Escape');
