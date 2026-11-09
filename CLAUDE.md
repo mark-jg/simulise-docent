@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.6.0)
+## Huidige staat (v0.7.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -25,7 +25,8 @@ theme.css       Alle opmaak. Tokens per thema bovenin, daarna generieke regels.
 modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.js (SD.register/start),
                 thema.js (data-sim-theme / -dark / -compact op <html>), hulpknop.js (data-sim-hide-support),
                 beoordelen.js (filterbalk op /assignments/assigned: Alles / Mijn opleidingen +
-                uitsluitwoorden; instellingen bdModus, bdOpleidingen, bdUitsluiten),
+                uitsluitwoorden + Alles op één pagina; bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina;
+                zet localStorage simDocentPerPage voor perpagina.js),
                 zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/school/<uuid>, groepsnamen in
                 chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
                 inspector.js (alleen als `developer` aan staat; Alt+I, R = rapport met namen vervangen,
@@ -106,6 +107,19 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   Filter `select#group-assignments-filter` (selectize) met voorvoegsels Status:, Leerlijn:, Rubric:,
   Student:, Reviewer:, Opdracht:; statussen o.a. Actie nodig, Ingeleverd en verwerkt, Wordt aan
   gewerkt, Niet begonnen, Te laat, Wordt verwerkt.
+- **Netwerk (uit het netwerkrapport)**: de app praat GraphQL met `api.simulise.com/graphql` (fetch,
+  Apollo-achtig, met `operationName`). Beoordelen-lijst = `assignmentsAssigned` met variabelen
+  `page`, `perPage` (standaard 25), `filters` (strings zoals `status:HANDED_IN`) en
+  `orderBy { field: UPDATED, direction: ASC }`. Antwoord `assignedAssignments`: `data[]` met o.a.
+  `assignment { id title forEducations }`, `user {...}` (persoonsgegevens!), `status`, `deliveredAt`,
+  `aspects[].aspect.education`, `educationStatus`, `canBeReviewed`; `aggregations` met `users`,
+  `groups`, `statuses`, `assignments` (aantallen per filterwaarde); `paginatorInfo` met `total`,
+  `lastPage`, `currentPage`, `hasMorePages`. De URL krijgt `&page=N`.
+  Andere operaties: `getTableSettingsForUser` / `userTableSettingsUpdate` (kolommen per gebruiker),
+  `shortcutFilterByType` (opgeslagen filters), meldingen via een subscription.
+  Derde partijen op de pagina: Help Scout (cloudfront), Cloudflare Insights, visibility.on.simulise.cloud.
+- `modules/perpagina.js` (world MAIN) zet bij "Alles op één pagina" `perPage` op 200 (dan 100, dan
+  origineel als de server weigert) en `page` op 1, alleen op /assignments/assigned.
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
 
 ## Open punten / bekende issues

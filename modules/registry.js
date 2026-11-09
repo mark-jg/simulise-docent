@@ -25,6 +25,7 @@ globalThis.SD_DEFAULTS = {
   bdModus: 'mijn',    // filter Beoordelen: 'alles' of 'mijn'
   bdOpleidingen: 'MEP, MIP, MR',
   bdUitsluiten: '',
+  bdEenPagina: true,  // Beoordelen: hele lijst op één pagina (modules/perpagina.js)
   navToggle: true,    // module zijbalk
   navMini: false,     // zijbalk ingeklapt
   updateCheck: true,  // updatepagina

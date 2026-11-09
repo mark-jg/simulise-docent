@@ -101,6 +101,9 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.7.0: Beoordelen: "Alles op één pagina" (standaard aan). Simulise laadt de hele lijst in één keer in
+  plaats van per 25, zodat de filter over alle opdrachten werkt en je niet meer hoeft te bladeren.
+  Weigert Simulise dat, dan blijft het gewoon per 25 werken.
 - 0.6.2: netwerkrapport (N) legt nu ook verzoeken vast die direct bij het laden van de pagina gebeuren,
   toont alle adressen die de browser opvroeg en de opbouw van gegevens die al in de pagina staan.
 - 0.6.1: Inspector: netwerkrapport met toets N. Laat zien welke verzoeken Simulise doet (adres, parameters,

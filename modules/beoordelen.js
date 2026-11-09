@@ -11,7 +11,10 @@
  * Gefilterd wordt op de titel van de opdracht, niet op id's. De kolom "Opdracht titel" wordt op
  * zijn koptekst gevonden, want kolommen zijn in Simulise te verslepen en uit te zetten.
  * Simulise toont 25 rijen per pagina; het aantal verborgen geldt voor de pagina die je ziet.
- * Instellingen in chrome.storage.sync: bdModus, bdOpleidingen, bdUitsluiten.
+ * Alles op één pagina (bdEenPagina, standaard aan): via localStorage simDocentPerPage vraagt
+ * modules/perpagina.js (in de pagina) Simulise om de hele lijst in één keer, zodat de filter niet
+ * per 25 rijen werkt. Lukt dat niet, dan blijft Simulise gewoon per 25 rijen werken.
+ * Instellingen in chrome.storage.sync: bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina.
  */
 SD.register({
   id: 'beoordelen',
@@ -38,8 +41,19 @@ SD.register({
     .inst small { grid-column: 2; color: var(--sim-text-3, #8a93a0); font-size: 11px; }
   `,
 
+  PER_PAGINA: 200,
+
+  /* Vlag voor modules/perpagina.js; moet er al staan voordat Simulise de lijst ophaalt. */
+  zetVlag() {
+    try {
+      if (this.SD && this.SD.settings.bdEenPagina !== false) localStorage.setItem('simDocentPerPage', String(this.PER_PAGINA));
+      else localStorage.removeItem('simDocentPerPage');
+    } catch { /* geen opslag */ }
+  },
+
   init(SD) {
     this.SD = SD;
+    this.zetVlag();
     this.tijdelijk = false; // "toon alles even", tot je de pagina verlaat
     SD.ready(() => {
       if (!this.SD) return;
@@ -48,9 +62,10 @@ SD.register({
     });
   },
 
-  update() { this.run(); },
+  update() { this.zetVlag(); this.run(); },
 
   destroy() {
+    try { localStorage.removeItem('simDocentPerPage'); } catch { /* geen opslag */ }
     this._stop?.();
     this.toonAlles();
     this.host?.remove();
@@ -132,6 +147,7 @@ SD.register({
     }
     const s = this.SD.settings, root = this.host.shadowRoot;
     root.querySelectorAll('[data-modus]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.modus === s.bdModus)));
+    root.querySelector('.een').setAttribute('aria-pressed', String(s.bdEenPagina !== false));
     const info = root.querySelector('.info');
     const toon = root.querySelector('.toon');
     if (this.tijdelijk) { info.textContent = `Filter even uit: ${totaal} rijen zichtbaar.`; toon.textContent = 'Filter weer aan'; toon.hidden = false; }
@@ -158,7 +174,14 @@ SD.register({
     const toon = el('button', { className: 'link toon' });
     toon.onclick = () => { this.tijdelijk = !this.tijdelijk; this.run(); };
     const instKnop = el('button', { className: 'link', textContent: 'Instellingen' });
-    bar.append(info, toon, el('span', { className: 'spacer' }), instKnop);
+    const een = el('button', { className: 'een', textContent: 'Alles op één pagina', title: 'Laat Simulise de hele lijst in één keer laden; de pagina herlaadt' });
+    een.onclick = async () => {
+      await chrome.storage.sync.set({ bdEenPagina: this.SD.settings.bdEenPagina === false });
+      this.SD.settings.bdEenPagina = this.SD.settings.bdEenPagina === false; // direct, niet wachten op onChanged
+      this.zetVlag();
+      location.reload(); // Simulise haalt de lijst opnieuw op
+    };
+    bar.append(info, toon, el('span', { className: 'spacer' }), een, instKnop);
 
     const inst = el('div', { className: 'inst', hidden: true });
     const veld = (label, key, hint) => {

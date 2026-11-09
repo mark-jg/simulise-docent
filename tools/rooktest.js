@@ -49,7 +49,11 @@ const BEOORDELEN = `<html><head></head><body><aside id="nav"><ul class="nav-main
 <th class="drag-handle"><div class="text-nowrap"><a href="#">Opdracht titel</a></div></th><th class="drag-handle"><div class="text-nowrap"><a href="#">Status</a></div></th></tr></thead>
 <tbody>${RIJEN.map(rij).join('')}</tbody></table></div></div></div></div></section></div></div></div>
 <div class="hidden" data-options='{"rows":[{"title":"Meetmoment SD Engels M4","student":"Piet Jansen","username":"pjansen"}],"total":34,"per_page":25,"page":1,"filler":"${'x'.repeat(200)}"}'></div>
-<script>{ const v = new XMLHttpRequest(); v.open('GET', '/api/vroeg?per_page=25'); v.send(); }
+<script>window.__perPage = null;
+fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ operationName: 'assignmentsAssigned',
+  query: 'query assignmentsAssigned($page: Int!, $perPage: Int!) { assignedAssignments(page: $page, first: $perPage) { paginatorInfo { total } } }', variables: { page: 2, perPage: 25, filters: ['status:HANDED_IN'] } }) })
+  .then((r) => r.json()).then((j) => { document.documentElement.dataset.testPerPage = j.data ? j.data.assignedAssignments.paginatorInfo.perPage : 'fout'; });
+{ const v = new XMLHttpRequest(); v.open('GET', '/api/vroeg?per_page=25'); v.send(); }
 setTimeout(() => {
   fetch('/api/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ operationName: 'AssignedAssignments',
     query: 'query AssignedAssignments($first: Int, $page: Int) { assigned(first: $first, page: $page, search: "Piet") { total items { title student { name username } } } }',
@@ -99,7 +103,16 @@ function bouwZip() {
       body: 'Testrelease', published_at: '2026-01-01T00:00:00Z', assets: [{ name: 'simulise-docent-v9.9.9.zip', browser_download_url: ZIP_URL }] }),
   }));
   await ctx.route(ZIP_URL, (r) => r.fulfill({ contentType: 'application/zip', body: zip }));
-  await ctx.route((url) => !/^(chrome-extension:|https:\/\/ma\.simulise\.com|https:\/\/api\.github\.com|https:\/\/github\.com)/.test(url.href),
+  // Nagebootste GraphQL-server: weigert meer dan 100 rijen, zoals een server met een maximum.
+  const graphqlVerzoeken = [];
+  await ctx.route('https://api.simulise.com/graphql', (r) => {
+    const v = JSON.parse(r.request().postData() || '{}').variables || {};
+    graphqlVerzoeken.push(`${v.page}/${v.perPage}`);
+    const body = v.perPage > 100 ? { errors: [{ message: 'Maximum number of 100 requested items exceeded' }] }
+      : { data: { assignedAssignments: { paginatorInfo: { total: 33, perPage: v.perPage, currentPage: v.page } } } };
+    return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
+  });
+  await ctx.route((url) => !/^(chrome-extension:|https:\/\/ma\.simulise\.com|https:\/\/api\.simulise\.com\/graphql|https:\/\/api\.github\.com|https:\/\/github\.com)/.test(url.href),
     (r) => r.abort()); // al het andere: geen netwerk
 
   let [sw] = ctx.serviceWorkers();
@@ -207,6 +220,12 @@ function bouwZip() {
 
   // Filter in Beoordelen
   await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN'); await sim.waitForTimeout(500);
+  // De vlag voor perpagina.js wordt bij het eerste bezoek gezet; vanaf de volgende keer laden geldt hij.
+  graphqlVerzoeken.length = 0;
+  await sim.reload(); await sim.waitForTimeout(700);
+  const perPage = () => sim.evaluate(() => document.documentElement.dataset.testPerPage);
+  check((await perPage()) === '100' && graphqlVerzoeken.join() === '1/200,1/100',
+    `Alles op één pagina: lijst in één keer opgevraagd, met terugval bij een maximum (verzoeken ${graphqlVerzoeken.join(', ')}, kreeg ${await perPage()})`);
   const zichtbaar = () => sim.$$eval('table.table-index tbody tr', (rs) => rs.filter((r) => r.offsetParent !== null).map((r) => r.querySelector('strong').textContent));
   const info = () => sim.textContent('#sim-docent-beoordelen .info');
   check(await sim.isVisible('#sim-docent-beoordelen .bar'), 'filterbalk boven de Beoordelen-lijst');
@@ -233,6 +252,11 @@ function bouwZip() {
   await zet({ grading: false });
   check((await zichtbaar()).length === 3 && !(await sim.isVisible('#sim-docent-beoordelen')), 'module uitzetten: filterbalk weg en alles zichtbaar');
   await zet({ grading: true, bdUitsluiten: '' });
+  graphqlVerzoeken.length = 0;
+  await Promise.all([sim.waitForEvent('load'), sim.click('#sim-docent-beoordelen button.een')]); await sim.waitForTimeout(700);
+  check((await perPage()) === '25' && graphqlVerzoeken.join() === '2/25', `"Alles op één pagina" uit: Simulise werkt weer per 25 (verzoeken ${graphqlVerzoeken.join(', ')})`);
+  check((await sim.getAttribute('#sim-docent-beoordelen button.een', 'aria-pressed')) === 'false', 'knop "Alles op één pagina" staat uit');
+  await zet({ bdEenPagina: true });
 
   // Netwerkrapport (N): opbouw van de verzoeken, zonder namen
   await zet({ developer: true });
@@ -295,7 +319,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 9, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 10, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();

@@ -32,7 +32,7 @@ Status: ✅ klaar · 🔧 in ontwikkeling · ⏳ gepland · 💡 idee · ⛔ bui
 
 | # | Item | Status | Opmerking |
 |---|------|--------|-----------|
-| 2.1 | **Filter in Beoordelen**: Mijn groepen / Verberg meetmomenten / Alles | 🔧 v0.6, prioriteit | Klaar: Alles / Mijn opleidingen (meetmomenten op opleidingscode in de titel), uitsluitwoorden, verborgen aantal, "toon even alles". Nog: dashboardtegel, "Mijn groepen" |
+| 2.1 | **Filter in Beoordelen**: Mijn groepen / Verberg meetmomenten / Alles | 🔧 v0.6, prioriteit | Klaar: Alles / Mijn opleidingen (meetmomenten op opleidingscode in de titel), uitsluitwoorden, verborgen aantal, "toon even alles", alles op één pagina (v0.7). Nog: dashboardtegel, "Mijn groepen" |
 | 2.2 | Beoordeelqueue over alle groepen heen | ⏳ v0.3 | Per-groep actionable-lijsten samenvoegen: student, opdracht, groep, ingeleverd op, wachttijd |
 | 2.3 | Beoordeelscherm met statusbalk | ⏳ | Welke rubrics mag je invullen, wat doet afronden met het competentiediagram, hoeveel criteria nog leeg |
 | 2.4 | "Volgende student"-knop binnen één opdracht | ⏳ | Hele klas achter elkaar nakijken |
