@@ -463,6 +463,30 @@ function bouwZip() {
   check(geschreven.versie === '9.9.9' && geschreven.mods === 13, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
+  // Rapportprofielen en voorvertoning van het voortgangsrapport
+  const prof = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);
+  await prof.waitForTimeout(600);
+  const srcdoc = () => prof.$eval('#vb', (i) => i.srcdoc);
+  let doc = await srcdoc();
+  check(doc.includes('Zo sta jij ervoor.') && doc.includes('BASISVAARDIGHEDEN') && doc.includes('Je zit op koers voor de VSA-norm'), 'voorvertoning: rapport met beide pagina\'s en oordeel VSA-norm');
+  const ring1 = (d) => Number(d.match(/<circle cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"/)[1]);
+  const metNadruk = ring1(doc);
+  await prof.uncheck('#nadruk'); await prof.waitForTimeout(200);
+  doc = await srcdoc();
+  check(ring1(doc) < metNadruk, `doelstap uitvergroten: ring 1 is groter met nadruk (${metNadruk.toFixed(1)} tegen ${ring1(doc).toFixed(1)})`);
+  await prof.check('#nadruk');
+  await prof.fill('#peildatum', '2026-12-10'); await prof.dispatchEvent('#peildatum', 'change'); await prof.waitForTimeout(300);
+  doc = await srcdoc();
+  check(doc.includes('was 1 bij M1') && doc.includes('stand aan het eind van Periode 1') && doc.includes('doel M2: stap 1'), 'vergelijking met de vorige periode');
+  await prof.fill('#json', '{ kapot'); await prof.waitForTimeout(600);
+  check((await prof.textContent('#melding')).startsWith('Geen geldige JSON'), 'foute JSON wordt gemeld');
+  const p = JSON.parse(await prof.evaluate(() => JSON.stringify(SD_RAPPORT_STANDAARD)));
+  p.weergave.accent = '#123456';
+  await prof.fill('#json', JSON.stringify(p, null, 2)); await prof.click('#opslaan'); await prof.waitForTimeout(300);
+  const bewaard = await prof.evaluate(() => chrome.storage.local.get('rpProfielen').then((s) => s.rpProfielen[0].weergave.accent));
+  check(bewaard === '#123456' && (await srcdoc()).includes('--accent-waarde: #123456'), 'profiel opslaan en accentkleur in het rapport');
+  check(!/<script/i.test(await srcdoc()), 'rapport bevat geen scripts');
+
   await ctx.close();
   console.log(fouten.length ? `\nMISLUKT:\n- ${fouten.join('\n- ')}` : '\nOK');
   process.exit(fouten.length ? 1 : 0);

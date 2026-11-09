@@ -101,6 +101,10 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.12.0: voortgangsrapporten, deel 1: de pagina Rapportprofielen (link onderaan de popup) met normen,
+  perioden, categorieën en weergave per opleiding, en een live voorbeeld met een verzonnen student. De
+  doelstap van de periode kan groter in beeld, en een latere periode wordt vergeleken met de vorige.
+  De koppeling met de gegevens uit Simulise volgt.
 - 0.11.1: netwerkrapport (N): GraphQL-vragen staan er volledig in, en bij de verzoeken over leerlijndiagrammen
   ook de waarden (stappen, scores, niveaus, datums), zonder id's, gebruikersnamen en namen van personen.
   Nodig voor de voortgangsrapporten.

@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.11.1)
+## Huidige staat (v0.12.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -42,6 +42,12 @@ modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.
                 Modules met `dev: true` in registry staan onder Ontwikkelaarsmodus.
                 core.js biedt ook SD.addCommand (voor Cmd+K), SD.ready, SD.shadowHost en SD.observe.
                 Eigen UI altijd in een shadow root, met de --sim-*-tokens (die erven door).
+rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel MEP/MIP 2026-2027,
+                SD_RAPPORT_VOORBEELD: verzonnen student), render.js (SDRapport.bereken/html: A4-rapport met
+                SVG-diagrammen, doelstap uitvergroot, vergelijking vorige periode, categorieën, normen),
+                profielen.html/.js (profielen beheren in chrome.storage.local rpProfielen, live voorbeeld).
+                Nog niet gekoppeld aan Simulise: knoppen op profiel en /groups en het ophalen via
+                getUserEducationDiagram volgen (netwerkrapporten van profiel en studentenpagina nodig).
 content.js      Start de modules (SD.start())
 popup.html/.js  Aan/uit per module (uit registry), themakeuze, compact, updatemelding
 ROADMAP.md      Roadmap en backlog met status per item; bijwerken als iets klaar is

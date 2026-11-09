@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Simulise Docent: rapportprofielen</title>
+<style>
+  :root { --bg: #f4f5f7; --card: #fff; --fg: #1f2328; --muted: #6b7280; --border: #e4e7eb; --accent: #0e8a74; --fout: #c93c3c; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15181c; --card: #1c2025; --fg: #e6e8eb; --muted: #a4acb6; --border: #2a3038; --accent: #3fc1a7; } }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--fg); }
+  header { padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; } header p { margin: 0; color: var(--muted); }
+  main { display: grid; grid-template-columns: minmax(340px, 480px) 1fr; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  h2 { font-size: 15px; margin: 0 0 8px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+  label.lbl { min-width: 150px; color: var(--muted); }
+  select, input, button, textarea { font: inherit; color: var(--fg); }
+  select, input[type=text], input[type=date], textarea { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; }
+  button { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  textarea { width: 100%; min-height: 420px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; }
+  #melding { min-height: 1.4em; color: var(--muted); } #melding.fout { color: var(--fout); }
+  .voorbeeld { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .voorbeeld .row { padding: 10px 14px; margin: 0; border-bottom: 1px solid var(--border); }
+  iframe { border: 0; width: 100%; flex: 1; min-height: 80vh; background: #e9ecef; }
+  small.hint { color: var(--muted); display: block; }
+  details summary { cursor: pointer; color: var(--muted); }
+  code { font-size: 12px; }
+</style>
+</head>
+<body>
+<header><h1>Voortgangsrapporten: profielen</h1><p>Normen, perioden, categorieën en weergave per opleiding. Rechts zie je het resultaat met een verzonnen voorbeeldstudent.</p></header>
+<main>
+  <section>
+    <h2>Profiel</h2>
+    <div class="row">
+      <select id="kies" aria-label="Profiel"></select>
+      <button id="kopie">Kopie maken</button>
+      <button id="weg">Verwijderen</button>
+    </div>
+    <div class="row">
+      <button id="export">Exporteren (.json)</button>
+      <label><button id="importKnop" type="button">Importeren</button><input id="import" type="file" accept=".json,application/json" hidden></label>
+      <button id="herstel">Standaard terugzetten</button>
+    </div>
+
+    <h2 style="margin-top:14px">Weergave</h2>
+    <div class="row"><label class="lbl" for="nadruk">Doelstap uitvergroten</label><input type="checkbox" id="nadruk"> <small class="hint">De ring van de stap waar de student deze periode naartoe werkt, wordt breder en gekleurd.</small></div>
+    <div class="row"><label class="lbl" for="factor">Hoeveel groter</label><input type="range" id="factor" min="1" max="3" step="0.1"> <span id="factorWaarde"></span></div>
+    <div class="row"><label class="lbl" for="accent">Accentkleur</label><input type="color" id="accent"></div>
+    <div class="row"><label class="lbl" for="vergelijk">Vergelijken met vorige periode</label><input type="checkbox" id="vergelijk"> <small class="hint">Stippellijn in het diagram en "was ... bij M1" in de tabel.</small></div>
+
+    <h2 style="margin-top:14px">Profiel als tekst</h2>
+    <details><summary>Hoe is een profiel opgebouwd?</summary>
+      <p><code>opleidingen</code>: welke diagrammen in het rapport komen. <code>herken</code> zoekt op de naam van de opleiding in Simulise; <code>rol</code> koppelt het diagram aan perioden en normen (bijv. <code>beroeps</code>, <code>bava</code>). <code>categorieen</code> groepeert leerlijnen, zoals Nederlands, Rekenen, Engels en Burgerschap; <code>kernvakken</code> telt mee in de samenvatting.</p>
+      <p><code>perioden</code>: per periode <code>van</code> en <code>tot</code> (JJJJ-MM-DD), het <code>moment</code>, of er een besluit valt (<code>beslis</code>), de <code>norm</code> als tekst, de <code>doel</code>stap per rol en <code>regels</code> om te bepalen of iemand op koers is.</p>
+      <p>Regels: <code>{ "rol": "beroeps", "stap": 1, "minAantal": 4, "verplicht": [1, 2, 3] }</code> of <code>{ "rol": "bava", "soort": "categorieen", "minAantal": 3, "perCategorie": { "minLeerlijnen": 1, "stap": 1 } }</code>.</p>
+    </details>
+    <textarea id="json" spellcheck="false" aria-label="Profiel als JSON"></textarea>
+    <div class="row"><button class="primary" id="opslaan">Opslaan</button> <span id="melding"></span></div>
+  </section>
+
+  <section class="voorbeeld">
+    <div class="row"><b>Voorbeeld</b> <label for="peildatum">peildatum</label> <input type="date" id="peildatum"> <small class="hint">Kies een datum in een latere periode om de vergelijking te zien.</small></div>
+    <iframe id="vb" title="Voorbeeld van het rapport"></iframe>
+  </section>
+</main>
+<script src="standaard.js"></script>
+<script src="render.js"></script>
+<script src="profielen.js"></script>
+</body>
+</html>

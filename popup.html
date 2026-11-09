@@ -32,7 +32,7 @@
   .update .small a { color: inherit; }
   .note { font-size: 12px; color: #6b7280; margin: 0 0 8px; }
   .note:empty { display: none; }
-  .foot { display: flex; justify-content: flex-end; margin-top: 10px; }
+  .foot { display: flex; justify-content: space-between; margin-top: 10px; }
   .foot a { color: inherit; }
 </style>
 </head>
@@ -54,7 +54,7 @@
   <hr>
   <label><input type="checkbox" id="developer"> <span>Ontwikkelaarsmodus<small>Inspector (Alt+I): selectors en paginarapporten zonder namen</small></span></label>
   <button id="inspect" class="dev" hidden>Inspector starten</button>
-  <div class="foot"><a href="#" id="updCheck">Controleer op updates</a></div>
+  <div class="foot"><a href="#" id="profielen">Rapportprofielen</a><a href="#" id="updCheck">Controleer op updates</a></div>
   <script src="modules/registry.js"></script>
   <script src="popup.js"></script>
   <script src="update/updater.js"></script>

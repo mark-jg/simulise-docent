@@ -78,3 +78,5 @@ document.getElementById('inspect').addEventListener('click', async () => {
   if (ok) window.close();
   else note('Open eerst een Simulise-tabblad (en herlaad het als de extensie net is bijgewerkt).');
 });
+
+document.getElementById('profielen').addEventListener('click', (e) => { e.preventDefault(); chrome.tabs.create({ url: chrome.runtime.getURL('rapport/profielen.html') }); });
