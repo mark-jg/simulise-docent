@@ -39,10 +39,9 @@ document.getElementById('compact').addEventListener('change', (e) => chrome.stor
 document.querySelectorAll('input[name="theme"]').forEach((el) =>
   el.addEventListener('change', (e) => chrome.storage.sync.set({ theme: e.target.value })));
 
-/* ---------- Updates: tonen; het bijwerken zelf gebeurt op de updatepagina ---------- */
+/* ---------- Updates: tonen; het bijwerken zelf doet update/updater.js, ook hier in de popup ---------- */
 const current = chrome.runtime.getManifest().version;
 const note = (t) => { document.getElementById('note').textContent = t; };
-const openUpdatePage = () => chrome.tabs.create({ url: chrome.runtime.getURL('update/update.html') });
 document.getElementById('ver').textContent = `v${current}`;
 
 function renderUpdate(info) {
@@ -57,7 +56,6 @@ chrome.storage.local.get(['update', 'justUpdated']).then(({ update, justUpdated 
   if (justUpdated?.to === current) note(`Bijgewerkt van ${justUpdated.from} naar ${justUpdated.to}. Herlaad je Simulise-tabbladen.`);
   if (justUpdated) chrome.storage.local.remove('justUpdated');
 });
-document.getElementById('doUpdate').addEventListener('click', openUpdatePage);
 document.getElementById('updCheck').addEventListener('click', async (e) => {
   e.preventDefault();
   note('Controleren…');

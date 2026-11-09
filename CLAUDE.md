@@ -16,7 +16,8 @@ gebruikt door het Simulise-domein aan de `matches` toe te voegen.
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
                 content_scripts op simulise.com (css + js, document_start)
 background.js   Updatecontrole bij GitHub Releases (mark-jg/simulise-docent), om de 6 uur, badge
-update/         Updatepagina (ook options_page) + updater.js: map kiezen, zip ophalen, schrijven, herladen
+update/         updater.js (map kiezen, zip ophalen, schrijven, herladen), draait in de popup en op
+                update.html (options_page, terugval voor map kiezen en aan/uit automatisch controleren)
 scripts/release.sh, .github/workflows/release.yml   nieuw versienummer op main => tag + release met zip
 tools/rooktest.js   rooktest headless Chromium, Simulise en GitHub nagebootst
 theme.css       Alle opmaak. Tokens per thema bovenin, daarna generieke regels.

@@ -32,6 +32,9 @@ function bouwZip() {
   const doel = path.join(tmp, 'simulise-docent');
   const skip = new Set(['.git', '.github', 'scripts', 'tools', 'dist', '.gitignore', '.DS_Store', 'CLAUDE.md', 'ROADMAP.md']);
   fs.cpSync(ext, doel, { recursive: true, filter: (src) => !skip.has(path.basename(src)) || src === ext });
+  // Versie zoals in de nagebootste release, anders weigert de updater de zip terecht.
+  const mf = path.join(doel, 'manifest.json');
+  fs.writeFileSync(mf, fs.readFileSync(mf, 'utf8').replace(/"version": "[0-9.]+"/, '"version": "9.9.9"'));
   execFileSync('zip', ['-qr', 'release.zip', 'simulise-docent'], { cwd: tmp });
   return fs.readFileSync(path.join(tmp, 'release.zip'));
 }
@@ -92,7 +95,9 @@ function bouwZip() {
   check(await popup.isVisible('#update'), 'popup toont "Versie 9.9.9 beschikbaar" na controle');
   check((await sw.evaluate(() => chrome.action.getBadgeText({}))) === '1', 'badge op het icoon');
 
-  // 3. Updatepagina: download en uitpakken (de map kiezen kan headless niet)
+  check(await popup.isVisible('#pickFolder') && await popup.isDisabled('#doUpdate'), 'popup: zonder map eerst "Extensiemap kiezen"');
+
+  // 3. Updatepagina: download en uitpakken
   const upd = await nieuw(`chrome-extension://${id}/update/update.html`);
   await upd.waitForFunction(() => document.getElementById('updateStatus').textContent.includes('9.9.9'));
   check(true, 'updatepagina toont de nieuwe versie');
@@ -103,6 +108,35 @@ function bouwZip() {
   }, ZIP_URL);
   check(inhoud.manifest?.name === 'Simulise Docent', `zip uitgepakt (${inhoud.namen.length} bestanden, manifest gevonden)`);
   check(!inhoud.namen.some((n) => /tools\/|scripts\/|\.github\/|CLAUDE\.md|ROADMAP\.md/.test(n)), 'zip bevat geen ontwikkelbestanden');
+
+  // 4. Bijwerken vanuit de popup. Het mapvenster kan headless niet; een map in het Origin Private
+  // File System is hetzelfde soort maphandle, dus die zetten we klaar als "gekozen extensiemap".
+  const popup2 = await nieuw(`chrome-extension://${id}/popup.html`);
+  await popup2.evaluate(async () => {
+    const root = await navigator.storage.getDirectory();
+    const dir = await root.getDirectoryHandle('extensiemap', { create: true });
+    const w = await (await dir.getFileHandle('manifest.json', { create: true })).createWritable();
+    await w.write(JSON.stringify({ name: 'Simulise Docent', version: '0.0.1' })); await w.close();
+    const db = await new Promise((res) => { const r = indexedDB.open('sd-updater', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); });
+    await new Promise((res) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(dir, 'dir'); tx.oncomplete = res; });
+  });
+  await popup2.reload();
+  await popup2.waitForSelector('#doUpdate:not([disabled])', { timeout: 5000 }).catch(() => {});
+  check(!(await popup2.isDisabled('#doUpdate')) && !(await popup2.isVisible('#pickFolder')), 'popup: met map is "Nu bijwerken" klikbaar');
+  // chrome.runtime.reload() na afloop zou de extensie herstarten; in de test onderscheppen.
+  await popup2.evaluate(() => { chrome.runtime.reload = () => { window.__herladen = true; }; });
+  await popup2.click('#doUpdate');
+  await popup2.waitForFunction(() => /Klaar|mislukt/.test(document.getElementById('updateProgress').textContent), null, { timeout: 15000 }).catch(() => {});
+  check((await popup2.textContent('#updateProgress')).startsWith('Klaar'), `popup: bijwerken ("${await popup2.textContent('#updateProgress')}")`);
+  const geschreven = await popup2.evaluate(async () => {
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle('extensiemap');
+    const mf = JSON.parse(await (await (await dir.getFileHandle('manifest.json')).getFile()).text());
+    const mods = []; for await (const [naam] of (await dir.getDirectoryHandle('modules')).entries()) mods.push(naam);
+    await new Promise((r) => setTimeout(r, 1000));
+    return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
+  });
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 4, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   await ctx.close();
   console.log(fouten.length ? `\nMISLUKT:\n- ${fouten.join('\n- ')}` : '\nOK');

@@ -20,6 +20,13 @@
   .update strong { display: block; font-size: 13px; }
   .update p { margin: 2px 0 6px; font-size: 12px; color: #6b7280; }
   .update button { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 9px; border: 0; border-radius: 6px; background: #0e8a74; color: #fff; cursor: pointer; }
+  .update button.sec { background: #fff; color: #1f2328; }
+  .update button[disabled] { opacity: .5; cursor: default; }
+  .update .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  #updateProgress { margin: 6px 0 0; font-size: 11px; }
+  #updateProgress:empty { display: none; }
+  .update .small { margin: 6px 0 0; font-size: 11px; }
+  .update .small a { color: inherit; }
   .note { font-size: 12px; color: #6b7280; margin: 0 0 8px; }
   .note:empty { display: none; }
   .foot { display: flex; justify-content: flex-end; margin-top: 10px; }
@@ -31,7 +38,9 @@
   <div class="update" id="update" hidden>
     <strong id="updTitle">Nieuwe versie beschikbaar</strong>
     <p id="updText"></p>
-    <button id="doUpdate">Nu bijwerken</button>
+    <div class="btns"><button id="doUpdate" disabled>Nu bijwerken</button><button id="pickFolder" class="sec" hidden>Extensiemap kiezen</button></div>
+    <p id="updateProgress"></p>
+    <p class="small"><a href="#" id="manualZip">Handmatig: zip downloaden</a></p>
   </div>
   <p class="note" id="note"></p>
   <div id="modules"></div>
@@ -42,5 +51,6 @@
   <div class="foot"><a href="#" id="updCheck">Controleer op updates</a></div>
   <script src="modules/registry.js"></script>
   <script src="popup.js"></script>
+  <script src="update/updater.js"></script>
 </body>
 </html>

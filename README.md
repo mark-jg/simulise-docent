@@ -14,13 +14,16 @@ is de updatecontrole bij GitHub (alleen versienummer en downloadlink, er gaat ni
 
 ## Bijwerken
 De extensie kijkt om de 6 uur op GitHub of er een nieuwere release is. Is die er, dan krijgt het
-icoon een gele badge en staat bovenin de popup "Nu bijwerken". Dat opent de updatepagina
-(ook bereikbaar via rechtsklik op het icoon > Opties):
-1. De eerste keer kies je de map waarin de extensie staat (de map met `manifest.json`); die keuze
-   wordt onthouden.
+icoon een gele badge en staat bovenin de popup een blok met "Nu bijwerken naar X". Alles gebeurt in
+de popup:
+1. De eerste keer klik je op "Extensiemap kiezen" en kies je de map waarin de extensie staat (de map
+   met `manifest.json`); die keuze wordt onthouden. Lukt het kiezen niet vanuit de popup, dan opent
+   de updatepagina (ook bereikbaar via rechtsklik op het icoon > Opties) en kies je de map daar.
 2. Klik "Nu bijwerken naar X". Chrome vraagt om toestemming voor de map (één klik). De extensie
    haalt de zip op, schrijft de bestanden in de map en herlaadt zichzelf. Herlaad daarna je
    Simulise-tabbladen.
+
+Op de updatepagina zet je ook het automatisch controleren aan of uit.
 
 Er worden alleen bestanden geschreven of overschreven, nooit verwijderd. Het manifest wordt als
 laatste geschreven, zodat een afgebroken update geen half nieuwe extensie achterlaat. Handmatig kan
@@ -75,6 +78,8 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.3.2: bijwerken gebeurt nu helemaal in de popup, zonder apart tabblad. Alleen als het kiezen van de
+  extensiemap vanuit de popup niet lukt, opent de updatepagina.
 - 0.3.1: de updatepagina toont wanneer er voor het laatst is gecontroleerd. Eerste update via "Nu bijwerken".
 - 0.3.0: modules met eigen aan/uit in de popup (Thema, Hulpknop verbergen). Dark mode voor modals,
   popovers, selectize-keuzelijsten, tabs, lijsten, paginering en witte achtergronden van Bootstrap 3.

@@ -45,7 +45,11 @@ async function sdUnzip(buffer) {
 globalThis.sdUnzip = sdUnzip;
 
 if (typeof document !== 'undefined' && typeof chrome !== 'undefined' && chrome.storage) (() => {
-  const $ = (id) => document.getElementById(id);
+  // Werkt zowel in de popup als op de updatepagina; een element dat op een pagina ontbreekt
+  // wordt een los, onzichtbaar element, zodat de code overal hetzelfde kan blijven.
+  const $ = (id) => document.getElementById(id) || document.createElement('span');
+  const inPopup = location.pathname.endsWith('/popup.html');
+  const openUpdatePage = () => chrome.tabs.create({ url: chrome.runtime.getURL('update/update.html') });
   const manifest = chrome.runtime.getManifest();
   const progress = (t) => { $('updateProgress').textContent = t; };
 
@@ -85,7 +89,7 @@ if (typeof document !== 'undefined' && typeof chrome !== 'undefined' && chrome.s
   }
 
   /* ---------- UI-status ---------- */
-  let update = null, dir = null;
+  let update = null, dir = null, klaar = false; // klaar: melding na bijwerken laten staan
 
   function renderStatus() {
     const out = $('updateStatus');
@@ -106,13 +110,15 @@ if (typeof document !== 'undefined' && typeof chrome !== 'undefined' && chrome.s
     $('folderName').textContent = dir ? `Extensiemap: ${dir.name}` : 'Nog geen extensiemap gekozen.';
     $('pickFolder').textContent = dir ? 'Andere map kiezen' : 'Extensiemap kiezen';
     $('forgetFolder').hidden = !dir;
+    if (inPopup) { $('pickFolder').hidden = !!dir; $('folderName').hidden = true; }
     const can = supported && dir && update?.available && update.zip;
     $('doUpdate').disabled = !can;
     $('doUpdate').textContent = update?.available ? `Nu bijwerken naar ${update.latest}` : 'Nu bijwerken';
     renderStatus();
+    if (klaar) return;
     if (!supported) progress('Deze browser ondersteunt het kiezen van een map niet; werk handmatig bij (zip downloaden).');
     else if (!dir) progress(update?.available ? 'Kies eerst één keer de map waarin de extensie staat (de map met manifest.json).' : '');
-    else if (update?.available) progress(`Versie ${update.latest} staat klaar. Chrome vraagt bij het bijwerken om toestemming voor de map.`);
+    else if (update?.available) progress(inPopup ? 'Chrome vraagt om toestemming voor de map (één klik).' : `Versie ${update.latest} staat klaar. Chrome vraagt bij het bijwerken om toestemming voor de map.`);
     else progress('');
   }
 
@@ -124,7 +130,12 @@ if (typeof document !== 'undefined' && typeof chrome !== 'undefined' && chrome.s
       await refreshUi();
       progress(`Map gekozen (${picked.name}, versie ${m.version}).`);
     } catch (e) {
-      if (e?.name !== 'AbortError') progress(`Map niet gebruikt: ${e.message || e}.`);
+      if (e?.name === 'AbortError') { /* geannuleerd */ }
+      else if (inPopup && !/manifest|andere extensie/.test(e?.message || '')) {
+        // Kiezen lukt niet in elke Chrome-versie vanuit de popup: dan via de updatepagina.
+        progress('Map kiezen lukt hier niet; de updatepagina opent…');
+        openUpdatePage();
+      } else progress(`Map niet gebruikt: ${e.message || e}.`);
     }
   };
   $('forgetFolder').onclick = async () => { await kvDel('dir').catch(() => {}); refreshUi(); };
@@ -175,6 +186,7 @@ if (typeof document !== 'undefined' && typeof chrome !== 'undefined' && chrome.s
         progress(`Bestanden schrijven (${i + 1}/${ordered.length}): ${ordered[i].path}`);
         await writeFile(dir, ordered[i].path, ordered[i].data);
       }
+      klaar = true;
       progress(`Klaar: ${ordered.length} bestanden geschreven. De extensie wordt herladen; herlaad daarna je Simulise-tabbladen.`);
       await chrome.storage.local.set({ update: { ...update, available: false, current: nm.version } });
       setTimeout(() => chrome.runtime.reload(), 800);
