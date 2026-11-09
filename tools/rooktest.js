@@ -48,7 +48,9 @@ const BEOORDELEN = `<html><head></head><body><aside id="nav"><ul class="nav-main
 <table class="table table-v-a-m table-index"><thead><tr><th class="hidden-xs"><input type="checkbox"></th><th class="drag-handle"><div class="text-nowrap"><a href="#">Toegewezen aan</a></div></th>
 <th class="drag-handle"><div class="text-nowrap"><a href="#">Opdracht titel</a></div></th><th class="drag-handle"><div class="text-nowrap"><a href="#">Status</a></div></th></tr></thead>
 <tbody>${RIJEN.map(rij).join('')}</tbody></table></div></div></div></div></section></div></div></div>
-<script>setTimeout(() => {
+<div class="hidden" data-options='{"rows":[{"title":"Meetmoment SD Engels M4","student":"Piet Jansen","username":"pjansen"}],"total":34,"per_page":25,"page":1,"filler":"${'x'.repeat(200)}"}'></div>
+<script>{ const v = new XMLHttpRequest(); v.open('GET', '/api/vroeg?per_page=25'); v.send(); }
+setTimeout(() => {
   fetch('/api/graphql', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ operationName: 'AssignedAssignments',
     query: 'query AssignedAssignments($first: Int, $page: Int) { assigned(first: $first, page: $page, search: "Piet") { total items { title student { name username } } } }',
     variables: { first: 25, page: 2, status: 'HANDED_IN', search: 'Piet Jansen' } }) });
@@ -85,6 +87,7 @@ function bouwZip() {
   const ZIP_URL = 'https://github.com/mark-jg/simulise-docent/releases/download/v9.9.9/simulise-docent-v9.9.9.zip';
   await ctx.route('https://ma.simulise.com/**', (r) => {
     const p = new URL(r.request().url()).pathname;
+    if (p === '/api/vroeg') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ rows: [{ name: 'Piet Jansen' }], per_page: 25, total: 34 }) });
     if (p === '/api/graphql') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: { assigned: { total: 34, items: [{ title: 'Meetmoment SD Engels M4', student: { name: 'Piet Jansen', username: 'pjansen' } }] } } }) });
     if (p === '/assignments/assigned/data') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ data: [{ id: 5, title: 'Opdracht X', user: { name: 'Piet Jansen' } }], current_page: 2, per_page: 25, total: 34 }) });
     const body = p.startsWith('/assignments/assigned') ? BEOORDELEN : p.startsWith('/groups/school/') ? GROEPSPAGINA : NEPPAGINA;
@@ -238,7 +241,8 @@ function bouwZip() {
   const net = await leesDownload('n');
   const netLek = ['Piet', 'Jansen', 'pjansen', 'Meetmoment SD', 'Opdracht X'].filter((w) => net.tekst.includes(w));
   check(netLek.length === 0, `netwerkrapport bevat geen namen of titels${netLek.length ? ` (gelekt: ${netLek.join(', ')})` : ''}`);
-  const netNodig = ['AssignedAssignments', '"first": 25', '"page": 2', 'HANDED_IN', '"total": 34', 'per_page=25', '"username"', 'GET /assignments/assigned/data?page=2&per_page=25&q=…'].filter((w) => !net.tekst.includes(w));
+  const netNodig = ['vanaf het laden van de pagina', 'GET /api/vroeg?per_page=25', 'xmlhttprequest · `/api/vroeg?per_page=25`', 'fetch · `/api/graphql`',
+    'div[data-options]', '"student": "string"', 'AssignedAssignments', '"first": 25', '"page": 2', 'HANDED_IN', '"total": 34', 'per_page=25', '"username"', 'GET /assignments/assigned/data?page=2&per_page=25&q=…'].filter((w) => !net.tekst.includes(w));
   check(netNodig.length === 0, `netwerkrapport toont adressen, paginering en veldnamen${netNodig.length ? ` (mist: ${netNodig.join(', ')})` : ''}`);
   await sim.keyboard.press('Escape');
   await zet({ developer: false });

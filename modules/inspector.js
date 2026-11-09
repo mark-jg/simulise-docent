@@ -40,6 +40,7 @@ SD.register({
     chrome.runtime.onMessage.addListener(this._msg);
     SD.addCommand('inspector', 'Inspector starten (ontwikkelaar)', () => this.start());
     SD.root.setAttribute('data-sim-netlog', ''); // netwerklog (modules/netlog.js) aan
+    try { localStorage.setItem('simDocentNetlog', '1'); } catch { /* geen opslag */ } // vanaf de volgende keer laden direct
   },
 
   destroy(SD) {
@@ -48,6 +49,7 @@ SD.register({
     chrome.runtime.onMessage.removeListener(this._msg);
     SD.removeCommand('inspector');
     SD.root.removeAttribute('data-sim-netlog');
+    try { localStorage.removeItem('simDocentNetlog'); } catch { /* geen opslag */ }
     this.SD = null;
   },
 
@@ -220,16 +222,17 @@ SD.register({
   },
 
   async netrapport() {
-    const log = await new Promise((res) => {
+    const antwoord = await new Promise((res) => {
       const t = setTimeout(() => { window.removeEventListener('message', op); res(null); }, 1500);
       const op = (e) => {
         if (e.source !== window || e.data?.type !== 'sd-netlog-antwoord') return;
-        clearTimeout(t); window.removeEventListener('message', op); res(e.data.log || []);
+        clearTimeout(t); window.removeEventListener('message', op); res(e.data);
       };
       window.addEventListener('message', op);
       window.postMessage({ type: 'sd-netlog-vraag' }, location.origin);
     });
-    if (!log) { this.melding('Geen netwerklog gevonden. Herlaad de pagina en probeer opnieuw.'); return; }
+    if (!antwoord) { this.melding('Geen netwerklog gevonden. Herlaad de pagina en probeer opnieuw.'); return; }
+    const log = antwoord.log || [], bronnen = antwoord.bronnen || [], ingebed = antwoord.ingebed || [];
     const masker = this.maskerVoorPagina();
     const groepen = new Map();
     for (const r of log) {
@@ -241,10 +244,10 @@ SD.register({
     const md = ['# Simulise Docent: netwerkrapport', '',
       `- Pagina: \`${this.schoneUrl(location.href)}\``,
       `- Extensie: v${chrome.runtime.getManifest().version}, gemaakt ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
-      `- ${log.length} verzoeken vastgelegd sinds het laden van de pagina (met ontwikkelaarsmodus aan), ${groepen.size} soorten.`,
+      `- ${log.length} verzoeken vastgelegd (${groepen.size} soorten), ${antwoord.vanafStart ? 'vanaf het laden van de pagina' : 'pas vanaf het starten van de extensie: herlaad de pagina voor een volledige log'}.`,
       '- Alleen de opbouw: namen van parameters en velden met hun type. Geen waarden, behalve getallen bij paginering en vaste codes.',
       ''];
-    if (!groepen.size) md.push('Nog geen verzoeken. Klik bijvoorbeeld naar pagina 2 van de lijst (met de Inspector uit), start de Inspector opnieuw en druk op N.', '');
+    if (!groepen.size) md.push('Geen verzoeken met inhoud vastgelegd. Zie hieronder welke adressen de browser wel opvroeg en welke gegevens al in de pagina staan.', '');
     for (const [sleutel, g] of groepen) {
       const r = g.laatste;
       md.push(`## ${sleutel}`, '', `- ${g.n}× · status ${r.status} · ${r.type || 'onbekend type'}`);
@@ -252,6 +255,13 @@ SD.register({
       if (r.antwoord) md.push('- Antwoord (opbouw):', '```json', JSON.stringify(r.antwoord, null, 2).slice(0, 6000), '```');
       md.push('');
     }
+    const api = bronnen.filter((b) => !/\.(js|css|png|jpe?g|svg|gif|woff2?|ico)(\?|$)/i.test(b.url));
+    md.push('## Alle opgevraagde adressen volgens de browser', '',
+      api.length ? 'Ook van vóór de log. Alleen adres, soort en moment (ms na het laden).' : 'Geen (fetch, XHR of beacon).', '');
+    for (const b of api.slice(0, 100)) md.push(`- ${b.ms} ms · ${b.soort} · \`${this.netUrl(b.url)}\``);
+    md.push('', '## Gegevens die al in de pagina staan (opbouw)', '');
+    if (!ingebed.length) md.push('Geen JSON gevonden in script-tags of data-attributen.');
+    for (const g of ingebed) md.push(`### \`${g.waar}\` (${g.lengte} tekens)`, '', '```json', JSON.stringify(g.vorm, null, 2).slice(0, 4000), '```', '');
     const text = masker(md.join('\n'));
     const slug = this.schoneUrl(location.href).split('?')[0].replace(/[{}@]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'pagina';
     this.download(`simulise-netwerk-${slug}.md`, text);

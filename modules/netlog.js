@@ -1,6 +1,7 @@
 /* Netwerklog voor de Inspector (draait in de pagina zelf, world MAIN, bij document_start).
- * Legt alleen vast als de ontwikkelaarsmodus aan staat (attribuut data-sim-netlog op <html>, gezet
- * door modules/inspector.js). Bewaard wordt per verzoek alleen de OPBOUW: methode, adres, de namen
+ * Legt alleen vast als de ontwikkelaarsmodus aan staat: localStorage simDocentNetlog = 1 (direct
+ * leesbaar bij het laden, zodat ook het eerste verzoek wordt gezien) of het attribuut
+ * data-sim-netlog op <html>. Beide worden gezet door modules/inspector.js. Bewaard wordt per verzoek alleen de OPBOUW: methode, adres, de namen
  * van parameters en velden, en het type van elk veld. Waarden worden niet bewaard, behalve getallen
  * bij paginering (page, per_page, limit, ...) en korte vaste codes (zoals HANDED_IN). Alles blijft in
  * het geheugen van dit tabblad; de Inspector vraagt het op met toets N en maskeert de adressen.
@@ -10,7 +11,9 @@
   window.__sdNetlog = true;
   const log = [];
   const MAX = 200;
-  const aan = () => document.documentElement.hasAttribute('data-sim-netlog');
+  let vlag = false;
+  try { vlag = localStorage.getItem('simDocentNetlog') === '1'; } catch { /* geen opslag */ }
+  const aan = () => vlag || document.documentElement.hasAttribute('data-sim-netlog');
   const PAGINA = /^(limit|offset|page|per_?page|perPage|page_?size|pageSize|size|first|last|skip|take|count|total|total_?count|totalCount|current_?page|currentPage|last_?page|lastPage|from|to)$/i;
   const CODE = /^[A-Z][A-Z_]{1,30}(,[A-Z][A-Z_]{1,30})*$/; // bijv. HANDED_IN of BEING_PROCESSED,HANDED_IN
 
@@ -89,6 +92,23 @@
   };
 
   window.addEventListener('message', (e) => {
-    if (e.source === window && e.data?.type === 'sd-netlog-vraag') window.postMessage({ type: 'sd-netlog-antwoord', log }, location.origin);
+    if (e.source !== window || e.data?.type !== 'sd-netlog-vraag') return;
+    // Alle verzoeken volgens de browser (ook van vóór deze log): alleen adres, soort en moment.
+    const bronnen = performance.getEntriesByType('resource')
+      .filter((r) => /^(xmlhttprequest|fetch|beacon|other)$/.test(r.initiatorType))
+      .map((r) => ({ url: r.name, soort: r.initiatorType, ms: Math.round(r.startTime) }));
+    // Gegevens die al in de pagina staan: JSON in script-tags en in data-*-attributen. Alleen de opbouw.
+    const ingebed = [];
+    const probeer = (waar, tekst) => {
+      if (!tekst || tekst.length < 200 || ingebed.length >= 20) return;
+      try { ingebed.push({ waar, lengte: tekst.length, vorm: vorm(JSON.parse(tekst)) }); } catch { /* geen JSON */ }
+    };
+    document.querySelectorAll('script[type*="json"], script[id*="data" i], script[id*="state" i]').forEach((s) => probeer(`script${s.id ? '#' + s.id : ''}[type=${s.type}]`, s.textContent));
+    for (const el of document.querySelectorAll('*')) {
+      for (const at of el.attributes) {
+        if (at.name.startsWith('data-') || at.name.startsWith(':') || at.name === 'props') probeer(`${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}[${at.name}]`, at.value);
+      }
+    }
+    window.postMessage({ type: 'sd-netlog-antwoord', log, bronnen, ingebed, vanafStart: vlag }, location.origin);
   });
 })();
