@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.10.0)
+## Huidige staat (v0.10.2)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -150,6 +150,8 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   gezien; meldingen.js kan beide. `notifications(first: 200, unread: true)` gaf een GraphQL-fout
   (path viewer.notifications, viewer null); waarschijnlijk een maximum. teller.js probeert daarom
   200, 100, 50 en zet wat het deed in `window.__sdTellerStatus` (zichtbaar in het netwerkrapport).
+  Bevestigd in de praktijk (v0.10.2): per verzoek komen er hooguit 100, en `page: N` werkt voor de
+  volgende pagina's; de teller telt zo alle ongelezen meldingen.
 - **Dashboard** (`/@<gebruiker>`): tegels via GraphQL, o.a. `dashboardTileGroups` (`user(id).groupsActive`
   met `id name icon path permalink actionableAssignmentsCount`) en `dashboardTileAssignmentsReviewCount`
   (`assignedAssignments(filters: $filters, page: 1, first: 5)`, `first: 5` letterlijk in de query;
