@@ -1,27 +1,50 @@
 {
   "manifest_version": 3,
   "name": "Simulise Docent",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Thema's en docent-tools voor Simulise (ma.simulise.com). Draait lokaal; controleert alleen GitHub op updates.",
-  "permissions": ["storage", "alarms"],
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
   "host_permissions": [
     "https://api.github.com/*",
     "https://github.com/*",
     "https://*.githubusercontent.com/*"
   ],
-  "icons": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_title": "Simulise Docent",
     "default_popup": "popup.html",
-    "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png", "128": "icons/icon128.png" }
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "options_page": "update/update.html",
-  "background": { "service_worker": "background.js" },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://*.simulise.com/*"],
-      "css": ["theme.css"],
-      "js": ["content.js"],
+      "matches": [
+        "https://*.simulise.com/*"
+      ],
+      "css": [
+        "theme.css"
+      ],
+      "js": [
+        "modules/registry.js",
+        "modules/core.js",
+        "modules/thema.js",
+        "modules/hulpknop.js",
+        "content.js"
+      ],
       "run_at": "document_start"
     }
   ]

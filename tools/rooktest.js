@@ -8,6 +8,20 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// Nagebootste Simulise-pagina met Bootstrap 3-onderdelen die standaard hardcoded wit zijn.
+const WIT = ['.modal-content', '.popover', '.selectize-dropdown', '.well', '.list-group-item', '.nav-tabs > li.active > a', '.bg-white', '.form-control'];
+const NEPPAGINA = `<html><head><style>
+  ${WIT.join(',')} { background: #fff; color: #333; }
+  .support-button { position: fixed; right: 0; bottom: 0; display: block; }
+</style></head><body><div id="nav"></div><div id="content">
+  <a class="support-button" href="#">Hulp nodig?</a>
+  <div class="modal-content">modal</div><div class="popover">popover</div>
+  <div class="selectize-dropdown">selectize</div><div class="well">well</div>
+  <ul class="list-group"><li class="list-group-item">item</li></ul>
+  <ul class="nav-tabs"><li class="active"><a href="#">tab</a></li></ul>
+  <div class="bg-white">wit</div><input class="form-control">
+</div></body></html>`;
+
 const ext = path.resolve(process.argv[2] || path.join(__dirname, '..'));
 const fouten = [];
 const check = (ok, tekst) => { console.log(`${ok ? 'ok  ' : 'FOUT'} ${tekst}`); if (!ok) fouten.push(tekst); };
@@ -16,7 +30,7 @@ const check = (ok, tekst) => { console.log(`${ok ? 'ok  ' : 'FOUT'} ${tekst}`); 
 function bouwZip() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sd-zip-'));
   const doel = path.join(tmp, 'simulise-docent');
-  const skip = new Set(['.git', '.github', 'scripts', 'tools', 'dist', '.gitignore', '.DS_Store', 'CLAUDE.md']);
+  const skip = new Set(['.git', '.github', 'scripts', 'tools', 'dist', '.gitignore', '.DS_Store', 'CLAUDE.md', 'ROADMAP.md']);
   fs.cpSync(ext, doel, { recursive: true, filter: (src) => !skip.has(path.basename(src)) || src === ext });
   execFileSync('zip', ['-qr', 'release.zip', 'simulise-docent'], { cwd: tmp });
   return fs.readFileSync(path.join(tmp, 'release.zip'));
@@ -29,10 +43,7 @@ function bouwZip() {
   });
   const zip = bouwZip();
   const ZIP_URL = 'https://github.com/mark-jg/simulise-docent/releases/download/v9.9.9/simulise-docent-v9.9.9.zip';
-  await ctx.route('https://ma.simulise.com/**', (r) => r.fulfill({
-    contentType: 'text/html',
-    body: '<html><head></head><body><div id="nav"></div><div id="content">test</div></body></html>',
-  }));
+  await ctx.route('https://ma.simulise.com/**', (r) => r.fulfill({ contentType: 'text/html', body: NEPPAGINA }));
   await ctx.route('https://api.github.com/repos/mark-jg/simulise-docent/releases/latest', (r) => r.fulfill({
     contentType: 'application/json',
     body: JSON.stringify({ tag_name: 'v9.9.9', html_url: 'https://github.com/mark-jg/simulise-docent/releases/tag/v9.9.9',
@@ -54,8 +65,25 @@ function bouwZip() {
   await sim.waitForTimeout(300);
   check(Boolean(await sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'))), 'content.js zet data-sim-theme');
 
-  // 2. Popup en updatecontrole
+  check(!(await sim.isVisible('.support-button')), 'module hulpknop verbergt "Hulp nodig?"');
+
+  // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
+  check(await popup.locator('#modules input').count() === 2, 'popup toont aan/uit per module');
+  const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
+  const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
+
+  await zet({ theme: 'dark' });
+  const achtergronden = await sim.evaluate((sels) => sels.map((s) => [s, getComputedStyle(document.querySelector(s)).backgroundColor]), WIT);
+  const nogWit = achtergronden.filter(([, bg]) => bg === 'rgb(255, 255, 255)').map(([s]) => s);
+  check(nogWit.length === 0, `donker thema: geen witte Bootstrap-onderdelen${nogWit.length ? ` (nog wit: ${nogWit.join(', ')})` : ''}`);
+  await zet({ hideSupport: false });
+  check(await sim.isVisible('.support-button'), 'hulpknop uitzetten maakt "Hulp nodig?" weer zichtbaar');
+  await zet({ enabled: false });
+  check((await attr()) === 'off', 'thema uitzetten zet data-sim-theme op off');
+  await zet({ enabled: true, theme: 'auto', hideSupport: true });
+  check((await attr()) !== 'off', 'thema weer aan');
+
   const versie = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8')).version;
   check((await popup.textContent('#ver')) === `v${versie}`, `popup toont versie v${versie}`);
   check(await popup.locator('input[name="theme"]').count() > 0, 'popup toont thema\'s');
@@ -74,7 +102,7 @@ function bouwZip() {
     return { namen: files.map((f) => f.name), manifest: mf && JSON.parse(new TextDecoder().decode(mf.data)) };
   }, ZIP_URL);
   check(inhoud.manifest?.name === 'Simulise Docent', `zip uitgepakt (${inhoud.namen.length} bestanden, manifest gevonden)`);
-  check(!inhoud.namen.some((n) => /tools\/|scripts\/|\.github\/|CLAUDE\.md/.test(n)), 'zip bevat geen ontwikkelbestanden');
+  check(!inhoud.namen.some((n) => /tools\/|scripts\/|\.github\/|CLAUDE\.md|ROADMAP\.md/.test(n)), 'zip bevat geen ontwikkelbestanden');
 
   await ctx.close();
   console.log(fouten.length ? `\nMISLUKT:\n- ${fouten.join('\n- ')}` : '\nOK');

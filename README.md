@@ -32,8 +32,10 @@ vanzelf.
 
 ## Bestanden
 - `theme.css`  alle opmaak, met tokens per thema bovenin
-- `content.js` zet `data-sim-theme` op `<html>` op basis van je instelling
-- `popup.html` / `popup.js`  themakeuze, aan/uit, compacte weergave
+- `modules/`  modulelijst (`registry.js`), kern (`core.js`) en de modules zelf (`thema.js`, `hulpknop.js`)
+- `content.js` start de modules
+- `ROADMAP.md`  roadmap en backlog
+- `popup.html` / `popup.js`  modules aan/uit, themakeuze, compacte weergave, updates
 - `background.js` updatecontrole bij GitHub Releases (om de 6 uur), badge op het icoon
 - `update/`  updatepagina en zelf-updater (`updater.js`)
 - `scripts/release.sh`  nieuwe versie uitbrengen
@@ -43,7 +45,12 @@ vanzelf.
 
 ## Thema toevoegen
 Kopieer een tokenblok in `theme.css`, geef het een nieuwe naam, en zet die naam in `THEMES`
-(popup.js) en, als het donker is, in `DARK` (content.js).
+(popup.js) en, als het donker is, in `DARK` (modules/thema.js).
+
+## Module toevoegen
+Maak `modules/<naam>.js` met `SD.register({ id, init, update, destroy })`, zet een regel in
+`modules/registry.js` (naam, uitleg, instelling) en voeg het bestand toe aan `content_scripts` in
+`manifest.json`, vóór `content.js`. De popup toont de aan/uit-knop dan vanzelf.
 
 ## Bekende aandachtspunten
 - Lege band onder de topbar: fix zit op `#content > .vbox > .vbox > header.header-md`. Nog te bevestigen.
@@ -64,6 +71,8 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.3.0: modules met eigen aan/uit in de popup (Thema, Hulpknop verbergen). Dark mode voor modals,
+  popovers, selectize-keuzelijsten, tabs, lijsten, paginering en witte achtergronden van Bootstrap 3.
 - 0.2.1: updates via GitHub Releases, zoals bij Docent Tools voor Magister. Om de 6 uur controleren,
   badge op het icoon, "Nu bijwerken" in de popup en een updatepagina die de nieuwe versie zelf in de
   extensiemap zet.

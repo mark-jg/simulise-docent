@@ -364,12 +364,82 @@ html[data-sim-theme]:not([data-sim-theme="off"]) .form-control:focus,
 html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-input.focus {
   border-color: var(--sim-accent) !important; box-shadow: 0 0 0 3px var(--sim-accent-soft) !important;
 }
+html[data-sim-theme]:not([data-sim-theme="off"]) .form-control::placeholder,
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-input input::placeholder { color: var(--sim-text-3) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .form-control[disabled],
+html[data-sim-theme]:not([data-sim-theme="off"]) .form-control[readonly] { background: var(--sim-surface-2) !important; color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .input-group-addon {
+  background: var(--sim-surface-2) !important; border-color: var(--sim-border-2) !important; color: var(--sim-text-2) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-input input { color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-control.multi .selectize-input > div {
+  background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; border: 0 !important; border-radius: 4px;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-dropdown {
+  background: var(--sim-surface) !important; border-color: var(--sim-border) !important; color: var(--sim-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-dropdown .option,
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-dropdown .optgroup-header { background: transparent !important; color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .selectize-dropdown .active { background: var(--sim-nav-active-bg) !important; color: var(--sim-text) !important; }
+
+/* ---------- Modals, popovers, tabs en lijsten (Bootstrap 3) ---------- */
+/* Bootstrap 3 heeft hier hardcoded wit; met tokens werkt het in elk thema, ook donker. */
+html[data-sim-theme]:not([data-sim-theme="off"]) .modal-content {
+  background: var(--sim-surface) !important; color: var(--sim-text) !important;
+  border: 1px solid var(--sim-border) !important; border-radius: var(--sim-radius) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .modal-header,
+html[data-sim-theme]:not([data-sim-theme="off"]) .modal-footer { border-color: var(--sim-border) !important; background: transparent !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .modal-title { color: var(--sim-text) !important; }
+html[data-sim-dark] .close { color: var(--sim-text) !important; text-shadow: none !important; opacity: .6; }
+
+html[data-sim-theme]:not([data-sim-theme="off"]) .popover {
+  background: var(--sim-surface) !important; color: var(--sim-text) !important; border-color: var(--sim-border) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .popover-title { background: var(--sim-surface-2) !important; border-color: var(--sim-border) !important; color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .popover.top > .arrow::after { border-top-color: var(--sim-surface) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .popover.bottom > .arrow::after { border-bottom-color: var(--sim-surface) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .popover.left > .arrow::after { border-left-color: var(--sim-surface) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .popover.right > .arrow::after { border-right-color: var(--sim-surface) !important; }
+
+html[data-sim-theme]:not([data-sim-theme="off"]) .well,
+html[data-sim-theme]:not([data-sim-theme="off"]) .list-group-item {
+  background: var(--sim-surface) !important; border-color: var(--sim-border) !important; color: var(--sim-text) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .well { background: var(--sim-surface-2) !important; box-shadow: none !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) a.list-group-item:hover { background: var(--sim-surface-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .list-group-item.active {
+  background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; border-color: var(--sim-border) !important;
+}
+
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-tabs { border-bottom-color: var(--sim-border) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-tabs > li > a { color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-tabs > li > a:hover { background: var(--sim-surface-2) !important; border-color: transparent !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-tabs > li.active > a {
+  background: var(--sim-surface) !important; color: var(--sim-text) !important;
+  border-color: var(--sim-border) var(--sim-border) transparent !important;
+}
+
+html[data-sim-theme]:not([data-sim-theme="off"]) .pagination > li > a,
+html[data-sim-theme]:not([data-sim-theme="off"]) .pagination > li > span {
+  background: var(--sim-surface) !important; border-color: var(--sim-border) !important; color: var(--sim-text-2) !important;
+}
+html[data-sim-theme]:not([data-sim-theme="off"]) .pagination > .active > a,
+html[data-sim-theme]:not([data-sim-theme="off"]) .pagination > .active > span {
+  background: var(--sim-accent) !important; border-color: var(--sim-accent) !important; color: #fff !important;
+}
+
+/* Losse witte achtergronden (utility-classes) in donkere thema's */
+html[data-sim-dark] .bg-white,
+html[data-sim-dark] .bg-light { background: var(--sim-surface) !important; color: var(--sim-text) !important; }
+/* Help Scout-widget (Beacon) draait in een iframe van een ander domein; die is met CSS niet te bereiken. */
+
 html[data-sim-theme]:not([data-sim-theme="off"]) a:focus-visible,
 html[data-sim-theme]:not([data-sim-theme="off"]) button:focus-visible { outline: 2px solid var(--sim-accent); outline-offset: 2px; }
 
 /* ---------- Hulpknop van Simulise ---------- */
-/* Verborgen: overlapt de Inspector van de Magister-extensie. Dezelfde hulp zit in het gebruikersmenu. */
-html[data-sim-theme] .support-button { display: none !important; }
+/* Module hulpknop: overlapt de Inspector van de Magister-extensie. Dezelfde hulp zit in het gebruikersmenu. */
+html[data-sim-hide-support] .support-button { display: none !important; }
 
 /* ---------- Compacte weergave ---------- */
 html[data-sim-compact] .panel-heading { padding: 10px 14px !important; }

@@ -8,7 +8,15 @@ const THEMES = [
   { id: 'paper',   name: 'Papier', hint: 'warm, serif', a: '#f3efe7', b: '#8a5a2b' },
   { id: 'mocha',   name: 'Mokka', hint: 'warm donker', a: '#1e1e2e', b: '#cba6f7' },
 ];
-const DEFAULTS = { enabled: true, theme: 'auto', compact: false };
+const DEFAULTS = globalThis.SD_DEFAULTS;
+
+// Aan/uit per module, uit modules/registry.js.
+const modList = document.getElementById('modules');
+for (const m of globalThis.SD_MODULES) {
+  const label = document.createElement('label');
+  label.innerHTML = `<input type="checkbox" data-key="${m.key}"> <span>${m.naam}<small>${m.uitleg}</small></span>`;
+  modList.appendChild(label);
+}
 
 const list = document.getElementById('themes');
 for (const t of THEMES) {
@@ -20,12 +28,13 @@ for (const t of THEMES) {
 }
 
 chrome.storage.sync.get(DEFAULTS, (s) => {
-  document.getElementById('enabled').checked = s.enabled;
+  document.querySelectorAll('#modules input').forEach((el) => { el.checked = s[el.dataset.key] !== false; });
   document.getElementById('compact').checked = s.compact;
   const el = document.querySelector(`input[name="theme"][value="${s.theme}"]`);
   if (el) el.checked = true;
 });
-document.getElementById('enabled').addEventListener('change', (e) => chrome.storage.sync.set({ enabled: e.target.checked }));
+document.querySelectorAll('#modules input').forEach((el) =>
+  el.addEventListener('change', (e) => chrome.storage.sync.set({ [e.target.dataset.key]: e.target.checked })));
 document.getElementById('compact').addEventListener('change', (e) => chrome.storage.sync.set({ compact: e.target.checked }));
 document.querySelectorAll('input[name="theme"]').forEach((el) =>
   el.addEventListener('change', (e) => chrome.storage.sync.set({ theme: e.target.value })));

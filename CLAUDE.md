@@ -10,7 +10,7 @@ Zusterproject: "Docent Tools voor Magister" (aparte extensie, zelfde maker). Daa
 "Inspector" in die pagina-rapporten (outerHTML + screenshot) oplevert; die wordt ook op Simulise
 gebruikt door het Simulise-domein aan de `matches` toe te voegen.
 
-## Huidige staat (v0.2.1)
+## Huidige staat (v0.3.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -20,16 +20,21 @@ update/         Updatepagina (ook options_page) + updater.js: map kiezen, zip op
 scripts/release.sh, .github/workflows/release.yml   tag vX.Y.Z => release met zip
 tools/rooktest.js   rooktest headless Chromium, Simulise en GitHub nagebootst
 theme.css       Alle opmaak. Tokens per thema bovenin, daarna generieke regels.
-content.js      Zet data-sim-theme / data-sim-dark / data-sim-compact op <html> vanuit chrome.storage.sync
-popup.html/.js  Themakeuze (auto, light, dark, discord, tiimo, nord, paper, mocha), aan/uit, compact
+modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.js (SD.register/start),
+                thema.js (data-sim-theme / -dark / -compact op <html>), hulpknop.js (data-sim-hide-support)
+content.js      Start de modules (SD.start())
+popup.html/.js  Aan/uit per module (uit registry), themakeuze, compact, updatemelding
+ROADMAP.md      Roadmap en backlog met status per item; bijwerken als iets klaar is
 icons/          placeholder-iconen
 ```
 
 Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Donkere thema's
-staan in `DARK` in content.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
+staan in `DARK` in modules/thema.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`: `{ enabled, theme, compact, updateCheck }`.
+Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, updateCheck }`.
+`enabled` is de aan/uit van module thema, `hideSupport` die van module hulpknop (namen uit v0.2
+bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`, en in manifest.json.
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de
 Magister-extensie (mark-jg/magister-docent), zonder het optionele GitHub-token.
 
@@ -79,8 +84,8 @@ Wacht op Inspector-rapporten van: (1) Beoordelen-lijst, (2) één opdracht in be
    met het competentiediagram; "volgende student"-knop binnen één opdracht.
 4. Later: Cmd+K zoeken, export naar Excel, studentkant (startscherm "wat moet ik nu doen").
 
-Architectuur-idee: `modules/<naam>.js` per feature, elk met eigen aan/uit in het popup,
-zoals in de Magister-extensie.
+Modulestructuur staat (v0.3.0): elke feature wordt een module in `modules/`. De Beoordelen-filter
+wordt module `beoordelen` met eigen aan/uit en uitsluitwoorden in de popup.
 
 ## Regels
 

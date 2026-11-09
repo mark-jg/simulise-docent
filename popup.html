@@ -11,6 +11,8 @@
   small { color: #6b7280; }
   hr { border: 0; border-top: 1px solid #e4e7eb; margin: 10px 0; }
   .themes { display: flex; flex-direction: column; }
+  #modules label { align-items: flex-start; }
+  #modules small { display: block; font-size: 11px; line-height: 1.3; }
   .head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 12px; }
   .head h1 { margin: 0; }
   .ver, .foot { font-size: 11px; color: #6b7280; }
@@ -32,12 +34,13 @@
     <button id="doUpdate">Nu bijwerken</button>
   </div>
   <p class="note" id="note"></p>
-  <label><input type="checkbox" id="enabled"> Thema inschakelen</label>
+  <div id="modules"></div>
   <hr>
   <div class="themes" id="themes"></div>
   <hr>
   <label><input type="checkbox" id="compact"> Compacte weergave</label>
   <div class="foot"><a href="#" id="updCheck">Controleer op updates</a></div>
+  <script src="modules/registry.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

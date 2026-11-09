@@ -29,7 +29,7 @@ jobs:
           mkdir -p dist/simulise-docent
           rsync -a ./ dist/simulise-docent/ \
             --exclude .git --exclude .github --exclude scripts --exclude tools --exclude dist \
-            --exclude .gitignore --exclude '.DS_Store' --exclude CLAUDE.md
+            --exclude .gitignore --exclude '.DS_Store' --exclude CLAUDE.md --exclude ROADMAP.md
           cd dist
           zip -qr "simulise-docent-${GITHUB_REF_NAME}.zip" simulise-docent
           ls -l
