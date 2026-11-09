@@ -94,6 +94,7 @@ if (typeof document !== 'undefined' && typeof chrome !== 'undefined' && chrome.s
     else if (update.available) out.textContent = `Versie ${update.latest} is beschikbaar (je hebt ${manifest.version}).`;
     else if (!update.latest) out.textContent = 'Er is nog geen release gepubliceerd.';
     else out.textContent = `Je hebt de nieuwste versie (${manifest.version}).`;
+    if (update?.checkedAt) out.textContent += ` Laatst gecontroleerd: ${new Date(update.checkedAt).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })}.`;
     $('notes').hidden = !(update?.available && update.notes);
     $('notes').textContent = update?.notes || '';
   }

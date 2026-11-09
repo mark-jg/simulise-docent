@@ -75,6 +75,7 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.3.1: de updatepagina toont wanneer er voor het laatst is gecontroleerd. Eerste update via "Nu bijwerken".
 - 0.3.0: modules met eigen aan/uit in de popup (Thema, Hulpknop verbergen). Dark mode voor modals,
   popovers, selectize-keuzelijsten, tabs, lijsten, paginering en witte achtergronden van Bootstrap 3.
 - 0.2.1: updates via GitHub Releases, zoals bij Docent Tools voor Magister. Om de 6 uur controleren,
