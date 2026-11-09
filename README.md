@@ -39,7 +39,7 @@ vanzelf.
 - `background.js` updatecontrole bij GitHub Releases (om de 6 uur), badge op het icoon
 - `update/`  updatepagina en zelf-updater (`updater.js`)
 - `scripts/release.sh`  nieuwe versie uitbrengen
-- `.github/workflows/release.yml`  bouwt bij elke tag `v*` de zip en publiceert de release
+- `.github/workflows/release.yml`  maakt automatisch een release bij een nieuw versienummer op `main`
 - `tools/rooktest.js`  rooktest in headless Chromium (zie Testen)
 - `CLAUDE.md`  projectcontext voor Claude Code
 
@@ -57,13 +57,17 @@ Maak `modules/<naam>.js` met `SD.register({ id, init, update, destroy })`, zet e
 - Alleen het dashboard is gestyled op basis van een echt rapport.
 
 ## Nieuwe versie uitbrengen
-1. Pas de code aan en zet een regel `- X.Y.Z: ...` bovenaan **Wijzigingen** hieronder. Commit op `main`.
-2. Voer uit: `scripts/release.sh X.Y.Z`. Dat zet het versienummer in `manifest.json`, commit, maakt
-   tag `vX.Y.Z` en pusht.
-3. GitHub Actions bouwt `simulise-docent-vX.Y.Z.zip` en zet die als release op GitHub. Klopt het
-   versienummer in `manifest.json` niet met de tag, dan stopt de workflow.
-4. Geïnstalleerde extensies zien de nieuwe versie bij de volgende controle (uiterlijk na 6 uur, of
+Releases gaan automatisch: zodra er op `main` een nieuw versienummer in `manifest.json` staat,
+maakt GitHub Actions de tag `vX.Y.Z`, de zip `simulise-docent-vX.Y.Z.zip` en de release.
+1. Pas de code aan en zet een regel `- X.Y.Z: ...` bovenaan **Wijzigingen** hieronder. Die regel
+   wordt de tekst van de release; zonder die regel stopt de workflow met een foutmelding.
+2. Zet het versienummer in `manifest.json` op X.Y.Z en push naar `main`. Of laat
+   `scripts/release.sh X.Y.Z` dat doen.
+3. Geïnstalleerde extensies zien de nieuwe versie bij de volgende controle (uiterlijk na 6 uur, of
    direct via "Controleer op updates" in de popup).
+
+Een push zonder nieuw versienummer maakt geen release. De workflow is ook met de hand te starten
+(Actions > Release > Run workflow).
 
 ## Testen
 `node tools/rooktest.js` laadt de extensie in headless Chromium. Simulise en GitHub worden lokaal

@@ -17,7 +17,7 @@ manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHu
                 content_scripts op simulise.com (css + js, document_start)
 background.js   Updatecontrole bij GitHub Releases (mark-jg/simulise-docent), om de 6 uur, badge
 update/         Updatepagina (ook options_page) + updater.js: map kiezen, zip ophalen, schrijven, herladen
-scripts/release.sh, .github/workflows/release.yml   tag vX.Y.Z => release met zip
+scripts/release.sh, .github/workflows/release.yml   nieuw versienummer op main => tag + release met zip
 tools/rooktest.js   rooktest headless Chromium, Simulise en GitHub nagebootst
 theme.css       Alle opmaak. Tokens per thema bovenin, daarna generieke regels.
 modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.js (SD.register/start),
@@ -38,8 +38,9 @@ bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de
 Magister-extensie (mark-jg/magister-docent), zonder het optionele GitHub-token.
 
-Release: regel `- X.Y.Z: ...` onder `## Wijzigingen` in README.md, dan `scripts/release.sh X.Y.Z`
-vanaf `main`. Draai voor elke release `node tools/rooktest.js`.
+Release: regel `- X.Y.Z: ...` onder `## Wijzigingen` in README.md en het versienummer in
+manifest.json ophogen; na een push naar `main` maakt de workflow zelf tag en release (Claude Code-
+sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke release `node tools/rooktest.js`.
 
 ## Wat we over Simulise weten (uit het dashboard-rapport)
 

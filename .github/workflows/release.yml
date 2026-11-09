@@ -1,10 +1,14 @@
-# Bouwt bij elke tag v* een zip van de extensie en publiceert die als GitHub Release.
+# Automatische release: bij elke push naar main kijkt deze workflow naar het versienummer in
+# manifest.json. Bestaat release vX.Y.Z nog niet, dan bouwt hij de zip, maakt hij de tag en
+# publiceert hij de release. Bestaat die al, dan gebeurt er niets.
 # De extensie controleert /releases/latest; de zip in die release is de downloadlink.
 name: Release
 
 on:
   push:
-    tags: ["v*"]
+    branches: [main]
+    paths: [manifest.json, .github/workflows/release.yml]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,37 +19,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Versie in manifest.json moet gelijk zijn aan de tag
+      - name: Versie bepalen en kijken of de release al bestaat
+        id: versie
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          MANIFEST="$(node -p "require('./manifest.json').version")"
-          if [ "$TAG" != "$MANIFEST" ]; then
-            echo "::error::Tag v$TAG komt niet overeen met manifest.json ($MANIFEST)"
+          V="$(node -p "require('./manifest.json').version")"
+          echo "versie=$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v$V bestaat al, niets te doen."
+            echo "nieuw=false" >> "$GITHUB_OUTPUT"
+          elif ! grep -qE "^- ${V//./\\.}:" README.md; then
+            echo "::error::Geen regel '- $V: ...' onder '## Wijzigingen' in README.md. Voeg die toe en push opnieuw."
             exit 1
+          else
+            echo "nieuw=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Zip bouwen
+        if: steps.versie.outputs.nieuw == 'true'
         run: |
           mkdir -p dist/simulise-docent
           rsync -a ./ dist/simulise-docent/ \
             --exclude .git --exclude .github --exclude scripts --exclude tools --exclude dist \
             --exclude .gitignore --exclude '.DS_Store' --exclude CLAUDE.md --exclude ROADMAP.md
           cd dist
-          zip -qr "simulise-docent-${GITHUB_REF_NAME}.zip" simulise-docent
+          zip -qr "simulise-docent-v${{ steps.versie.outputs.versie }}.zip" simulise-docent
           ls -l
 
       - name: Release-notities uit README halen
+        if: steps.versie.outputs.nieuw == 'true'
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          LINE="$(grep -m1 -E "^- ${TAG//./\\.}:" README.md | sed -E 's/^- [^:]+: *//' || true)"
+          V="${{ steps.versie.outputs.versie }}"
+          # De regel "- X.Y.Z: ..." plus eventuele ingesprongen vervolgregels.
+          LINE="$(awk -v v="$V" 'index($0, "- " v ":") == 1 { f=1; sub(/^- [^:]+: */, ""); print; next } f && /^  / { sub(/^ +/, ""); print; next } f { exit }' README.md | tr '\n' ' ')"
           {
-            echo "${LINE:-Versie $TAG.}"
+            echo "${LINE:-Versie $V.}"
             echo
-            echo "**Installeren of bijwerken:** download \`simulise-docent-${GITHUB_REF_NAME}.zip\`, pak uit, vervang de bestanden in je extensiemap en klik op ↻ bij \`chrome://extensions\`. Vanaf 0.2.1 kan het ook met \"Nu bijwerken\" in de extensie."
+            echo "**Bijwerken:** klik in de extensie op \"Nu bijwerken\". Handmatig kan ook: download \`simulise-docent-v$V.zip\`, pak uit over je extensiemap en klik op ↻ bij \`chrome://extensions\`."
           } > dist/notes.md
+          cat dist/notes.md
 
       - uses: softprops/action-gh-release@v2
+        if: steps.versie.outputs.nieuw == 'true'
         with:
-          name: Versie ${{ github.ref_name }}
+          tag_name: v${{ steps.versie.outputs.versie }}
+          target_commitish: ${{ github.sha }}
+          name: Versie v${{ steps.versie.outputs.versie }}
           body_path: dist/notes.md
           files: dist/simulise-docent-*.zip
