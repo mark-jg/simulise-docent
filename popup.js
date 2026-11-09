@@ -29,3 +29,31 @@ document.getElementById('enabled').addEventListener('change', (e) => chrome.stor
 document.getElementById('compact').addEventListener('change', (e) => chrome.storage.sync.set({ compact: e.target.checked }));
 document.querySelectorAll('input[name="theme"]').forEach((el) =>
   el.addEventListener('change', (e) => chrome.storage.sync.set({ theme: e.target.value })));
+
+/* ---------- Updates: tonen; het bijwerken zelf gebeurt op de updatepagina ---------- */
+const current = chrome.runtime.getManifest().version;
+const note = (t) => { document.getElementById('note').textContent = t; };
+const openUpdatePage = () => chrome.tabs.create({ url: chrome.runtime.getURL('update/update.html') });
+document.getElementById('ver').textContent = `v${current}`;
+
+function renderUpdate(info) {
+  const avail = !!info?.available;
+  document.getElementById('update').hidden = !avail;
+  if (!avail) return;
+  document.getElementById('updTitle').textContent = `Versie ${info.latest} beschikbaar`;
+  document.getElementById('updText').textContent = `Je gebruikt nu ${current}.`;
+}
+chrome.storage.local.get(['update', 'justUpdated']).then(({ update, justUpdated }) => {
+  renderUpdate(update);
+  if (justUpdated?.to === current) note(`Bijgewerkt van ${justUpdated.from} naar ${justUpdated.to}. Herlaad je Simulise-tabbladen.`);
+  if (justUpdated) chrome.storage.local.remove('justUpdated');
+});
+document.getElementById('doUpdate').addEventListener('click', openUpdatePage);
+document.getElementById('updCheck').addEventListener('click', async (e) => {
+  e.preventDefault();
+  note('Controleren…');
+  const info = await chrome.runtime.sendMessage({ type: 'checkUpdate' }).catch(() => null);
+  if (!info) { note('Controleren mislukt.'); return; }
+  renderUpdate(info);
+  note(info.error ? `Kon GitHub niet bereiken: ${info.error}.` : info.available ? '' : info.latest ? `Je hebt de nieuwste versie (${current}).` : 'Er is nog geen release gepubliceerd.');
+});

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Simulise Docent: updates</title>
+<style>
+  :root { --bg: #f4f5f7; --card: #fff; --fg: #1f2328; --muted: #6b7280; --border: #e4e7eb; --accent: #0e8a74; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15181c; --card: #1c2025; --fg: #e6e8eb; --muted: #a4acb6; --border: #2a3038; --accent: #3fc1a7; } }
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 32px 16px; background: var(--bg); color: var(--fg); }
+  main { max-width: 620px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 22px 0 6px; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+  button { font: inherit; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--fg); cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button[disabled] { opacity: .5; cursor: default; }
+  a { color: var(--accent); }
+  #notes { white-space: pre-wrap; background: var(--bg); border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+  #updateProgress { min-height: 1.5em; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Simulise Docent: updates</h1>
+  <p class="muted" id="version"></p>
+
+  <h2>Status</h2>
+  <div class="row"><button id="checkUpdate">Nu controleren</button> <span id="updateStatus" class="muted"></span></div>
+  <p id="notes" hidden></p>
+  <label class="row"><input type="checkbox" id="autoCheck"> Automatisch controleren (om de 6 uur)</label>
+  <p class="muted">Er wordt alleen het versienummer en de downloadlink opgehaald bij
+    <a href="https://github.com/mark-jg/simulise-docent/releases" target="_blank" rel="noopener">github.com/mark-jg/simulise-docent</a>.
+    Er gaat niets over jou of je Simulise-omgeving mee.</p>
+
+  <h2>Zelf bijwerken</h2>
+  <p>Kies één keer de map waarin de extensie staat (de map met <code>manifest.json</code>). Daarna haalt
+    "Nu bijwerken" de nieuwe versie op, schrijft de bestanden in die map en herlaadt de extensie.
+    Chrome vraagt bij elke update met één klik om toestemming voor de map. Er wordt niets verwijderd.</p>
+  <div class="row"><button id="pickFolder">Extensiemap kiezen</button> <span id="folderName" class="muted"></span> <button id="forgetFolder" hidden>Map vergeten</button></div>
+  <div class="row"><button id="doUpdate" class="primary" disabled>Nu bijwerken</button> <a href="#" id="manualZip">Handmatig: zip downloaden</a></div>
+  <p id="updateProgress"></p>
+</main>
+<script src="updater.js"></script>
+</body>
+</html>

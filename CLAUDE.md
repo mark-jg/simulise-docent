@@ -10,10 +10,15 @@ Zusterproject: "Docent Tools voor Magister" (aparte extensie, zelfde maker). Daa
 "Inspector" in die pagina-rapporten (outerHTML + screenshot) oplevert; die wordt ook op Simulise
 gebruikt door het Simulise-domein aan de `matches` toe te voegen.
 
-## Huidige staat (v0.2.0)
+## Huidige staat (v0.2.1)
 
 ```
-manifest.json   MV3, permissions: storage, content_scripts op simulise.com (css + js, document_start)
+manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
+                content_scripts op simulise.com (css + js, document_start)
+background.js   Updatecontrole bij GitHub Releases (mark-jg/simulise-docent), om de 6 uur, badge
+update/         Updatepagina (ook options_page) + updater.js: map kiezen, zip ophalen, schrijven, herladen
+scripts/release.sh, .github/workflows/release.yml   tag vX.Y.Z => release met zip
+tools/rooktest.js   rooktest headless Chromium, Simulise en GitHub nagebootst
 theme.css       Alle opmaak. Tokens per thema bovenin, daarna generieke regels.
 content.js      Zet data-sim-theme / data-sim-dark / data-sim-compact op <html> vanuit chrome.storage.sync
 popup.html/.js  Themakeuze (auto, light, dark, discord, tiimo, nord, paper, mocha), aan/uit, compact
@@ -24,7 +29,12 @@ Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Do
 staan in `DARK` in content.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`: `{ enabled, theme, compact }`.
+Instellingen in `chrome.storage.sync`: `{ enabled, theme, compact, updateCheck }`.
+Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de
+Magister-extensie (mark-jg/magister-docent), zonder het optionele GitHub-token.
+
+Release: regel `- X.Y.Z: ...` onder `## Wijzigingen` in README.md, dan `scripts/release.sh X.Y.Z`
+vanaf `main`. Draai voor elke release `node tools/rooktest.js`.
 
 ## Wat we over Simulise weten (uit het dashboard-rapport)
 
@@ -76,7 +86,8 @@ zoals in de Magister-extensie.
 
 - Nederlands in UI-teksten en commentaar. Geen gedachtestreepjes (—) in Nederlands.
 - Geen persoonsgegevens van studenten in code, commits, logs of documentatie. Klasnamen zijn ok.
-- Niets naar externe servers sturen; alles lokaal in de browser. Alleen de bestaande
+- Niets naar externe servers sturen; alles lokaal in de browser. Enige uitzondering: de
+  updatecontrole haalt bij GitHub het versienummer en de zip op (er gaat niets mee). Alleen de bestaande
   Simulise-sessie gebruiken, geen eigen opslag van studentdata buiten `chrome.storage` voor
   instellingen.
 - Buiten scope: Teams-koppeling. Simulise heeft geen publieke API; Teams for Education geen LTI.
