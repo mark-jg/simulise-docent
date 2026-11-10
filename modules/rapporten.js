@@ -2,6 +2,8 @@
  *
  *   Profiel van een student (/@gebruiker): knop "Voortgangsrapport" bij het diagram (kaart Opleidingen).
  *   Groepen (/groups): in het menu van elke groep "Voortgangsrapporten" voor alle studenten van die groep.
+ *   Analytics (/analytics): een extra kaart "Voortgangsrapporten" naast die van Simulise, met een
+ *   keuzelijst van groepen (de groepen die de zoekmodule onthield, chrome.storage.local sdGroups).
  *
  * Gegevens: via modules/gql.js (in de pagina) met je eigen sessie bij Simulise:
  *   sdRapportStudent   user(id) { id name username dashboardEducations { id name groups } }
@@ -49,7 +51,7 @@ SD.register({
     window.removeEventListener('message', this._bericht);
     document.removeEventListener('click', this._klik, true);
     this._stop?.();
-    document.querySelectorAll('.sim-docent-rapport-li, .sim-docent-rapportknop').forEach((el) => el.remove());
+    document.querySelectorAll('.sim-docent-rapport-li, .sim-docent-rapportknop, .sim-docent-kaart').forEach((el) => el.remove());
     this.SD = null;
   },
 
@@ -57,6 +59,7 @@ SD.register({
     if (!this.SD) return;
     this.groepsMenus();
     this.profielKnop();
+    this.analyticsKaart();
   },
 
   /* ---------- Knoppen ---------- */
@@ -78,6 +81,44 @@ SD.register({
       li.append(a);
       menu.append(scheiding, li);
     }
+  },
+
+  /* Kaart in dezelfde opmaak als de rapportagekaarten van Simulise op /analytics. */
+  async analyticsKaart() {
+    if (location.pathname !== '/analytics' || this._kaartBezig) return;
+    const rij = document.querySelector('#content section.panel.panel-link')?.closest('div.row');
+    if (!rij || rij.querySelector('.sim-docent-kaart')) return;
+    this._kaartBezig = true;
+    try {
+      const { sdGroups } = await chrome.storage.local.get({ sdGroups: {} });
+      if (rij.querySelector('.sim-docent-kaart')) return;
+      const groepen = Object.entries(sdGroups || {}).filter(([k]) => k.startsWith('school/')).map(([k, naam]) => ({ uuid: k.slice(7), naam }))
+        .sort((a, b) => a.naam.localeCompare(b.naam, 'nl', { numeric: true }));
+      const el = (tag, cls, tekst) => { const x = document.createElement(tag); if (cls) x.className = cls; if (tekst) x.textContent = tekst; return x; };
+      const kol = el('div', 'col-lg-4 col-sm-12 col-xs-12 m-b-xs col-md-6 sim-docent-kaart');
+      const kaart = el('section', 'panel panel-link hbox m-b-sm b-b-none text-center');
+      const icoon = el('div', 'panel-link-icon v-middle text-white bg-success');
+      const w1 = el('div', 'wrapper p-b-sm'); w1.append(el('i', 'fad fa-fw fa-3x fa-file-chart-line'));
+      const w2 = el('div', 'wrapper p-t-none'); w2.append(el('span', 'h3 font-thin', 'Voortgangsrapporten'));
+      icoon.append(w1, w2);
+      const lichaam = el('div', 'panel-link-body');
+      lichaam.append(el('div', 'text-center font-thin m-t-none m-sm', 'Voortgangsrapport, gespreksformulier of groepsoverzicht van een groep, met normen per periode (Simulise Docent).'));
+      const keuze = el('select', 'form-control input-sm');
+      keuze.style.cssText = 'display:inline-block;width:auto;min-width:140px;margin:0 6px 6px 0;vertical-align:middle';
+      keuze.setAttribute('aria-label', 'Groep voor de voortgangsrapporten');
+      for (const g of groepen) { const o = el('option', '', g.naam); o.value = g.uuid; keuze.append(o); }
+      const knop = el('button', 'btn btn-success btn-sm', 'Nieuw rapport');
+      knop.type = 'button';
+      knop.style.marginBottom = '6px';
+      knop.disabled = !groepen.length;
+      knop.onclick = () => { const g = groepen.find((x) => x.uuid === keuze.value); if (g) this.groepsrapport(g.uuid, g.naam); };
+      const voet = el('div', 'panel-footer text-center');
+      if (groepen.length) voet.append(keuze, knop);
+      else voet.append(el('em', 'm-b-none', 'Open eerst één keer Groepen; daarna staan je groepen hier.'));
+      kaart.append(icoon, lichaam, voet);
+      kol.append(kaart);
+      rij.append(kol);
+    } finally { this._kaartBezig = false; }
   },
 
   profielKnop() {

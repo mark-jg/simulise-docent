@@ -114,6 +114,9 @@ const GROEPEN = `<html><head></head><body><aside id="nav"><ul class="nav-main"><
 <tr><td><a href="/groups/school/${'0a1b2c3d-1111-4222-8333-444455556666'}/community"><strong>MEP1A</strong></a></td><td><div class="btn-group m-t-none"><button class="btn btn-sm btn-info dropdown-toggle">v</button>
 <ul class="dropdown-menu"><li><a href="/groups/school/${'0a1b2c3d-1111-4222-8333-444455556666'}/students">Studenten</a></li></ul></div></td></tr></tbody></table></div>${APP_GQL}</body></html>`;
 // Studentenpagina zonder profiel-links (zoals bij Simulise bleek); de studenten staan als kolommen op de opdrachtenpagina.
+const ANALYTICS = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section id="scrollable-page-wrapper"><div><div class="row">
+<div class="col-lg-4 col-sm-12 col-xs-12 m-b-xs col-md-6"><section class="panel panel-link hbox"><div class="panel-link-icon bg-primary"><a class="h3 font-thin" href="#">Leerlijnen</a></div>
+<button class="btn btn-success btn-sm">Nieuwe rapportage</button><div class="panel-footer"><em>Geen opgeslagen rapportages</em></div></section></div></div></div></section></div>${APP_GQL}</body></html>`;
 const STUDENTEN = `<html><head></head><body><div id="content"><div class="student-lijst" data-vue="1"></div></div></body></html>`;
 // Leerlijndiagram zoals Simulise het geeft (verzonnen student).
 const FASE = (phase, behaald, score, datum) => ({ id: `f${phase}`, phase, weights: [{ level: -1, title: 'Niet beoordeeld' }, { level: 0, title: 'Nog niet aangetoond' }, { level: 1, title: 'Op koers' }, { level: 2, title: 'Boven verwachting' }],
@@ -159,6 +162,7 @@ function bouwZip() {
   await ctx.route('https://ma.simulise.com/**', (r) => {
     const u = new URL(r.request().url()), p = u.pathname;
     if (p.startsWith('/@')) return r.fulfill({ contentType: 'text/html', body: PROFIEL });
+    if (p === '/analytics') return r.fulfill({ contentType: 'text/html', body: ANALYTICS });
     if (p === '/groups') return r.fulfill({ contentType: 'text/html', body: GROEPEN });
     if (/^\/groups\/school\/[^/]+\/students$/.test(p)) return r.fulfill({ contentType: 'text/html', body: STUDENTEN });
     if (p === '/notifications') return r.fulfill({ contentType: 'text/html', body: MELDINGENPAGINA(parseInt(u.searchParams.get('page'), 10) || 1) });
@@ -570,6 +574,16 @@ function bouwZip() {
   await groepTab.locator('#sd-groepkeuzes label:has-text("alleen niet op koers") input').check();
   check((await gt()).includes('Geen studenten die aan het filter voldoen.'), 'filter: alleen studenten die niet op koers zijn');
   await groepTab.close();
+
+  // Kaart Voortgangsrapporten op de analytics-pagina
+  await sim.goto('https://ma.simulise.com/analytics'); await sim.waitForTimeout(700);
+  const kaartOpties = await sim.locator('.sim-docent-kaart select option').allTextContents();
+  // Zelfde adres als de groep op /groups (MEP1A); groepen zonder adres (101, 102) en menu-namen niet.
+  check(await sim.isVisible('.sim-docent-kaart') && kaartOpties.join() === 'MEP1A', `analytics: kaart met de bekende groepen met adres, zonder menu-namen (${kaartOpties.join(', ')})`);
+  const [aTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sim-docent-kaart button')]);
+  await aTab.waitForFunction(() => document.querySelectorAll('.pagina').length >= 4, null, { timeout: 20000 }).catch(() => {});
+  { const n = await aTab.locator('.pagina').count(); const tk = await aTab.evaluate(() => document.body.innerText.slice(0, 200)); check(n === 2 && (await aTab.locator('table.overzicht tbody tr').count()) === 4 && tk.includes('Voortgangsrapporten MEP1A'), `analytics: groepsrapport vanaf de kaart, met de onthouden keuze groepsoverzicht (${n} pagina's, "${tk.replace(/\n/g, ' ')}")`); }
+  await aTab.close();
 
   // Rapportprofielen en voorvertoning van het voortgangsrapport
   const prof = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);

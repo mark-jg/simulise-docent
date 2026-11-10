@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.14.0)
+## Huidige staat (v0.15.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -198,6 +198,15 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   `table.table-index`, per rij `td > div.btn-group.m-t-none > button.btn.btn-sm.btn-info.dropdown-toggle`
   met een menu (links naar community, students, teachers, assignments, templates, settings).
   Plek voor "Voortgangsrapporten" (wens van de gebruiker).
+- **Analytics** (`/analytics`): zes kaarten in `#scrollable-page-wrapper div.row > div.col-lg-4.col-sm-12.col-xs-12.m-b-xs.col-md-6 >
+  section.panel.panel-link.hbox` (icoon `div.panel-link-icon.bg-*` met `a.h3` titel, `button.btn.btn-success.btn-sm`
+  "Nieuwe rapportage", `div.panel-link-body`, `div.panel-footer` "Geen opgeslagen rapportages"): Leerlijnen,
+  Leerlijnen per groep, Opdrachten per student, Status opdracht over groepen, Portfolio, Status sjablonen.
+  GraphQL `analyticsQueryTypes { type icon title color description reportCount }`. Wat een rapportage
+  "Leerlijnen" ophaalt is nog niet gezien (kan de voortgang van een hele groep in één keer geven).
+  rapporten.js voegt een zevende kaart "Voortgangsrapporten" toe (groepen uit sdGroups).
+- Op /groups staan in het groepsmenu links met teksten als "Studenten"; zoeken.js slaat links in
+  `.nav-tabs, .dropdown-menu, .btn-group` over en ruimt zulke namen op (GEEN_NAAM).
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
 
 ## Open punten / bekende issues

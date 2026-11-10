@@ -53,17 +53,22 @@ SD.register({
    * groepspagina ("Groepen / MEP1A"). */
   GROEP: /^\/groups\/((?:school\/)?(?:[0-9a-f]{8}-[0-9a-f-]{27}|\d+))(\/|$)/i,
 
+  // Tabbladen en menu-items van een groep zijn geen groepsnamen.
+  GEEN_NAAM: /^(community|studenten|docenten|opdrachten|sjablonen|instellingen|bestanden|voortgangsrapporten|te beoordelen)$/i,
+
   async harvest() {
     await this._geladen;
     if (!this.SD) return;
     let changed = false;
+    // Opruimen: eerder per ongeluk onthouden menu-namen
+    for (const [k, v] of Object.entries(this.groups)) if (this.GEEN_NAAM.test(v)) { delete this.groups[k]; changed = true; }
     const zet = (sleutel, naam) => {
       naam = (naam || '').replace(/\s+/g, ' ').trim();
-      if (!/[a-z]/i.test(naam) || naam.length > 60 || this.groups[sleutel] === naam) return;
+      if (!/[a-z]/i.test(naam) || naam.length > 60 || this.GEEN_NAAM.test(naam) || this.groups[sleutel] === naam) return;
       this.groups[sleutel] = naam; changed = true;
     };
     for (const a of document.querySelectorAll('#content a[href*="/groups/"], aside#nav a[href*="/groups/"]')) {
-      if (a.closest('.nav-tabs')) continue; // tabbladen Community, Opdrachten... zijn geen groepsnamen
+      if (a.closest('.nav-tabs, .dropdown-menu, .btn-group')) continue; // tabbladen en menu's zijn geen groepsnamen
       const m = new URL(a.href, location.href).pathname.match(this.GROEP);
       if (m) zet(m[1], a.textContent);
     }

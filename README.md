@@ -101,6 +101,9 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.15.0: voortgangsrapporten ook vanaf Analytics: een extra kaart "Voortgangsrapporten" naast de rapportages van
+  Simulise, met een keuzelijst van je groepen. Zoeken onthield bij Groepen soms "Studenten" of "Community" als
+  groepsnaam; dat is opgelost en zulke namen worden opgeruimd.
 - 0.14.0: voortgangsrapporten flexibeler. In het rapporttabblad staat een werkbalk: soort (voortgangsrapport,
   gespreksformulier met invulvakken, groepsoverzicht op één liggende pagina), peildatum (ook in het verleden,
   bijvoorbeeld de stand aan het eind van M1), vergelijken met een periode naar keuze, onderdelen aan en uit,
