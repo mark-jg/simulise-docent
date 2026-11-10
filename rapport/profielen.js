@@ -60,7 +60,18 @@ function voorbeeld(p = huidig()) {
       if (l.stap > 0) l.beoordeeldNiet = false;
     }
   }
-  const html = SDRapport.html([vb], p, 'Voorbeeld voortgangsrapport');
+  const soort = $('soort').value;
+  let studenten = [vb];
+  if (soort === 'groep') {
+    // Een paar verzonnen studenten met een andere stand, voor het groepsoverzicht.
+    studenten = ['A', 'B', 'C'].map((letter, n) => {
+      const s = kloon(vb);
+      s.student.naam = `Voorbeeldstudent ${letter}`;
+      s.opleidingen.forEach((o) => o.leerlijnen.forEach((l, i) => { l.stap = Math.max(0, Math.min(o.maxStap, l.stap + ((i + n) % 3) - 1)); l.bovenVerwachting = l.bovenVerwachting && n === 0; }));
+      return s;
+    });
+  }
+  const html = SDRapport.html(studenten, p, 'Voorbeeld voortgangsrapport', { soort, peildatum: datum });
   const iframe = $('vb');
   iframe.srcdoc = html;
   iframe.onload = () => { const b = iframe.contentDocument?.querySelector('.afdruk'); if (b) b.onclick = () => iframe.contentWindow.print(); };
@@ -80,6 +91,7 @@ $('factor').oninput = () => { $('factorWaarde').textContent = `${$('factor').val
 $('accent').oninput = () => zetWeergave({ accent: $('accent').value });
 $('vergelijk').onchange = () => zetWeergave({ vergelijk: $('vergelijk').checked });
 $('peildatum').onchange = () => { try { voorbeeld(JSON.parse($('json').value)); } catch { voorbeeld(); } };
+$('soort').onchange = $('peildatum').onchange;
 
 let tik;
 $('json').oninput = () => {

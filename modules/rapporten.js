@@ -128,6 +128,8 @@ SD.register({
       qDiagram: app.vragen?.getUserEducationDiagram || null,
       idSoort: soort(app.variabelen?.dashboardTileEducationDiagram?.id),
       userIdSoort: soort(app.variabelen?.getUserEducationDiagram?.userId),
+      qDiscover: app.vragen?.dashboardDiscoverUser || null,
+      discoverIdSoort: soort(app.variabelen?.dashboardDiscoverUser?.id),
     };
     if (kennis.qOpleidingen || kennis.qDiagram) {
       const oud = (await chrome.storage.local.get({ rpAppKennis: {} })).rpAppKennis || {};
@@ -150,10 +152,18 @@ SD.register({
       naam = naam || document.querySelector('#content .s-card table h3')?.textContent.trim() || null;
     }
     const k = { ...kennis, ...(await chrome.storage.local.get({ rpAppKennis: {} })).rpAppKennis };
-    const idVoor = (soort) => (soort === 'dashboardId' ? gebruikerId : gebruiker);
+    // Gebruikt de app een interne id in plaats van de gebruikersnaam? Dan die eerst opzoeken
+    // (dashboardDiscoverUser met de gebruikersnaam geeft user.id), zoals de app op een profiel doet.
+    const nodigId = (s) => s && s !== 'gebruikersnaam';
+    if (!gebruikerId && (nodigId(k.idSoort) || nodigId(k.userIdSoort)) && k.qDiscover) {
+      const r = await this.gql('dashboardDiscoverUser', k.qDiscover, { id: gebruiker });
+      gebruikerId = r.data?.user?.id || null;
+      if (!gebruikerId) stappen.push(`id opzoeken: ${r.errors?.[0] || 'leeg antwoord'}`);
+    }
+    const idVoor = (soort) => (nodigId(soort) ? gebruikerId || gebruiker : gebruiker);
 
     if (!opleidingen && k.qOpleidingen) {
-      const r = await this.gql('dashboardTileEducationDiagram', k.qOpleidingen, { id: idVoor(k.idSoort === 'dashboardId' ? 'gebruikersnaam' : k.idSoort) });
+      const r = await this.gql('dashboardTileEducationDiagram', k.qOpleidingen, { id: idVoor(k.idSoort) });
       const d = r.data?.dashboard;
       if (d?.educations) { opleidingen = d.educations; gebruikerId = d.id; } else stappen.push(`opleidingen (vraag van Simulise): ${r.errors?.[0] || 'leeg antwoord'}`);
     }
@@ -243,6 +253,95 @@ SD.register({
     return w;
   },
   voortgang(w, tekst) { const p = w?.document?.getElementById('voortgang'); if (p) p.textContent = tekst; },
+  /* ---------- Rapport met werkbalk ----------
+   * De gegevens blijven in het geheugen van dit script; de werkbalk tekent het rapport opnieuw bij elke
+   * keuze, zonder opnieuw op te halen. Keuzes (geen studentgegevens) staan in chrome.storage.local rpOpties.
+   * Zelf aangepaste teksten (gespreksadvies, gespreksvakken) blijven bewaard tijdens het wisselen. */
+  async toonRapport(w, studenten, profiel, titel, fouten = []) {
+    if (!w || w.closed) return;
+    const groep = studenten.length > 1;
+    const bewaard = (await chrome.storage.local.get({ rpOpties: {} })).rpOpties || {};
+    const vandaag = new Date().toISOString().slice(0, 10);
+    const opties = {
+      soort: groep ? (bewaard.soortGroep || 'student') : (bewaard.soortStudent === 'groep' ? 'student' : bewaard.soortStudent || 'student'),
+      peildatum: vandaag, vergelijkMet: bewaard.vergelijkMet || 'vorige',
+      onderdelen: { kpis: true, diagram: true, tabel: true, normen: true, advies: true, ...(bewaard.onderdelen || {}) },
+      opleidingen: null, nadruk: bewaard.nadruk ?? null, sorteer: bewaard.sorteer || 'naam', filter: 'alle',
+    };
+    const bewaar = () => chrome.storage.local.set({ rpOpties: { ...bewaard, [groep ? 'soortGroep' : 'soortStudent']: opties.soort, vergelijkMet: opties.vergelijkMet, onderdelen: opties.onderdelen, nadruk: opties.nadruk, sorteer: opties.sorteer } });
+
+    w.document.open(); w.document.write(SDRapport.shell(titel, profiel)); w.document.close();
+    const d = w.document, balk = d.getElementById('sd-balk'), inhoud = d.getElementById('sd-inhoud');
+    const el = (tag, props = {}, kinderen = []) => { const x = Object.assign(d.createElement(tag), props); x.append(...kinderen); return x; };
+    const keuze = (id, waarden, huidig, bij) => {
+      const s = el('select', { id });
+      for (const [v, t] of waarden) s.append(el('option', { value: v, textContent: t, selected: v === huidig }));
+      s.onchange = () => { bij(s.value); bewaar(); teken(); };
+      return s;
+    };
+    const vink = (tekst, aanUit, bij) => {
+      const c = el('input', { type: 'checkbox', checked: aanUit });
+      c.onchange = () => { bij(c.checked); bewaar(); teken(); };
+      return el('label', {}, [c, tekst]);
+    };
+
+    // Rollen die in de gegevens voorkomen, in de volgorde van het profiel
+    const rollen = [];
+    for (const g of studenten) for (const o of g.opleidingen) { const c = SDRapport.rolVan(o.naam, profiel); const rol = c?.rol || o.naam.toLowerCase(); if (!rollen.some((x) => x.rol === rol)) rollen.push({ rol, titel: c?.titel || o.naam }); }
+    const gekozenRollen = new Set(rollen.map((x) => x.rol));
+    const nadrukNu = opties.nadruk ?? (profiel.weergave?.nadrukDoelstap !== false);
+
+    const onderdeelVakjes = el('span', { className: 'groepje', id: 'sd-onderdelen' },
+      [['kpis', 'Kerncijfers'], ['diagram', 'Diagram'], ['tabel', 'Tabel'], ['normen', 'Normen'], ['advies', 'Gespreksadvies']]
+        .map(([k, t]) => vink(t, opties.onderdelen[k] !== false, (v) => { opties.onderdelen[k] = v; })));
+    const groepVakjes = el('span', { className: 'groepje', id: 'sd-groepkeuzes' }, [
+      'Sorteer', keuze('sd-sorteer', [['naam', 'op naam'], ['aandacht', 'aandacht eerst']], opties.sorteer, (v) => { opties.sorteer = v; }),
+      vink('alleen niet op koers', false, (v) => { opties.filter = v ? 'nietOpKoers' : 'alle'; }),
+    ]);
+    const datum = el('input', { type: 'date', id: 'sd-peildatum', value: opties.peildatum, max: vandaag });
+    datum.onchange = () => { opties.peildatum = datum.value || vandaag; teken(); };
+    const afdruk = el('button', { className: 'afdruk', textContent: 'Afdrukken of opslaan als PDF' });
+    afdruk.onclick = () => w.print();
+    const csvKnop = el('button', { className: 'tweede', id: 'sd-csv', textContent: 'CSV voor Excel' });
+    csvKnop.onclick = () => {
+      const blob = new Blob(['\ufeff' + SDRapport.csv(studenten, profiel, opties)], { type: 'text/csv;charset=utf-8' });
+      const a = el('a', { href: URL.createObjectURL(blob), download: `${titel.replace(/[^\w-]+/g, '-').replace(/-+$/, '')}-${opties.peildatum}.csv` });
+      d.body.append(a); a.click(); a.remove();
+    };
+    const info = el('span', { className: 'info', id: 'sd-info' });
+    if (fouten.length) {
+      const redenen = [...fouten.reduce((m, f) => m.set(f, (m.get(f) || 0) + 1), new Map())].map(([f, n]) => `${n}× ${f}`).join('\n');
+      info.title = redenen;
+    }
+    balk.append(
+      el('b', { textContent: titel }),
+      el('span', { className: 'groepje' }, ['Soort', keuze('sd-soort', [['student', 'Voortgangsrapport'], ['gesprek', 'Gespreksformulier'], ['groep', 'Groepsoverzicht']], opties.soort, (v) => { opties.soort = v; })]),
+      el('span', { className: 'groepje' }, ['Peildatum', datum]),
+      el('span', { className: 'groepje' }, ['Vergelijk met', keuze('sd-vergelijk', [['vorige', 'vorige periode'], ['geen', 'niets'], ...(profiel.perioden || []).map((p) => [p.code, `${p.code} (${p.naam || ''})`])], opties.vergelijkMet, (v) => { opties.vergelijkMet = v; })]),
+      el('span', { className: 'groepje', id: 'sd-rollen' }, rollen.map((x) => vink(x.titel, true, (v) => { v ? gekozenRollen.add(x.rol) : gekozenRollen.delete(x.rol); opties.opleidingen = [...gekozenRollen]; }))),
+      onderdeelVakjes,
+      el('span', { className: 'groepje' }, [vink('Doelstap groot', nadrukNu, (v) => { opties.nadruk = v; })]),
+      groepVakjes, info, el('span', { className: 'ruimte' }), csvKnop, afdruk,
+    );
+
+    const bewerkt = {};
+    const teken = () => {
+      d.querySelectorAll('[data-bewerk]').forEach((x) => { if (x.dataset.aangepast) bewerkt[x.dataset.bewerk] = x.innerText; });
+      inhoud.innerHTML = SDRapport.paginas(studenten, profiel, opties);
+      d.querySelectorAll('[data-bewerk]').forEach((x) => {
+        if (bewerkt[x.dataset.bewerk] != null) { x.innerText = bewerkt[x.dataset.bewerk]; x.dataset.aangepast = '1'; }
+        x.addEventListener('input', () => { x.dataset.aangepast = '1'; });
+      });
+      const overzicht = opties.soort === 'groep';
+      onderdeelVakjes.hidden = overzicht;
+      groepVakjes.hidden = !groep && !overzicht;
+      csvKnop.hidden = !groep && !overzicht;
+      const n = d.querySelectorAll(overzicht ? 'table.overzicht tbody tr' : '.pagina .naamblok h1').length;
+      info.textContent = `${groep ? `${n} van ${studenten.length} studenten` : ''}${fouten.length ? `${groep ? ' · ' : ''}${fouten.length} zonder diagram (zie tooltip)` : ''}`;
+    };
+    teken();
+  },
+
   toon(w, html) {
     if (!w || w.closed) return;
     w.document.open(); w.document.write(html); w.document.close();
@@ -258,7 +357,7 @@ SD.register({
       const profiel = await this.profiel();
       const g = this.sorteer(await this.student(gebruiker), profiel);
       if (!g.opleidingen.length) throw new Error('geen leerlijndiagram gevonden voor deze student');
-      this.toon(w, SDRapport.html([g], profiel, `Voortgangsrapport ${g.student.naam}`));
+      await this.toonRapport(w, [g], profiel, `Voortgangsrapport ${g.student.naam}`);
     } catch (e) { this.fout(w, e.message || e); }
   },
 
@@ -319,9 +418,7 @@ SD.register({
           + (kennis.qDiagram ? '' : ' Tip: open eerst één keer het profiel van een student met het diagram en maak daar een rapport; daarna weet de extensie hoe Simulise de gegevens ophaalt.'));
       }
       klaar.sort((a, b) => a.student.naam.localeCompare(b.student.naam, 'nl'));
-      let html = SDRapport.html(klaar, profiel, titel);
-      if (fouten.length) html = html.replace('</div>', `<span style="color:#ffb37a">Zonder diagram: ${fouten.length}</span></div>`);
-      this.toon(w, html);
+      await this.toonRapport(w, klaar, profiel, titel, fouten);
     } catch (e) { this.fout(w, e.message || e); }
   },
 });

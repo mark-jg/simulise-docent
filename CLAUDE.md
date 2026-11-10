@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.13.1)
+## Huidige staat (v0.14.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -51,7 +51,10 @@ rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel
                 GraphQL-brug met de headers van de app, postMessage sd-gql / sd-gql-antwoord) de
                 opleidingen (sdRapportStudent) en diagrammen (sdRapportDiagram) op; studenten van een groep
                 uit de HTML van /groups/school/<uuid>/students (links /@gebruiker). Rapport opent in een
-                nieuw tabblad (alleen geheugen).
+                nieuw tabblad (alleen geheugen) met een werkbalk (rapporten.js toonRapport): soort
+                (student | gesprek | groep), peildatum (historisch via historie), vergelijkMet, onderdelen,
+                opleidingen, nadruk, sorteer, filter, CSV. Keuzes in chrome.storage.local rpOpties.
+                render.js: SDRapport.paginas/shell/csv/modellen naast html.
 content.js      Start de modules (SD.start())
 popup.html/.js  Aan/uit per module (uit registry), themakeuze, compact, updatemelding
 ROADMAP.md      Roadmap en backlog met status per item; bijwerken als iets klaar is

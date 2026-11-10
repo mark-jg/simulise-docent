@@ -1,6 +1,18 @@
 /* Voortgangsrapport: berekenen en opmaken.
- * SDRapport.bereken(gegevens, profiel) -> model met status, doelstap, normen en advies per opleiding.
- * SDRapport.html(gegevens[], profiel) -> een volledig HTML-document (A4, afdrukbaar), één of meer studenten.
+ * SDRapport.bereken(gegevens, profiel, opties) -> model met status, doelstap, normen en advies per opleiding.
+ * SDRapport.paginas(gegevens[], profiel, opties) -> de pagina's (HTML) voor één of meer studenten.
+ * SDRapport.shell(titel, profiel) -> leeg document met opmaak, #sd-balk en #sd-inhoud (voor de werkbalk).
+ * SDRapport.html(gegevens[], profiel, titel, opties) -> volledig document met eenvoudige balk.
+ * SDRapport.csv(gegevens[], profiel, opties) -> groepsoverzicht als CSV (puntkomma's, voor Excel).
+ *
+ * Opties (alle optioneel):
+ *   soort        'student' (voortgangsrapport) | 'gesprek' (met invulvakken) | 'groep' (overzicht, liggend)
+ *   peildatum    JJJJ-MM-DD; eerder dan de gegevens = stand op die datum, uit de historie per stap
+ *   vergelijkMet 'vorige' | 'geen' | periodecode (bijv. 'M1')
+ *   onderdelen   { kpis, diagram, tabel, normen, advies } (standaard alles aan)
+ *   opleidingen  lijst rollen om te tonen (bijv. ['beroeps']); null = alle
+ *   nadruk       doelstap uitvergroten (true/false), anders volgens het profiel
+ *   sorteer      'naam' | 'aandacht' (wie niet op koers is eerst);  filter 'alle' | 'nietOpKoers'
  *
  * Gegevens per student (zie SD_RAPPORT_VOORBEELD in standaard.js):
  *   { student: { naam, groep }, peildatum, opleidingen: [{ naam, maxStap, leerlijnen: [{ naam, kleur?, stap,
@@ -43,10 +55,13 @@
   }
 
   /* ---------- Berekenen ---------- */
-  function bereken(g, profiel) {
-    const datum = g.peildatum;
+  function bereken(g, profiel, opties = {}) {
+    const datum = opties.peildatum || g.peildatum;
+    const historisch = datum < g.peildatum; // stand op een eerdere datum, uit de historie
     const pi = periodeIndex(profiel, datum), periode = profiel.perioden?.[pi] || null;
-    const vorige = pi > 0 ? profiel.perioden[pi - 1] : null;
+    const vergelijk = opties.vergelijkMet || (profiel.weergave?.vergelijk === false ? 'geen' : 'vorige');
+    let vorige = vergelijk === 'geen' ? null : vergelijk === 'vorige' ? (pi > 0 ? profiel.perioden[pi - 1] : null) : (profiel.perioden || []).find((p) => p.code === vergelijk) || null;
+    if (vorige && vorige.tot >= datum) vorige = null; // alleen vergelijken met iets dat al voorbij is
     const ti = toetsIndex(profiel, datum), toets = profiel.perioden?.[ti] || null;
     const opleidingen = (g.opleidingen || []).map((o) => {
       const conf = rolVan(o.naam, profiel) || { rol: norm(o.naam), titel: o.naam, kop: String(o.naam).toUpperCase() };
@@ -57,10 +72,16 @@
         cats = [...new Map(o.leerlijnen.filter((l) => l.categorie).map((l) => [l.categorie, { naam: l.categorie, kleur: l.kleur || GRIJS, leerlijnen: [] }])).values()];
       }
       const past = (n, naam) => { const a = norm(n), b = norm(naam); return a === b || b.startsWith(a) || b.endsWith(a) || b.includes(` ${a}`) || a.startsWith(b); };
-      let lijnen = o.leerlijnen.map((ll, i) => {
+      let lijnen = o.leerlijnen.map((ll0, i) => {
+        let ll = ll0;
+        if (historisch && Array.isArray(ll0.historie)) {
+          const stap = stapOp(ll0, datum);
+          const laatste = ll0.historie.filter((h) => h.datum && h.datum <= datum).map((h) => h.datum).sort().pop() || null;
+          ll = stap === ll0.stap ? { ...ll0, datum: laatste || ll0.datum } : { ...ll0, stap, bovenVerwachting: false, beoordeeldNiet: false, datum: laatste };
+        }
         const cat = cats ? (cats.find((c) => (c.leerlijnen || []).some((n) => past(n, ll.naam))) || cats.find((c) => ll.categorie && norm(c.naam) === norm(ll.categorie)) || null) : null;
         const kleur = ll.kleur || cat?.kleur || GRIJS;
-        const vorigeStap = vorige && profiel.weergave?.vergelijk !== false ? stapOp(ll, vorige.tot) : null;
+        const vorigeStap = vorige ? stapOp(ll, vorige.tot) : null;
         const beoordeeld = ll.stap > 0 || ll.beoordeeldNiet || !!ll.datum;
         let status, soort;
         if (cats) { status = ll.stap > 0 ? 'Behaald' : beoordeeld ? 'Nog niet behaald' : 'Geen beoordeling'; soort = ll.stap > 0 ? 'ok' : beoordeeld ? 'niet' : 'leeg'; }
@@ -118,7 +139,8 @@
       if (niet.length) zinnen.push(`Stap ${o.doel} is nog niet behaald bij ${lijst(niet)}. Bespreek wat je nodig hebt om die stap te zetten.`);
       if (leeg.length) zinnen.push(`Bij ${lijst(leeg)} is nog geen beoordeling gedaan.`);
     }
-    return { g, profiel, datum, periode, vorige, toets, opleidingen, uitslagen, opKoers, advies: zinnen.join(' ') };
+    const aandacht = opleidingen.reduce((n, o) => n + o.lijnen.filter((l) => l.soort === 'niet' || (!o.cats && l.soort === 'leeg')).length, 0);
+    return { g, profiel, opties, datum, historisch, periode, vorige, toets, opleidingen, uitslagen, opKoers, aandacht, advies: zinnen.join(' ') };
   }
   const lijst = (a) => (a.length <= 1 ? a.join('') : `${a.slice(0, -1).join(', ')} en ${a[a.length - 1]}`);
   const woord = (c) => c.woord || c.naam.replace(/^./, (x) => x.toLowerCase());
@@ -216,8 +238,13 @@
   }).join('');
 
   /* ---------- Pagina's ---------- */
+  const aan = (m, k) => m.opties?.onderdelen?.[k] ?? true;
+  const weergaveVan = (m) => ({ ...(m.profiel.weergave || {}), ...(m.opties?.nadruk != null ? { nadrukDoelstap: !!m.opties.nadruk } : {}) });
+  const bewerk = (m, sleutel) => `data-bewerk="s${m.g.__idx ?? 0}-${sleutel}" contenteditable="true" spellcheck="true"`;
+
   function paginaBeroeps(m, o, nr, totaalPag) {
-    const w = m.profiel.weergave || {};
+    const w = weergaveVan(m);
+    const gesprek = m.opties?.soort === 'gesprek';
     const bava = m.opleidingen.find((x) => x.cats);
     const opDoel = o.lijnen.filter((l) => l.stap >= o.doel).length;
     const boven = o.lijnen.filter((l) => l.soort === 'boven').length;
@@ -229,7 +256,7 @@
       if (kern.length) kpis.push([`${kern.filter((c) => c.behaald > 0).length}`, `/${kern.length}`, `${esc(lijst(kern.map(woord)).replace(/^./, (x) => x.toUpperCase()))}: vakken met een behaalde stap`]);
     }
     const jaar = m.profiel.jaardoel?.[o.rol];
-    const vorige = m.vorige && w.vergelijk !== false && o.lijnen.some((l) => l.vorigeStap != null);
+    const vorige = m.vorige && o.lijnen.some((l) => l.vorigeStap != null);
     const rijen = o.lijnen.map((l) => `<tr>
       <td class="kleur"><span style="background:${esc(l.kleur)}"></span></td>
       <td class="naam"><b>${esc(l.naam)}</b>${l.omschrijving ? `<small>${esc(l.omschrijving)}</small>` : ''}</td>
@@ -240,26 +267,29 @@
     const toets = m.toets;
     const oordeel = m.opKoers == null ? '' : `<div class="oordeel ${m.opKoers ? 'ja' : 'nee'}">${m.opKoers ? 'Je zit op koers voor de' : 'Je zit nog niet op koers voor de'} ${esc(toets.normNaam || `norm van ${toets.code}`)}</div>
       <p>${esc(m.uitslagen.map((u) => u.tekst).join('; ').replace(/^./, (x) => x.toUpperCase()))}.</p>`;
-    return `<section class="pagina">
-      ${kop(m, o.conf.kop || 'VOORTGANG')}
-      <div class="naamblok"><h1>${esc(m.g.student.naam)}</h1><div class="zo">Zo sta jij ervoor.</div></div>
-      <div class="kpis">${kpis.map(([a, b, t]) => `<div><span class="groot">${a}</span><span class="deel">${b}</span><span class="uitleg">${t}</span></div>`).join('')}</div>
+    const vakken = [['goed', 'Wat gaat goed?'], ['werken', 'Waar ga je aan werken? Wat heb je daarvoor nodig?'], ['afspraken', 'Afspraken (wie doet wat, wanneer)']];
+    return `<section class="pagina${gesprek ? ' gesprek' : ''}">
+      ${kop(m, gesprek ? `GESPREK · ${o.conf.kop || 'VOORTGANG'}` : (o.conf.kop || 'VOORTGANG'))}
+      <div class="naamblok"><h1>${esc(m.g.student.naam)}</h1>${gesprek ? '' : '<div class="zo">Zo sta jij ervoor.</div>'}</div>
+      ${aan(m, 'kpis') ? `<div class="kpis">${kpis.map(([a, b, t]) => `<div><span class="groot">${a}</span><span class="deel">${b}</span><span class="uitleg">${t}</span></div>`).join('')}</div>` : ''}
       <h2>${esc(o.naam)}</h2>
-      <p class="sub">${o.lijnen.length} ${esc(o.conf.titel?.toLowerCase() || 'leerlijnen')} · ${o.maxStap} stappen${jaar ? ` · jaar 1 werkt toe naar stap ${jaar}` : ''}${m.periode ? ` · doel ${esc(m.periode.code)}: stap ${o.doel}` : ''}</p>
-      ${diagram(o, w, `d${nr}`)}
-      ${vorige ? `<p class="legenda-vorig"><span></span> stand aan het eind van ${esc(m.vorige.naam || m.vorige.code)}</p>` : ''}
-      <table class="lijnen">${rijen}</table>
-      <div class="onder">
+      <p class="sub">${o.lijnen.length} ${esc(o.conf.titel?.toLowerCase() || 'leerlijnen')} · ${o.maxStap} stappen${jaar ? ` · jaar 1 werkt toe naar stap ${jaar}` : ''}${m.periode ? ` · doel ${esc(m.periode.code)}: stap ${o.doel}` : ''}${m.historisch ? ` · stand op ${langeDatum(m.datum)}` : ''}</p>
+      ${aan(m, 'diagram') ? diagram(o, w, `d${m.g.__idx ?? 0}-${nr}`).replace('class="diagram"', `class="diagram${gesprek ? ' klein' : ''}"`) : ''}
+      ${aan(m, 'diagram') && vorige ? `<p class="legenda-vorig"><span></span> stand aan het eind van ${esc(m.vorige.naam || m.vorige.code)}</p>` : ''}
+      ${aan(m, 'tabel') ? `<table class="lijnen">${rijen}</table>` : ''}
+      ${aan(m, 'normen') ? (gesprek ? `<div class="uitslag kort">${oordeel}</div>` : `<div class="onder">
         <div class="normen"><h3>NORM</h3>${(m.profiel.perioden || []).map((p) => `<p class="${p === m.periode ? 'nu' : ''}"><b>${esc(p.naam)} (${esc(p.code)}), ${esc(p.moment || '')}:</b> ${esc(p.norm || '')}</p>`).join('')}</div>
         <div class="uitslag">${oordeel}</div>
-      </div>
-      ${m.advies ? `<div class="advies"><h3>OM OVER TE PRATEN MET JE SLB'ER</h3><p>${esc(m.advies)}</p></div>` : ''}
+      </div>`) : ''}
+      ${aan(m, 'advies') ? `<div class="advies"><h3>OM OVER TE PRATEN MET JE SLB'ER</h3><p ${bewerk(m, 'advies')}>${esc(m.advies)}</p></div>` : ''}
+      ${gesprek ? `<div class="gesprekvakken">${vakken.map(([k, t]) => `<div><h3>${esc(t.toUpperCase())}</h3><div class="vak" ${bewerk(m, k)}></div></div>`).join('')}
+        <p class="ondertekening">Datum gesprek: ____________________ &nbsp; Student: ____________________ &nbsp; SLB'er: ____________________</p></div>` : ''}
       ${voet(m, nr, totaalPag)}
     </section>`;
   }
 
   function paginaCategorieen(m, o, nr, totaalPag) {
-    const w = m.profiel.weergave || {};
+    const w = weergaveVan(m);
     const blokken = (o.cats || []).map((c) => {
       const ls = o.lijnen.filter((l) => l.cat === c.naam);
       return `<table class="cat"><tr class="catkop"><th colspan="3">${esc(c.naam.toUpperCase())}</th><th colspan="2">${c.actief ? `${c.behaald}/${c.aantal} leerlijnen met een behaalde stap` : 'deze periode nog geen beoordeling'}</th></tr>
@@ -269,11 +299,11 @@
     return `<section class="pagina">
       ${kop(m, o.conf.kop || 'VOORTGANG')}
       <h2>${esc(o.naam)}</h2>
-      <p class="sub">${esc(lijst((o.cats || []).map(woord)).replace(/^./, (x) => x.toUpperCase()))} · ${o.maxStap} stappen${m.periode ? ` · doel ${esc(m.periode.code)}: stap ${o.doel}` : ''}</p>
-      ${diagram(o, w, `d${nr}`)}
-      <div class="twee"><div>${blokken.slice(0, helft).join('')}</div><div>${blokken.slice(helft).join('')}</div></div>
-      <div class="legenda"><span class="bol vol" style="background:#1e2328"></span> stap behaald <span class="bol stip"></span> beoordeeld, stap nog niet behaald <span class="bol"></span> nog niet aan toe</div>
-      <p class="uitleg-klein">Elke ring in het diagram is een stap; de ring van de doelstap is groter en gekleurd. Hoe verder een vlak naar buiten loopt, hoe verder je bent in die leerlijn. Gestreept: wel beoordeeld, deze stap is nog niet behaald.</p>
+      <p class="sub">${esc(lijst((o.cats || []).map(woord)).replace(/^./, (x) => x.toUpperCase()))} · ${o.maxStap} stappen${m.periode ? ` · doel ${esc(m.periode.code)}: stap ${o.doel}` : ''}${m.historisch ? ` · stand op ${langeDatum(m.datum)}` : ''}</p>
+      ${aan(m, 'diagram') ? diagram(o, w, `d${m.g.__idx ?? 0}-${nr}`) : ''}
+      ${aan(m, 'tabel') ? `<div class="twee"><div>${blokken.slice(0, helft).join('')}</div><div>${blokken.slice(helft).join('')}</div></div>
+      <div class="legenda"><span class="bol vol" style="background:#1e2328"></span> stap behaald <span class="bol stip"></span> beoordeeld, stap nog niet behaald <span class="bol"></span> nog niet aan toe</div>` : ''}
+      ${aan(m, 'diagram') ? '<p class="uitleg-klein">Elke ring in het diagram is een stap; de ring van de doelstap is groter en gekleurd. Hoe verder een vlak naar buiten loopt, hoe verder je bent in die leerlijn. Gestreept: wel beoordeeld, deze stap is nog niet behaald.</p>' : ''}
       ${voet(m, nr, totaalPag)}
     </section>`;
   }
@@ -282,19 +312,100 @@
     <div class="rechts"><b>VOORTGANGSRAPPORT · ${esc(titel)}</b><span>${esc(m.g.student.naam)}${m.g.student.groep ? ` · ${esc(m.g.student.groep)}` : ''} · peildatum ${langeDatum(m.datum)}</span></div></header>`;
   const voet = (m, nr, totaal) => `<footer class="rvoet"><span>Bron: Simulise, leerlijndiagrammen. Normen: ${esc(m.profiel.bron || m.profiel.naam)}.</span><span>${nr}/${totaal}</span></footer>`;
 
-  function studentPaginas(g, profiel) {
-    const m = bereken(g, profiel);
-    const delen = [];
-    const totaal = m.opleidingen.length;
-    m.opleidingen.forEach((o, i) => delen.push(o.cats ? paginaCategorieen(m, o, i + 1, totaal) : paginaBeroeps(m, o, i + 1, totaal)));
-    return delen.join('');
+  /* Welke opleidingen (pagina's) getoond worden. */
+  const getoond = (m) => m.opleidingen.filter((o) => !m.opties?.opleidingen || m.opties.opleidingen.includes(o.rol));
+
+  function studentPaginas(m) {
+    const ols = getoond(m);
+    const gesprek = m.opties?.soort === 'gesprek';
+    // Gespreksformulier: alleen de beroepspagina met invulvakken (BAVA alleen als er geen beroeps is).
+    const delen = gesprek ? (ols.filter((o) => !o.cats).slice(0, 1).length ? ols.filter((o) => !o.cats).slice(0, 1) : ols.slice(0, 1)) : ols;
+    return delen.map((o, i) => (o.cats && !gesprek ? paginaCategorieen(m, o, i + 1, delen.length) : paginaBeroeps(m, o, i + 1, delen.length))).join('');
   }
 
-  function html(studenten, profiel, titel = 'Voortgangsrapport') {
+  /* Modellen berekenen, filteren en sorteren. */
+  function modellen(studenten, profiel, opties = {}) {
+    studenten.forEach((g, i) => { if (g.__idx == null) g.__idx = i; });
+    let ms = studenten.map((g) => bereken(g, profiel, opties));
+    if (opties.filter === 'nietOpKoers') ms = ms.filter((m) => m.opKoers === false);
+    const naam = (m) => m.g.student.naam || '';
+    if (opties.sorteer === 'aandacht') ms.sort((a, b) => (Number(a.opKoers !== false) - Number(b.opKoers !== false)) || (b.aandacht - a.aandacht) || naam(a).localeCompare(naam(b), 'nl'));
+    else ms.sort((a, b) => naam(a).localeCompare(naam(b), 'nl'));
+    return ms;
+  }
+
+  /* ---------- Groepsoverzicht (liggend): een tabel per opleiding, een rij per student ---------- */
+  function overzicht(ms, profiel, opties) {
+    if (!ms.length) return '<section class="pagina liggend"><p>Geen studenten die aan het filter voldoen.</p></section>';
+    const rollen = [];
+    for (const m of ms) for (const o of getoond(m)) if (!rollen.some((r) => r.rol === o.rol)) rollen.push({ rol: o.rol, conf: o.conf, naam: o.naam });
+    const volg = (r) => { const i = (profiel.opleidingen || []).findIndex((x) => x.rol === r.rol); return i < 0 ? 99 : i; };
+    rollen.sort((a, b) => volg(a) - volg(b));
+    const groep = [...new Set(ms.map((m) => m.g.student.groep).filter(Boolean))].join(', ');
+    const eerste = ms[0];
+    const opKoers = ms.filter((m) => m.opKoers === true).length, nietOp = ms.filter((m) => m.opKoers === false).length;
+    return rollen.map((r, ri) => {
+      const voorbeeld = ms.map((m) => m.opleidingen.find((o) => o.rol === r.rol)).find(Boolean);
+      const kolommen = voorbeeld.lijnen.map((l) => ({ naam: l.naam, kort: kortNaam(l.naam), cat: l.cat, kleur: l.kleur }));
+      const catKop = voorbeeld.cats ? `<tr class="catrij"><th></th>${voorbeeld.cats.filter((c) => c.aantal).map((c) => `<th colspan="${c.aantal}" style="background:${esc(c.kleur)}">${esc(c.naam)}</th>`).join('')}<th colspan="2"></th></tr>` : '';
+      const rijen = ms.map((m) => {
+        const o = m.opleidingen.find((x) => x.rol === r.rol);
+        const cellen = kolommen.map((k) => {
+          const l = o?.lijnen.find((x) => norm(x.naam) === norm(k.naam));
+          if (!l) return '<td class="cel leeg">–</td>';
+          const teken = l.soort === 'boven' ? '<sup>★</sup>' : l.beoordeeldNiet ? '<sup>◌</sup>' : '';
+          const vorig = l.vorigeStap != null && l.vorigeStap !== l.stap ? `<small>${l.vorigeStap}→</small>` : '';
+          return `<td class="cel ${l.stap >= (o.doel || 1) ? 'op' : l.soort}" style="--k:${esc(l.kleur)}">${vorig}<b>${l.stap}</b>${teken}</td>`;
+        }).join('');
+        const boven = o ? o.lijnen.filter((l) => l.soort === 'boven').length : 0;
+        const koers = m.opKoers == null ? '–' : m.opKoers ? '<span class="ja">✓</span>' : '<span class="nee">✗</span>';
+        return `<tr><td class="studnaam">${esc(m.g.student.naam)}</td>${cellen}<td class="num">${o?.cats ? '' : boven || ''}</td><td class="num">${koers}</td></tr>`;
+      }).join('');
+      const toets = eerste.toets;
+      return `<section class="pagina liggend">
+        <header class="rkop"><div class="merk"><b>MA</b><span>Mediacollege<br>Amsterdam</span></div>
+          <div class="rechts"><b>GROEPSOVERZICHT · ${esc(r.conf.kop || r.naam)}</b><span>${esc(groep)} · ${ms.length} studenten · peildatum ${langeDatum(eerste.datum)}</span></div></header>
+        <p class="sub">${esc(r.naam)} · cijfer = behaalde stap${eerste.periode ? ` · doel ${esc(eerste.periode.code)}: stap ${voorbeeld.doel}` : ''}${toets ? ` · ${opKoers} op koers, ${nietOp} niet op koers voor de ${esc(toets.normNaam || `norm van ${toets.code}`)}` : ''}${eerste.vorige ? ` · klein cijfer: stand bij ${esc(eerste.vorige.code)}` : ''}</p>
+        <table class="overzicht">
+          <thead>${catKop}<tr><th class="studnaam">Student</th>${kolommen.map((k) => `<th class="ll" title="${esc(k.naam)}"><span>${esc(k.kort)}</span></th>`).join('')}<th class="num">${voorbeeld.cats ? '' : '★'}</th><th class="num">Op koers</th></tr></thead>
+          <tbody>${rijen}</tbody></table>
+        <p class="legenda">Vet cijfer: behaalde stap. Groen: doelstap gehaald. ★ boven verwachting · ◌ beoordeeld, volgende stap nog niet behaald · ✓/✗ op koers voor de norm.</p>
+        <footer class="rvoet"><span>Bron: Simulise, leerlijndiagrammen. Normen: ${esc(profiel.bron || profiel.naam)}.</span><span>${ri + 1}/${rollen.length}</span></footer>
+      </section>`;
+    }).join('');
+  }
+  const kortNaam = (naam) => { const t = String(naam).replace(/\s*\([^)]*\)\s*/g, ' ').trim(); return t.length > 22 ? `${t.slice(0, 21)}…` : t; };
+
+  function paginas(studenten, profiel, opties = {}) {
+    const ms = modellen(studenten, profiel, opties);
+    if (opties.soort === 'groep') return overzicht(ms, profiel, opties);
+    if (!ms.length) return '<section class="pagina"><p>Geen studenten die aan het filter voldoen.</p></section>';
+    return ms.map(studentPaginas).join('');
+  }
+
+  /* Groepsoverzicht als CSV (puntkomma's, voor Excel): een rij per student, kolommen per leerlijn. */
+  function csv(studenten, profiel, opties = {}) {
+    const ms = modellen(studenten, profiel, opties);
+    const kolommen = [];
+    for (const m of ms) for (const o of getoond(m)) for (const l of o.lijnen) if (!kolommen.some((k) => k.rol === o.rol && norm(k.naam) === norm(l.naam))) kolommen.push({ rol: o.rol, naam: l.naam });
+    const cel = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const kop = ['Student', 'Groep', 'Peildatum', 'Op koers', ...kolommen.map((k) => k.naam)];
+    const rijen = ms.map((m) => [m.g.student.naam, m.g.student.groep, m.datum, m.opKoers == null ? '' : m.opKoers ? 'ja' : 'nee',
+      ...kolommen.map((k) => m.opleidingen.find((o) => o.rol === k.rol)?.lijnen.find((l) => norm(l.naam) === norm(k.naam))?.stap ?? '')]);
+    return [kop, ...rijen].map((r) => r.map(cel).join(';')).join('\r\n');
+  }
+
+  function shell(titel, profiel) {
+    const accent = profiel.weergave?.accent || '#e6007e';
+    return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>${esc(titel)}</title><style>:root { --accent-waarde: ${esc(accent)}; }${CSS}</style></head>
+      <body><div class="balk geen-print" id="sd-balk"></div><div id="sd-inhoud"></div></body></html>`;
+  }
+
+  function html(studenten, profiel, titel = 'Voortgangsrapport', opties = {}) {
     const accent = profiel.weergave?.accent || '#e6007e';
     return `<!doctype html><html lang="nl"><head><meta charset="utf-8"><title>${esc(titel)}</title><style>:root { --accent-waarde: ${esc(accent)}; }${CSS}</style></head>
       <body><div class="balk geen-print"><b>${esc(titel)}</b><span>${studenten.length} ${studenten.length === 1 ? 'student' : 'studenten'}</span><button class="afdruk">Afdrukken of opslaan als PDF</button></div>
-      ${studenten.map((g) => studentPaginas(g, profiel)).join('')}</body></html>`;
+      ${paginas(studenten, profiel, opties)}</body></html>`;
   }
 
   const CSS = `
@@ -333,8 +444,27 @@
     .twee { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 6px; } .cat { margin-bottom: 10px; }
     .catkop th { text-align: left; font-size: 10px; letter-spacing: .06em; border-bottom: 1px solid #1e2328; padding: 4px; } .catkop th + th { text-align: right; font-weight: 400; color: #5b6470; letter-spacing: 0; }
     .legenda { font-size: 9.5px; color: #3b434d; margin-top: 4px; } .legenda .bol { margin-left: 8px; } .uitleg-klein { font-size: 9px; color: #5b6470; }
-    @media print { body { background: #fff; } .geen-print { display: none; } .pagina { margin: 0; width: auto; min-height: auto; height: 273mm; padding: 0; overflow: hidden; } }
+    .balk [hidden] { display: none !important; } .balk { flex-wrap: wrap; } .balk label { display: inline-flex; gap: 4px; align-items: center; } .balk .groepje { display: inline-flex; gap: 8px; align-items: center; padding-left: 10px; border-left: 1px solid #3b434d; }
+    .balk select, .balk input[type=date] { font: inherit; font-size: 12px; padding: 3px 6px; border-radius: 5px; border: 0; }
+    .balk button.tweede { margin-left: 0; background: #3b434d; } .balk .info { color: #c4cad1; font-size: 12px; } .balk .ruimte { flex: 1; }
+    [contenteditable="true"] { outline: none; } [contenteditable="true"]:hover, [contenteditable="true"]:focus { box-shadow: 0 0 0 2px #ffe08a; border-radius: 2px; }
+    .diagram.klein { max-width: 66mm; margin-top: 0; }
+    .uitslag.kort { display: flex; gap: 12px; align-items: center; margin-top: 8px; } .uitslag.kort p { margin: 0; } .uitslag.kort .oordeel { margin: 0; }
+    .gesprekvakken { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; } .gesprekvakken > div:nth-child(3), .ondertekening { grid-column: 1 / -1; }
+    .vak { border: 1px solid #c4cad1; border-radius: 4px; min-height: 24mm; padding: 6px 8px; white-space: pre-wrap; } .gesprek .kpis { margin: 6px 0; } .gesprek .lijnen td { padding: 3px 4px; }
+    .ondertekening { font-size: 10px; color: #3b434d; margin: 6px 0 0; }
+    @page liggend { size: A4 landscape; margin: 10mm 12mm; }
+    .pagina.liggend { page: liggend; width: 297mm; min-height: 210mm; }
+    table.overzicht { border-collapse: collapse; font-size: 10px; margin-top: 6px; width: auto; }
+    table.overzicht th, table.overzicht td { border: 1px solid #e3e6ea; padding: 3px 4px; text-align: center; }
+    table.overzicht th.ll { vertical-align: bottom; height: 34mm; width: 9mm; } table.overzicht th.ll span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-weight: 500; }
+    table.overzicht .studnaam { text-align: left; white-space: nowrap; font-weight: 600; } table.overzicht .catrij th { color: #fff; font-size: 9px; letter-spacing: .04em; }
+    td.cel b { font-size: 11px; } td.cel small { color: #8a93a0; font-size: 8px; margin-right: 1px; } td.cel sup { font-size: 8px; }
+    td.cel.op { background: color-mix(in srgb, var(--k) 22%, #fff); } td.cel.niet { background: #fff4f8; } td.cel.leeg { color: #b0b6bd; }
+    td.num { width: 12mm; } table.overzicht .ja { color: #1f9d55; font-weight: 700; } table.overzicht .nee { color: var(--accent-waarde); font-weight: 700; }
+    @media print { body { background: #fff; } .geen-print { display: none; } .pagina { margin: 0; width: auto; min-height: auto; height: 273mm; padding: 0; overflow: hidden; }
+      .pagina.liggend { height: auto; overflow: visible; } [contenteditable="true"]:hover, [contenteditable="true"]:focus { box-shadow: none; } }
   `;
 
-  globalThis.SDRapport = { bereken, html, diagram, periodeIndex, toetsIndex, rolVan, esc };
+  globalThis.SDRapport = { bereken, html, shell, paginas, csv, modellen, diagram, periodeIndex, toetsIndex, rolVan, esc };
 })();

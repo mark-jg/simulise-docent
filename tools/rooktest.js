@@ -101,7 +101,9 @@ const APP_GQL = `<script>fetch('https://api.simulise.com/graphql', { method: 'PO
 const APP_PROFIEL = `<script>
 const q = (operationName, query, variables) => fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-test': 'app' }, body: JSON.stringify({ operationName, query, variables }) });
 setTimeout(() => {
-  q('dashboardTileEducationDiagram', 'query dashboardTileEducationDiagram($id: String!) { dashboard: user(id: $id) { id username educations: dashboardEducations { id name groups { ... on SchoolGroup { id name } } isDefault } } }', { id: location.pathname.slice(2) });
+  // Zoals (waarschijnlijk) bij Simulise: eerst de gebruiker opzoeken met de gebruikersnaam, daarna alles met de interne id.
+  q('dashboardDiscoverUser', 'query dashboardDiscoverUser($id: String!) { user(id: $id) { id username } }', { id: location.pathname.slice(2) });
+  q('dashboardTileEducationDiagram', 'query dashboardTileEducationDiagram($id: String!) { dashboard: user(id: $id) { id username educations: dashboardEducations { id name groups { ... on SchoolGroup { id name } } isDefault } } }', { id: 'u-' + location.pathname.slice(2) });
   q('getUserEducationDiagram', 'query getUserEducationDiagram($educationId: ID!, $userId: String!) { user(id: $userId) { id diagram: diagramForEducation(id: $educationId) { id phaseCount aspects { id aspect { id name skill { id color } } phases { id phase weights { level title } reviews { id color score title maxScore scoreName } currentScore reviewProgress reviewsAchieved reviewsRequired } } } username } }', { educationId: 'e-bava', userId: 'u-' + location.pathname.slice(2) });
 }, 200);</script>`;
 const PROFIEL = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section id="scrollable-page-wrapper"><div class="p-0">
@@ -188,9 +190,11 @@ function bouwZip() {
     const OPLEIDINGEN = [{ id: 'e-bava', name: 'BAVA 4', groups: [{ id: 'g', name: 'MEP1A' }], isDefault: true }, { id: 'e-beroeps', name: 'Mediaproducer / Music Industry Professional', groups: [{ id: 'g', name: 'MEP1A' }], isDefault: false }];
     // Zoals bij het echte Simulise: de eigen studentvraag van de extensie wordt geweigerd.
     if (verzoek.operationName === 'sdRapportStudent') return antw({ errors: [{ message: 'This action is unauthorized.' }], data: { user: null } });
+    if (verzoek.operationName === 'dashboardDiscoverUser') return antw({ data: { user: { id: `u-${verzoek.variables.id}`, username: verzoek.variables.id } } });
     if (verzoek.operationName === 'dashboardTileEducationDiagram') {
       const id = verzoek.variables.id;
-      return antw({ data: { dashboard: { id: `u-${id}`, username: id, educations: OPLEIDINGEN } } });
+      if (!String(id).startsWith('u-')) return antw({ errors: [{ message: 'This action is unauthorized.' }], data: { dashboard: null } });
+      return antw({ data: { dashboard: { id, username: id.slice(2), educations: OPLEIDINGEN } } });
     }
     if (verzoek.operationName === 'getUserEducationDiagram') {
       if (verzoek.variables.educationId === 'e-beroeps') rapportVerzoeken.push(r.request().headers()['x-test'] || '');
@@ -526,8 +530,24 @@ function bouwZip() {
     `rapport uit Simulise-gegevens: stappen, statussen, beide diagrammen (${rapportTekst.slice(0, 80).replace(/\n/g, ' ')}…)`);
   check(rapportVerzoeken.length >= 1 && rapportVerzoeken.every((h) => h === 'app'), `diagram van de tweede opleiding opgevraagd met de vraag en headers van de app (${rapportVerzoeken.length}×)`);
   const kennis = await popup.evaluate(() => chrome.storage.local.get('rpAppKennis').then((s) => s.rpAppKennis));
-  check(kennis?.idSoort === 'gebruikersnaam' && kennis?.userIdSoort === 'dashboardId' && kennis?.qDiagram?.includes('getUserEducationDiagram') && !JSON.stringify(kennis).includes('studentx'),
-    `geleerd hoe de app een student aanduidt, zonder gebruikersnaam op te slaan (${JSON.stringify({ idSoort: kennis?.idSoort, userIdSoort: kennis?.userIdSoort })})`);
+  check(kennis?.idSoort === 'dashboardId' && kennis?.userIdSoort === 'dashboardId' && kennis?.discoverIdSoort === 'gebruikersnaam' && kennis?.qDiscover?.includes('dashboardDiscoverUser') && !JSON.stringify(kennis).includes('studentx'),
+    `geleerd hoe de app een student aanduidt, zonder gebruikersnaam op te slaan (${JSON.stringify({ idSoort: kennis?.idSoort, userIdSoort: kennis?.userIdSoort, discoverIdSoort: kennis?.discoverIdSoort })})`);
+  // Werkbalk in het rapporttabblad
+  const rt = () => rapportTab.evaluate(() => document.getElementById('sd-inhoud').innerText);
+  await rapportTab.selectOption('#sd-soort', 'gesprek');
+  check((await rt()).includes('WAT GAAT GOED?') && (await rt()).includes('AFSPRAKEN'), 'werkbalk: gespreksformulier met invulvakken');
+  await rapportTab.click('[data-bewerk$="-advies"]'); await rapportTab.keyboard.press('End'); await rapportTab.keyboard.type(' Eigen zin van de docent.');
+  await rapportTab.selectOption('#sd-soort', 'student');
+  check((await rt()).includes('Eigen zin van de docent.'), 'zelf aangepaste tekst blijft staan bij wisselen');
+  await rapportTab.locator('#sd-onderdelen label:has-text("Diagram") input').uncheck();
+  check(!(await rapportTab.locator('#sd-inhoud svg.diagram').count()), 'werkbalk: diagram uitzetten');
+  await rapportTab.locator('#sd-onderdelen label:has-text("Diagram") input').check();
+  await rapportTab.fill('#sd-peildatum', '2026-10-25'); await rapportTab.dispatchEvent('#sd-peildatum', 'change');
+  check((await rt()).includes('stand op 25 oktober 2026') && (await rt()).includes('Stap 0 van 4'), 'werkbalk: stand op een eerdere peildatum, uit de historie');
+  await rapportTab.locator('#sd-rollen label:has-text("Basisvaardigheden") input').uncheck();
+  check(!(await rt()).includes('BASISVAARDIGHEDEN'), 'werkbalk: alleen de beroepsleerlijnen');
+  const opties = await popup.evaluate(() => chrome.storage.local.get('rpOpties').then((s) => s.rpOpties));
+  check(opties?.soortStudent === 'student' && opties?.onderdelen?.diagram === true && !JSON.stringify(opties).includes('Sam'), 'keuzes onthouden, zonder studentgegevens');
   check(rapportTekst.indexOf('BEROEPSLEERLIJNEN') < rapportTekst.indexOf('BASISVAARDIGHEDEN'), 'beroeps eerst, dan BAVA (volgorde van het profiel)');
   check(!/<script/i.test(await rapportTab.content()), 'rapporttabblad zonder scripts');
   await rapportTab.close();
@@ -540,6 +560,15 @@ function bouwZip() {
   const groepTekst = await groepTab.evaluate(() => document.body.innerText);
   check((await groepTab.locator('.pagina').count()) === 4 && groepTekst.includes('Anna Test') && groepTekst.includes('Bram Test') && groepTekst.includes('2 studenten'),
     `groepsrapport: alle studenten van de groep, elk met eigen pagina's (${await groepTab.locator('.pagina').count()} pagina's)`);
+  await groepTab.selectOption('#sd-soort', 'groep');
+  const gt = () => groepTab.evaluate(() => document.getElementById('sd-inhoud').innerText);
+  check((await groepTab.locator('table.overzicht').count()) === 2 && (await groepTab.locator('table.overzicht').first().locator('tbody tr').count()) === 2 && (await gt()).includes('GROEPSOVERZICHT'),
+    'werkbalk: groepsoverzicht, een tabel per opleiding met een rij per student');
+  const [dl] = await Promise.all([groepTab.waitForEvent('download'), groepTab.click('#sd-csv')]);
+  const csvTekst = fs.readFileSync(await dl.path(), 'utf8');
+  check(/Anna Test;MEP1A;\d{4}-\d{2}-\d{2};ja/.test(csvTekst) && csvTekst.includes('1. Adviseren over mediaproducten'), 'CSV voor Excel met een rij per student');
+  await groepTab.locator('#sd-groepkeuzes label:has-text("alleen niet op koers") input').check();
+  check((await gt()).includes('Geen studenten die aan het filter voldoen.'), 'filter: alleen studenten die niet op koers zijn');
   await groepTab.close();
 
   // Rapportprofielen en voorvertoning van het voortgangsrapport

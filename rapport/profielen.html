@@ -63,7 +63,10 @@
   </section>
 
   <section class="voorbeeld">
-    <div class="row"><b>Voorbeeld</b> <label for="peildatum">peildatum</label> <input type="date" id="peildatum"> <small class="hint">Kies een datum in een latere periode om de vergelijking te zien.</small></div>
+    <div class="row"><b>Voorbeeld</b>
+      <label for="soort">soort</label> <select id="soort"><option value="student">Voortgangsrapport</option><option value="gesprek">Gespreksformulier</option><option value="groep">Groepsoverzicht</option></select>
+      <label for="peildatum">peildatum</label> <input type="date" id="peildatum">
+      <small class="hint">Kies een datum in een latere periode om de vergelijking te zien. In het echte rapport kies je dit in de werkbalk bovenin.</small></div>
     <iframe id="vb" title="Voorbeeld van het rapport"></iframe>
   </section>
 </main>
