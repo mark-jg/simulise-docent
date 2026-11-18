@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.16.0)
+## Huidige staat (v0.17.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -61,6 +61,12 @@ rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel
                 opleiding uit /api/autocomplete/analytics/educations die het profiel herkent (picker EDUCATION
                 vervangen, pickers met ASPECT/LEERLIJN alleen bij de huidige opleiding); rijen per student
                 samengevoegd; opleidingen zonder enige beoordeling (ander cohort) vallen weg.
+                rapport/weergave.js (SDWeergave.open/toon): het rapport in de pagina zelf. Verbergt de kinderen van
+                #scrollable-page-wrapper (anders #content), knop Terug zet ze terug. Bewust geen shadow root: de
+                opmaak komt van de klassen van Simulise (panel, table-index, label, btn, form-control); eigen
+                klassen met voorvoegsel sdw-, stijl in <style id="sdw-css">. Weergaven perioden | groep | student
+                (keuze in rpOpties webSoortGroep/webSoortStudent). Excel = CSV-export; Afdrukken roept
+                rapporten.js toonRapport aan met een echt venster (printVenster), de A4-versie van render.js.
 content.js      Start de modules (SD.start())
 popup.html/.js  Aan/uit per module (uit registry), themakeuze, compact, updatemelding
 ROADMAP.md      Roadmap en backlog met status per item; bijwerken als iets klaar is

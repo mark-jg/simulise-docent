@@ -10,8 +10,8 @@
  *   sdRapportDiagram   user(id).diagramForEducation(id) { phaseCount aspects { aspect { name skill } phases {
  *                      phase weights reviews { score title scoreName } currentScore reviewsAchieved reviewsRequired } } }
  * De studenten van een groep komen uit de HTML van /groups/school/<uuid>/students (links naar /@gebruiker).
- * Het rapport (rapport/render.js, profiel uit chrome.storage.local rpProfielen) opent in een nieuw tabblad,
- * alleen in het geheugen: er wordt niets bewaard. Afdrukken of opslaan als PDF kan vanuit dat tabblad.
+ * Het rapport verschijnt in de pagina zelf, in de opmaak van Simulise (rapport/weergave.js), alleen in het
+ * geheugen: er wordt niets bewaard. Afdrukken opent de A4-versie (rapport/render.js) in een nieuw tabblad.
  */
 SD.register({
   id: 'rapporten',
@@ -54,6 +54,7 @@ SD.register({
     document.removeEventListener('click', this._klik, true);
     this._stop?.();
     document.querySelectorAll('.sim-docent-rapport-li, .sim-docent-rapportknop, .sim-docent-kaart, .sim-docent-analyseknop').forEach((el) => el.remove());
+    document.querySelector('.sdw')?.__sluit?.();
     this.SD = null;
   },
 
@@ -401,20 +402,32 @@ SD.register({
   },
 
   /* ---------- Venster ---------- */
+  /* Het rapport verschijnt in de pagina zelf (rapport/weergave.js); afdrukken opent de A4-versie. */
   venster(titel) {
+    return SDWeergave.open({ titel });
+  },
+  printVenster(titel) {
     const w = window.open('', '_blank');
     if (!w) { alert('Het rapport kon niet openen. Sta pop-ups toe voor Simulise en probeer opnieuw.'); return null; }
     w.document.write(`<!doctype html><meta charset="utf-8"><title>${SDRapport.esc(titel)}</title><body style="font:15px/1.5 system-ui,sans-serif;padding:32px;color:#1e2328"><h1 style="font-size:20px">${SDRapport.esc(titel)}</h1><p id="voortgang">Gegevens ophalen uit Simulise…</p></body>`);
     w.document.close();
     return w;
   },
-  voortgang(w, tekst) { const p = w?.document?.getElementById('voortgang'); if (p) p.textContent = tekst; },
+  voortgang(w, tekst) { if (w?.inPagina) { w.voortgang(tekst); return; } const p = w?.document?.getElementById('voortgang'); if (p) p.textContent = tekst; },
   /* ---------- Rapport met werkbalk ----------
    * De gegevens blijven in het geheugen van dit script; de werkbalk tekent het rapport opnieuw bij elke
    * keuze, zonder opnieuw op te halen. Keuzes (geen studentgegevens) staan in chrome.storage.local rpOpties.
    * Zelf aangepaste teksten (gespreksadvies, gespreksvakken) blijven bewaard tijdens het wisselen. */
   async toonRapport(w, studenten, profiel, titel, fouten = [], startSoort = null) {
     if (!w || w.closed) return;
+    if (w.inPagina) {
+      w.onAfdruk = (lijst, soort) => {
+        const t = lijst.length === 1 ? `${soort === 'gesprek' ? 'Gespreksformulier' : 'Voortgangsrapport'} ${lijst[0].student.naam}` : titel;
+        const pw = this.printVenster(t);
+        if (pw) this.toonRapport(pw, lijst.map((g) => ({ ...g, __idx: undefined })), profiel, t, [], soort);
+      };
+      return w.toon(studenten, profiel, fouten, startSoort);
+    }
     const groep = studenten.length > 1;
     const bewaard = (await chrome.storage.local.get({ rpOpties: {} })).rpOpties || {};
     const vandaag = new Date().toISOString().slice(0, 10);
@@ -504,7 +517,7 @@ SD.register({
     const b = w.document.querySelector('.afdruk');
     if (b) b.onclick = () => w.print();
   },
-  fout(w, tekst) { if (w && !w.closed) this.voortgang(w, `Het rapport kon niet worden gemaakt: ${tekst}`); },
+  fout(w, tekst) { if (w?.inPagina) { w.fout(tekst); return; } if (w && !w.closed) this.voortgang(w, `Het rapport kon niet worden gemaakt: ${tekst}`); },
 
   async studentrapport(gebruiker) {
     const w = this.venster('Voortgangsrapport');

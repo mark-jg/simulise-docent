@@ -101,6 +101,10 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.17.0: rapporten verschijnen nu in Simulise zelf, als gewone pagina in de opmaak van Simulise, in plaats van in
+  een apart afdrukvenster. Weergaven: Meetmomenten naast elkaar, Groepsoverzicht en Per student (diagram,
+  leerlijnen, norm en gespreksadvies, met bladeren tussen studenten; klik op een naam). Knop Terug brengt de pagina
+  terug. Excel alleen als export; Afdrukken opent de A4-versie (rapport of gespreksformulier, één of alle studenten).
 - 0.16.0: Analytics, Opleiding per groep: knop "Overzicht & rapporten" op de resultatenpagina. Die haalt alle
   studenten op (niet alleen de eerste 25) en ook de andere opleiding uit je profiel (beroeps en BAVA), en zet alles
   samen. Nieuwe soort "Meetmomenten naast elkaar": per leerlijn een kolom per periode (M1, M2, ...), gekleurd als de

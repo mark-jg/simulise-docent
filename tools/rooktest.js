@@ -552,84 +552,94 @@ function bouwZip() {
   check(geschreven.versie === '9.9.9' && geschreven.mods === 15, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
-  // Voortgangsrapport vanaf het profiel van een student
+  // Voortgangsrapport vanaf het profiel van een student: in de pagina zelf, in de opmaak van Simulise
   await sim.goto('https://ma.simulise.com/@studentx'); await sim.waitForTimeout(600);
   check(await sim.isVisible('.sim-docent-rapportknop'), 'knop Voortgangsrapport op het profiel');
-  const [rapportTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sim-docent-rapportknop')]);
-  await rapportTab.waitForFunction(() => document.body.innerText.includes('Zo sta jij ervoor.'), null, { timeout: 15000 }).catch(() => {});
-  const rapportTekst = await rapportTab.evaluate(() => document.body.innerText);
-  const vandaag = new Date().toISOString().slice(0, 10);
-  check(['Sam Voorbeeld', 'MEP1A', 'BEROEPSLEERLIJNEN', 'BASISVAARDIGHEDEN', 'Boven verwachting', 'Nog niet behaald', 'Stap 2 van 4', 'Ontdekken wat adviseren is'].every((w) => rapportTekst.includes(w)),
+  let tabs = ctx.pages().length;
+  await sim.click('.sim-docent-rapportknop');
+  await sim.waitForSelector('.sdw .sdw-diagram svg', { timeout: 15000 }).catch(() => {});
+  const wt = () => sim.evaluate(() => document.querySelector('.sdw')?.innerText || '');
+  const rapportTekst = await wt();
+  check(ctx.pages().length === tabs && !(await sim.isVisible('.s-card')) && (await sim.locator('.sdw section.panel.panel-default').count()) >= 3,
+    'rapport in de pagina zelf (panelen van Simulise), geen nieuw tabblad; eigen inhoud van de pagina verborgen');
+  check(['Sam Voorbeeld', 'MEP1A', 'Beroepsleerlijnen', 'Basisvaardigheden', 'Boven verwachting', 'Nog niet behaald', 'stap 2/4', 'Ontdekken wat adviseren is'].every((w) => rapportTekst.includes(w)) && (await sim.locator('.sdw .sdw-diagram svg').count()) === 2,
     `rapport uit Simulise-gegevens: stappen, statussen, beide diagrammen (${rapportTekst.slice(0, 80).replace(/\n/g, ' ')}…)`);
+  check(rapportTekst.indexOf('Beroepsleerlijnen ·') < rapportTekst.indexOf('Basisvaardigheden ·'), 'beroeps eerst, dan BAVA (volgorde van het profiel)');
   check(rapportVerzoeken.length >= 1 && rapportVerzoeken.every((h) => h === 'app'), `diagram van de tweede opleiding opgevraagd met de vraag en headers van de app (${rapportVerzoeken.length}×)`);
   const kennis = await popup.evaluate(() => chrome.storage.local.get('rpAppKennis').then((s) => s.rpAppKennis));
   check(kennis?.idSoort === 'dashboardId' && kennis?.userIdSoort === 'dashboardId' && kennis?.discoverIdSoort === 'gebruikersnaam' && kennis?.qDiscover?.includes('dashboardDiscoverUser') && !JSON.stringify(kennis).includes('studentx'),
     `geleerd hoe de app een student aanduidt, zonder gebruikersnaam op te slaan (${JSON.stringify({ idSoort: kennis?.idSoort, userIdSoort: kennis?.userIdSoort, discoverIdSoort: kennis?.discoverIdSoort })})`);
-  // Werkbalk in het rapporttabblad
+  await sim.fill('.sdw input[type=date]', '2026-10-25'); await sim.dispatchEvent('.sdw input[type=date]', 'change');
+  check((await wt()).includes('stand op 25 oktober 2026') && (await wt()).includes('stap 0/4'), 'werkbalk: stand op een eerdere peildatum, uit de historie');
+  await sim.locator('.sdw [data-balk] label:has-text("Basisvaardigheden") input').uncheck();
+  check(!(await wt()).includes('Basisvaardigheden ·'), 'werkbalk: alleen de beroepsleerlijnen');
+  await sim.selectOption('.sdw [data-balk] select >> nth=0', 'perioden');
+  check((await sim.locator('.sdw table.sdw-matrix').count()) === 1 && (await wt()).includes('Behaalde stap aan het eind van M1'), 'werkbalk: meetmomenten naast elkaar voor één student');
+  await sim.selectOption('.sdw [data-balk] select >> nth=0', 'student');
+  // Afdrukversie (A4) in een nieuw tabblad
+  await sim.click('.sdw .sdw-afdruk');
+  const [rapportTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sdw .dropdown-menu a:has-text("Gespreksformulier van deze student")')]);
+  await rapportTab.waitForFunction(() => document.getElementById('sd-inhoud')?.innerText.includes('AFSPRAKEN'), null, { timeout: 15000 }).catch(() => {});
   const rt = () => rapportTab.evaluate(() => document.getElementById('sd-inhoud').innerText);
-  await rapportTab.selectOption('#sd-soort', 'gesprek');
-  check((await rt()).includes('WAT GAAT GOED?') && (await rt()).includes('AFSPRAKEN'), 'werkbalk: gespreksformulier met invulvakken');
+  check((await rt()).includes('WAT GAAT GOED?') && (await rt()).includes('AFSPRAKEN'), 'afdrukken: gespreksformulier (A4) met invulvakken');
   await rapportTab.click('[data-bewerk$="-advies"]'); await rapportTab.keyboard.press('End'); await rapportTab.keyboard.type(' Eigen zin van de docent.');
   await rapportTab.selectOption('#sd-soort', 'student');
-  check((await rt()).includes('Eigen zin van de docent.'), 'zelf aangepaste tekst blijft staan bij wisselen');
-  await rapportTab.locator('#sd-onderdelen label:has-text("Diagram") input').uncheck();
-  check(!(await rapportTab.locator('#sd-inhoud svg.diagram').count()), 'werkbalk: diagram uitzetten');
-  await rapportTab.locator('#sd-onderdelen label:has-text("Diagram") input').check();
-  await rapportTab.fill('#sd-peildatum', '2026-10-25'); await rapportTab.dispatchEvent('#sd-peildatum', 'change');
-  check((await rt()).includes('stand op 25 oktober 2026') && (await rt()).includes('Stap 0 van 4'), 'werkbalk: stand op een eerdere peildatum, uit de historie');
-  await rapportTab.locator('#sd-rollen label:has-text("Basisvaardigheden") input').uncheck();
-  check(!(await rt()).includes('BASISVAARDIGHEDEN'), 'werkbalk: alleen de beroepsleerlijnen');
-  const opties = await popup.evaluate(() => chrome.storage.local.get('rpOpties').then((s) => s.rpOpties));
-  check(opties?.soortStudent === 'student' && opties?.onderdelen?.diagram === true && !JSON.stringify(opties).includes('Sam'), 'keuzes onthouden, zonder studentgegevens');
-  check(rapportTekst.indexOf('BEROEPSLEERLIJNEN') < rapportTekst.indexOf('BASISVAARDIGHEDEN'), 'beroeps eerst, dan BAVA (volgorde van het profiel)');
-  check(!/<script/i.test(await rapportTab.content()), 'rapporttabblad zonder scripts');
+  check((await rt()).includes('Eigen zin van de docent.') && (await rt()).includes('Zo sta jij ervoor.'), 'afdrukversie: zelf aangepaste tekst blijft staan bij wisselen');
+  check(!/<script/i.test(await rapportTab.content()), 'afdruktabblad zonder scripts');
   await rapportTab.close();
+  const opties = await popup.evaluate(() => chrome.storage.local.get('rpOpties').then((s) => s.rpOpties));
+  check(opties?.webSoortStudent === 'student' && !JSON.stringify(opties).includes('Sam'), 'keuzes onthouden, zonder studentgegevens');
+  await sim.click('.sdw [data-terug]');
+  check(!(await sim.locator('.sdw').count()) && (await sim.isVisible('.s-card')), 'Terug: de pagina van Simulise staat er weer');
 
   // Voortgangsrapporten voor een hele groep, vanuit het menu op /groups
   await sim.goto('https://ma.simulise.com/groups'); await sim.waitForTimeout(600);
   check(await sim.locator('.dropdown-menu .sim-docent-rapport').count() === 1, 'menu-item Voortgangsrapporten in het groepsmenu');
-  const [groepTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.dropdown-menu .sim-docent-rapport')]);
-  await groepTab.waitForFunction(() => document.querySelectorAll('.pagina').length >= 4, null, { timeout: 20000 }).catch(() => {});
-  const groepTekst = await groepTab.evaluate(() => document.body.innerText);
-  check((await groepTab.locator('.pagina').count()) === 4 && groepTekst.includes('Anna Test') && groepTekst.includes('Bram Test') && groepTekst.includes('2 studenten'),
-    `groepsrapport: alle studenten van de groep, elk met eigen pagina's (${await groepTab.locator('.pagina').count()} pagina's)`);
-  await groepTab.selectOption('#sd-soort', 'groep');
-  const gt = () => groepTab.evaluate(() => document.getElementById('sd-inhoud').innerText);
-  check((await groepTab.locator('table.overzicht').count()) === 2 && (await groepTab.locator('table.overzicht').first().locator('tbody tr').count()) === 2 && (await gt()).includes('GROEPSOVERZICHT'),
-    'werkbalk: groepsoverzicht, een tabel per opleiding met een rij per student');
-  const [dl] = await Promise.all([groepTab.waitForEvent('download'), groepTab.click('#sd-csv')]);
+  await sim.click('.dropdown-menu .sim-docent-rapport');
+  await sim.waitForSelector('.sdw table.sdw-matrix', { timeout: 20000 }).catch(() => {});
+  check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await sim.locator('.sdw table.sdw-matrix').first().locator('tbody tr').count()) === 2 && (await wt()).includes('Anna Test') && (await wt()).includes('2 van 2 studenten'),
+    'groep: meetmomenten naast elkaar, een tabel per opleiding met een rij per student');
+  await sim.selectOption('.sdw [data-balk] select >> nth=0', 'groep');
+  check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await wt()).includes('Stand op'), 'werkbalk: groepsoverzicht');
+  const [dl] = await Promise.all([sim.waitForEvent('download'), sim.click('.sdw .sdw-excel')]);
   const csvTekst = fs.readFileSync(await dl.path(), 'utf8');
-  check(/Anna Test;MEP1A;\d{4}-\d{2}-\d{2};ja/.test(csvTekst) && csvTekst.includes('1. Adviseren over mediaproducten'), 'CSV voor Excel met een rij per student');
-  await groepTab.locator('#sd-groepkeuzes label:has-text("alleen niet op koers") input').check();
-  check((await gt()).includes('Geen studenten die aan het filter voldoen.'), 'filter: alleen studenten die niet op koers zijn');
-  await groepTab.close();
+  check(/Anna Test;MEP1A;\d{4}-\d{2}-\d{2};ja/.test(csvTekst) && csvTekst.includes('1. Adviseren over mediaproducten'), 'Excel-export (CSV) met een rij per student');
+  await sim.click('.sdw a[data-student]:has-text("Bram Test")');
+  check((await sim.locator('.sdw .sdw-diagram svg').count()) === 2 && (await wt()).includes('2 van 2'), 'klik op een naam: de student, met bladeren tussen studenten');
+  await sim.click('.sdw [data-stap="-1"]');
+  check((await sim.locator('.sdw h3').first().textContent()).includes('Anna Test'), 'vorige student');
+  await sim.selectOption('.sdw [data-balk] select >> nth=0', 'groep');
+  await sim.locator('.sdw [data-balk] label:has-text("alleen niet op koers") input').check();
+  check((await wt()).includes('Geen studenten die aan het filter voldoen.'), 'filter: alleen studenten die niet op koers zijn');
+  await sim.locator('.sdw [data-balk] label:has-text("alleen niet op koers") input').uncheck();
 
   // Kaart Voortgangsrapporten op de analytics-pagina
   await sim.goto('https://ma.simulise.com/analytics'); await sim.waitForTimeout(700);
   const kaartOpties = await sim.locator('.sim-docent-kaart select option').allTextContents();
   // Zelfde adres als de groep op /groups (MEP1A); groepen zonder adres (101, 102) en menu-namen niet.
   check(await sim.isVisible('.sim-docent-kaart') && kaartOpties.join() === 'MEP1A', `analytics: kaart met de bekende groepen met adres, zonder menu-namen (${kaartOpties.join(', ')})`);
-  const [aTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sim-docent-kaart button')]);
-  await aTab.waitForFunction(() => document.querySelectorAll('.pagina').length >= 4, null, { timeout: 20000 }).catch(() => {});
-  { const n = await aTab.locator('.pagina').count(); const tk = await aTab.evaluate(() => document.body.innerText.slice(0, 200)); check(n === 2 && (await aTab.locator('table.overzicht tbody tr').count()) === 4 && tk.includes('Voortgangsrapporten MEP1A'), `analytics: groepsrapport vanaf de kaart, met de onthouden keuze groepsoverzicht (${n} pagina's, "${tk.replace(/\n/g, ' ')}")`); }
-  await aTab.close();
+  await sim.click('.sim-docent-kaart button');
+  await sim.waitForSelector('.sdw table.sdw-matrix', { timeout: 20000 }).catch(() => {});
+  check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await wt()).includes('Stand op') && (await wt()).includes('Voortgangsrapporten MEP1A'), 'analytics: groepsrapport vanaf de kaart, met de onthouden weergave groepsoverzicht');
 
   // Analytics, Opleiding per groep: alle studenten en beide opleidingen naast elkaar
   await sim.goto('https://ma.simulise.com/analytics/educationbygroups/result?type=educationbygroups&view=table'); await sim.waitForTimeout(800);
   check(await sim.isVisible('.sim-docent-analyseknop'), 'resultaatpagina: knop Overzicht & rapporten naast de download-knop');
-  const [resTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sim-docent-analyseknop')]);
-  await resTab.waitForFunction(() => document.querySelectorAll('table.overzicht.perioden').length >= 2, null, { timeout: 20000 }).catch(() => {});
-  { const rt2 = await resTab.evaluate(() => document.getElementById('sd-inhoud')?.innerText || document.body.innerText);
-    const rijen = await resTab.locator('table.overzicht.perioden').first().locator('tbody tr').count();
-    check(rijen === 30 && rt2.includes('MEETMOMENTEN NAAST ELKAAR') && rt2.includes('BEROEPSLEERLIJNEN') && rt2.includes('BASISVAARDIGHEDEN') && rt2.includes('MEP1A'),
+  await sim.click('.sim-docent-analyseknop');
+  await sim.waitForFunction(() => document.querySelectorAll('.sdw table.sdw-matrix').length >= 2, null, { timeout: 20000 }).catch(() => {});
+  { const rt2 = await wt();
+    const rijen = await sim.locator('.sdw table.sdw-matrix').first().locator('tbody tr').count();
+    check(rijen === 30 && rt2.includes('Behaalde stap aan het eind van') && rt2.includes('Beroepsleerlijnen') && rt2.includes('Basisvaardigheden') && rt2.includes('Overzicht MEP1A'),
       `resultaatpagina: alle 30 studenten (2 pagina's) met beroeps en BAVA naast elkaar (${rijen} rijen; "${rt2.slice(0, 120).replace(/\n/g, ' ')}")`);
     check(resultaatVerzoeken.includes('ed-bava/2/met-leerlijnen') && resultaatVerzoeken.includes('ed-beroeps/1/zonder-leerlijnen') && !resultaatVerzoeken.some((x) => x.startsWith('ed-sd')),
       `resultaatpagina: dezelfde vraag van de app per opleiding uit het profiel, alle pagina's (${[...new Set(resultaatVerzoeken)].join(', ')})`);
-    check((await resTab.locator('table.overzicht.perioden').count()) === 2, 'resultaatpagina: ander cohort zonder beoordelingen weggelaten (één tabel per rol)');
-    await resTab.selectOption('#sd-soort', 'student');
-    check((await resTab.locator('.pagina').count()) === 60, `resultaatpagina: voortgangsrapporten voor de hele groep (${await resTab.locator('.pagina').count()} pagina's)`);
+    check((await sim.locator('.sdw table.sdw-matrix').count()) === 2, 'resultaatpagina: ander cohort zonder beoordelingen weggelaten (één tabel per rol)');
+    await sim.click('.sdw .sdw-afdruk');
+    const [resTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sdw .dropdown-menu a:has-text("Voortgangsrapporten van alle studenten")')]);
+    await resTab.waitForFunction(() => document.querySelectorAll('.pagina').length >= 60, null, { timeout: 20000 }).catch(() => {});
+    check((await resTab.locator('.pagina').count()) === 60, `afdrukken: voortgangsrapporten voor de hele groep (${await resTab.locator('.pagina').count()} pagina's)`);
+    await resTab.close();
   }
-  await resTab.close();
 
   // Rapportprofielen en voorvertoning van het voortgangsrapport
   const prof = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);

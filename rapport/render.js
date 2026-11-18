@@ -531,5 +531,5 @@
       .pagina.liggend { height: auto; overflow: visible; } [contenteditable="true"]:hover, [contenteditable="true"]:focus { box-shadow: none; } }
   `;
 
-  globalThis.SDRapport = { bereken, html, shell, paginas, csv, modellen, diagram, periodeIndex, toetsIndex, rolVan, esc };
+  globalThis.SDRapport = { bereken, html, shell, paginas, csv, modellen, diagram, periodeIndex, toetsIndex, rolVan, stapOp, esc };
 })();
