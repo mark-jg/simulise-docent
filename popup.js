@@ -3,6 +3,7 @@ const THEMES = [
   { id: 'light',   name: 'Neutraal licht', a: '#f4f5f7', b: '#0e8a74' },
   { id: 'dark',    name: 'Neutraal donker', a: '#1c2025', b: '#3fc1a7' },
   { id: 'discord', name: 'Discord', a: '#313338', b: '#5865f2' },
+  { id: 'helder',  name: 'Helder', hint: 'nieuwe schil: taken, gewone taal, kleur per klas (proef)', a: '#f6f4ef', b: '#4f5bd5' },
   { id: 'tiimo',   name: 'Tiimo', hint: 'zacht lila, ronde vormen', a: '#f3effb', b: '#7c5cff' },
   { id: 'nord',    name: 'Nord', hint: 'koel blauwgrijs', a: '#2e3440', b: '#88c0d0' },
   { id: 'paper',   name: 'Papier', hint: 'warm, serif', a: '#f3efe7', b: '#8a5a2b' },

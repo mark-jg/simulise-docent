@@ -106,6 +106,20 @@ setTimeout(() => {
   q('dashboardTileEducationDiagram', 'query dashboardTileEducationDiagram($id: String!) { dashboard: user(id: $id) { id username educations: dashboardEducations { id name groups { ... on SchoolGroup { id name } } isDefault } } }', { id: 'u-' + location.pathname.slice(2) });
   q('getUserEducationDiagram', 'query getUserEducationDiagram($educationId: ID!, $userId: String!) { user(id: $userId) { id diagram: diagramForEducation(id: $educationId) { id phaseCount aspects { id aspect { id name skill { id color } } phases { id phase weights { level title } reviews { id color score title maxScore scoreName } currentScore reviewProgress reviewsAchieved reviewsRequired } } } username } }', { educationId: 'e-bava', userId: 'u-' + location.pathname.slice(2) });
 }, 200);</script>`;
+// Nagebootst beoordeelscherm: lijst met studenten (alleen plaatjes), omslag, vier delen en de onderbalk van Simulise.
+const REVIEW = (nu) => `<html><head></head><body><section id="app" class="vbox"><header class="header navbar">bovenbalk</header><section><section class="hbox stretch">
+<aside id="nav"><ul class="nav-main"><li><a href="/dashboard"><i class="fa"></i><span>Dashboard</span></a></li></ul></aside>
+<section id="content"><div class="vbox"><div class="vbox"><header class="header header-md"><p class="header-text"><span>Beoordelen</span></p></header>
+<section id="scrollable-page-wrapper"><div class="flex-wrapper flex-row"><div class="review-group-panel"><a href="/assignments/assigned">terug</a><div class="groups-table">
+${['success', 'warning', 'danger', 'warning', 'blank'].map((st, i) => (i + 1 === nu
+    ? `<div class="selected item"><div class="usercard"><img class="avatar" alt="Piet Jansen"></div><div class="bg-backport-${st} user-status"></div></div>`
+    : `<a class="item" href="/@student${i + 1}/assignment/00000000-0000-4000-8000-00000000000${i + 1}/review?nr=${i + 1}&group=vg-mr1a"><div class="usercard"><img class="avatar" alt="Sanne de Vries"></div><div class="bg-backport-${st} user-status"></div></a>`)).join('')}
+</div><div class="circle-button" onclick="this.parentElement.classList.toggle('expanded')">uitklappen</div></div><div class="flex-wrapper flex-column flex-grow"><div class="full-width-wrapper"><div class="width-filling-header"><div class="assignment-details"><h1>PS_1.8: Wie ben ik?</h1><div class="footer-details">ingeleverd</div></div></div></div>
+<div class="fluid-container-max-width"><div class="spacing-bottom-30"><h2>Omschrijving</h2><p id="oms">Lange tekst van de opdracht</p></div><div class="spacing-bottom-30"><h2>Ingevulde pagina</h2><p>werk</p></div>
+<div><h2>Reflecties</h2><div class="wrapper-reflection">rubric<div class="badges-title-wrapper"><div class="item"><img alt=""><div class="badge-small-screen">Voldaan</div></div></div>
+<div class="reflection-wrapper"><h4>Algemeen</h4><div class="reflection-items"><div class="item"><div><div class="content"><strong class="d-md-none" style="display:none">Voldaan</strong><div>${'Een lange omschrijving van het niveau. '.repeat(12)}</div></div><div class="authors d-none d-md-flex"><a class="avatar"><img alt=""></a></div></div></div></div></div></div></div><div class="spacing-bottom-30"><h2>Feedback</h2><textarea></textarea></div></div>
+<div class="fixed-bottom-bar assignment-status-bar"><button class="ladda-button">Afronden &amp; volgende</button></div></div></div></section></div></div></section></section></section></section>
+<script>fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-test': 'app' }, body: JSON.stringify({ operationName: 'appStart', query: 'query appStart { viewer { id } }', variables: {} }) });</script></body></html>`;
 const PROFIEL = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section id="scrollable-page-wrapper"><div class="p-0">
 <div class="s-card"><div class="panel panel-default"><table class="table"><tr><td><h3 class="font-thin">Sam Voorbeeld</h3></td></tr></table></div></div>
 <div class="s-card col-span-2"><div class="panel panel-default"><div class="panel-heading p-sm"><div class="row"><p class="h3 font-thin"><div>Opleidingen</div></p></div></div><div class="row"><canvas></canvas></div></div></div>
@@ -149,6 +163,14 @@ const RES_STUDENTEN = Array.from({ length: 30 }, (_, i) => ({ id: `u-res${i}`, n
 
 const ext = path.resolve(process.argv[2] || path.join(__dirname, '..'));
 const fouten = [];
+// Met SD_BEELD=<map> bewaart de test schermafbeeldingen van de eigen schermen (nagebootste gegevens).
+const beeld = async (pagina, naam) => {
+  if (!process.env.SD_BEELD) return;
+  const maat = pagina.viewportSize();
+  await pagina.setViewportSize({ width: 1280, height: 2400 }); // de nagebootste pagina heeft geen opmaak: alleen het eigen scherm vastleggen
+  await pagina.locator('#sim-docent-vandaag .binnen').screenshot({ path: path.join(process.env.SD_BEELD, `${naam}.png`) });
+  await pagina.setViewportSize(maat);
+};
 const check = (ok, tekst) => { console.log(`${ok ? 'ok  ' : 'FOUT'} ${tekst}`); if (!ok) fouten.push(tekst); };
 
 // Zip bouwen zoals .github/workflows/release.yml dat doet (map simulise-docent/ bovenin).
@@ -173,6 +195,7 @@ function bouwZip() {
   const ZIP_URL = 'https://github.com/mark-jg/simulise-docent/releases/download/v9.9.9/simulise-docent-v9.9.9.zip';
   await ctx.route('https://ma.simulise.com/**', (r) => {
     const u = new URL(r.request().url()), p = u.pathname;
+    if (/^\/@[^/]+\/assignment\/[^/]+\/review/.test(p)) return r.fulfill({ contentType: 'text/html', body: REVIEW(Number(u.searchParams.get('nr')) || 2) });
     if (p.startsWith('/@')) return r.fulfill({ contentType: 'text/html', body: PROFIEL });
     if (p === '/analytics') return r.fulfill({ contentType: 'text/html', body: ANALYTICS });
     if (p === '/analytics/educationbygroups/result') return r.fulfill({ contentType: 'text/html', body: RESULTAAT });
@@ -204,6 +227,9 @@ function bouwZip() {
   const rapportVerzoeken = [];
   const resultaatVerzoeken = [];
   let tellerVerzoeken = 0;
+  const vandaagVerzoeken = [];
+  const klasVerzoeken = [];
+  const vandaagAfgerond = { n: 40 };
   await ctx.route('https://api.simulise.com/graphql', (r) => {
     const verzoek = JSON.parse(r.request().postData() || '{}');
     const antw = (body) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
@@ -256,6 +282,43 @@ function bouwZip() {
       meldVerzoeken.push(verzoek.query.match(/notifications\(first: (\d+)/)?.[1]);
       return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ data: { viewer: { notifications: { data: [], paginatorInfo: { total: 118 } } } } }) });
     }
+    if (verzoek.operationName === 'sdDocentKlassen') {
+      // Klassen van de docent: één gearchiveerde (valt weg). 'x' is de groep in de links van de nagebootste Beoordelen-lijst.
+      return antw({ data: { viewer: { id: 'v', groupsByType: { data: [{ __typename: 'SchoolGroup', id: 'vg-mr1a', name: 'MR1A', isArchived: false },
+        { __typename: 'SchoolGroup', id: 'vg-oud', name: 'MEP1A', isArchived: true }, { __typename: 'SchoolGroup', id: 'vg-mep1a', name: 'MEP1A', isArchived: false },
+        { __typename: 'SchoolGroup', id: 'x', name: 'MIP1B', isArchived: false }], paginatorInfo: { hasMorePages: false } } } } });
+    }
+    if (verzoek.operationName === 'sdDocentKlasTellers') {
+      if (!/__typename/.test(verzoek.query)) return antw({ errors: [{ message: 'Internal server error' }], data: null });
+      return antw({ data: { assignedAssignments: { data: [], aggregations: { groups: [{ key: 'vg-mep1a', count: 4 }, { key: 'vg-mr1a', count: 1 }, { key: 'vg-sd2b', count: 2 }] } } } });
+    }
+    if (verzoek.operationName === 'sdDocentVandaag') {
+      // Scherm Vandaag: openstaande inleveringen over twee pagina's, daarna de afgeronde. Nepnamen.
+      const f = verzoek.variables.filters[0], pagina = verzoek.variables.page;
+      vandaagVerzoeken.push(`${f.includes('FINISHED') ? 'klaar' : 'open'}/${pagina}/${verzoek.variables.perPage}`);
+      // Zoals het echte Simulise: zonder __typename binnen aggregations een serverfout.
+      if (!/statuses \{ key count \} __typename \}/.test(verzoek.query)) return antw({ errors: [{ message: 'Internal server error', path: ['assignedAssignments', 'aggregations'] }], data: null });
+      const VG = { MEP1A: 'vg-mep1a', MR1A: 'vg-mr1a', SD2B: 'vg-sd2b' };
+      const geleden = (d) => new Date(Date.now() - d * 864e5 - 36e5).toISOString();
+      const inl = (i, titel, opdr, groep, dagen, wie, status = 'HANDED_IN') => ({ id: `vd-${i}`, status, deliveredAt: geleden(dagen), connectableKey: `connectable:vc-${opdr}-${groep}`,
+        user: { username: wie, name: 'Piet Jansen' }, assignment: { id: opdr, title: titel, forEducations: /^Meetmoment/.test(titel) },
+        assignmentConnection: { id: `vc-${opdr}-${groep}`, connectable: { id: VG[groep] } } });
+      const open = [inl(1, 'ENG_1.5: True crime', 'o-eng', 'MEP1A', 2, 'sdevries'), inl(2, 'ENG_1.5: True crime', 'o-eng', 'MEP1A', 12, 'pjansen'), inl(3, 'Meetmoment SD Engels M4', 'o-sd', 'SD2B', 20, 'abouzid'),
+        inl(4, 'PS_1.8: Wie ben ik?', 'o-ps', 'MR1A', 6, 'kbakker', 'BEING_PROCESSED'), inl(5, 'ENG_1.5: True crime', 'o-eng', 'MEP1A', 3, 'kbakker'),
+        inl(6, 'Meetmoment SD Engels M4', 'o-sd', 'SD2B', 1, 'pjansen'), inl(7, 'Meetmoment MEP/MIP Engels M1 (Cohort 2026)', 'o-mm', 'MEP1A', 1, 'sdevries')];
+      const klaar = [inl(8, 'ENG_1.5: True crime', 'o-eng', 'MEP1A', 30, 'x1', 'FINISHED'), inl(9, 'ENG_1.5: True crime', 'o-eng', 'MEP1A', 31, 'x2', 'FINISHED')];
+      const groep = (verzoek.variables.filters[1] || '').replace(/^group:/, '');
+      if (groep) klasVerzoeken.push(groep);
+      const vanGroep = (lijst) => (groep ? lijst.filter((x) => x.assignmentConnection.connectable.id === groep) : lijst);
+      // Nog niet ingeleverd (alleen gevraagd op de thuispagina van een klas, voor de stippenkaart).
+      const rest = [inl(10, 'PS_1.8: Wie ben ik?', 'o-ps', 'MR1A', 0, 'y1', 'NOT_STARTED'), inl(11, 'PS_1.8: Wie ben ik?', 'o-ps', 'MR1A', 0, 'y2', 'NOT_STARTED'), inl(12, 'PS_1.8: Wie ben ik?', 'o-ps', 'MR1A', 0, 'y3', 'DEADLINE_PAST'),
+        inl(13, 'LOB - werkveld verkennen', 'o-lob', 'MR1A', 0, 'y4', 'IN_PROGRESS')];
+      const alle = vanGroep(f.includes('NOT_STARTED') ? rest : f.includes('FINISHED') ? klaar : open), stuk = /FINISHED|NOT_STARTED/.test(f) ? alle : alle.slice((pagina - 1) * 4, pagina * 4);
+      return antw({ data: { assignedAssignments: { data: stuk,
+        aggregations: { groups: Object.entries(VG).map(([naam, gid]) => ({ key: gid, item: { autocompletion: { id: `school_group:${gid}`, text: naam, value: gid } }, count: 1 })),
+          statuses: groep ? [{ key: 'FINISHED', count: 5 }, { key: 'DEADLINE_PAST', count: 3 }, { key: 'NOT_STARTED', count: 8 }] : [{ key: 'FINISHED', count: vandaagAfgerond.n }, { key: 'HANDED_IN', count: 6 }] },
+        paginatorInfo: { total: alle.length, currentPage: pagina, hasMorePages: !/FINISHED|NOT_STARTED/.test(f) && pagina * 4 < alle.length } } } });
+    }
     const v = verzoek.variables || {};
     graphqlVerzoeken.push(`${v.page}/${v.perPage}`);
     // Groepen zoals Simulise ze meestuurt; rij 1 heeft een groeps-id in de gegevens van de student (moet genegeerd worden).
@@ -293,7 +356,7 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
-  check(await popup.locator('#modules input').count() === 7, 'popup toont aan/uit per module');
+  check(await popup.locator('#modules input').count() === 10, 'popup toont aan/uit per module');
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -322,6 +385,7 @@ function bouwZip() {
     `teller toont exact 7 relevante (alle 121 geteld over 2 pagina's) in plaats van 117 (belletje "${await sim.textContent(belletje)}", ${tellerVerzoeken} verzoek(en))`);
   check((await sim.getAttribute(belletje, 'title')).includes('121 in totaal'), `tooltip met het echte totaal ("${await sim.getAttribute(belletje, 'title')}")`);
   check((await sim.textContent('#notifications-dropdown .panel-heading strong')) === 'Je hebt 7 ongelezen meldingen voor jouw opleidingen (van de 121).', 'kop van het menu aangepast');
+  await sim.waitForTimeout(1500); // eerst de eerste telling laten uitlopen (Simulise toonde 117, de extensie telt dan nog eens)
   const voor = tellerVerzoeken;
   await sim.evaluate((sel) => { document.querySelector(sel).textContent = '12'; }, belletje); // Simulise werkt de teller bij
   await sim.waitForTimeout(1800);
@@ -549,7 +613,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 15, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 19, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   // Voortgangsrapport vanaf het profiel van een student: in de pagina zelf, in de opmaak van Simulise
@@ -640,6 +704,213 @@ function bouwZip() {
     check((await resTab.locator('.pagina').count()) === 60, `afdrukken: voortgangsrapporten voor de hele groep (${await resTab.locator('.pagina').count()} pagina's)`);
     await resTab.close();
   }
+
+  // Scherm Vandaag: eigen startscherm met de beoordeelwachtrij (module vandaag)
+  await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN'); await sim.waitForTimeout(700);
+  check((await sim.locator('aside#nav .nav-main > li').first().innerText()).trim() === 'Vandaag' && (await sim.locator('aside#nav .nav-main > li').count()) === 2, 'menu-item Vandaag bovenaan de zijbalk, het eigen menu blijft staan');
+  await sim.dispatchEvent('.sim-docent-vandaag', 'click'); // de nagebootste zijbalk heeft geen opmaak: items liggen over elkaar
+  const vd = sim.locator('#sim-docent-vandaag');
+  await vd.locator('a.rij').first().waitFor({ timeout: 20000 }).catch(() => {});
+  const vdTekst = () => vd.locator('.scherm').innerText();
+  check(await sim.evaluate(() => document.querySelector('#sim-docent-vandaag').parentElement.id === 'content' && document.querySelector('.sim-docent-vandaag-li').classList.contains('active'))
+    && (await sim.isVisible('aside#nav')) && !(await sim.isVisible('#content table')), 'Vandaag staat in de pagina van Simulise: zijbalk blijft, inhoud tijdelijk verborgen, menu-item actief');
+  check(vandaagVerzoeken.join() === 'open/1/100,open/2/100,klaar/1/100', `Vandaag haalt alle pagina's op, eerst open en dan afgerond (verzoeken ${vandaagVerzoeken.join(', ')})`);
+  check((await vd.locator('a.rij').count()) === 3 && (await vd.locator('[data-teller="open"]').innerText()) === '5' && (await vd.locator('[data-teller="verborgen"]').innerText()) === '2',
+    'Vandaag: één regel per opdracht en groep, meetmomenten van andere opleidingen verborgen en geteld');
+  check(!/jansen|vries|bakker|bouzid/i.test(await vdTekst()), 'Vandaag toont geen namen of gebruikersnamen van studenten');
+  const eersteRij = vd.locator('a.rij').first();
+  check((await eersteRij.innerText()).includes('ENG_1.5: True crime') && (await eersteRij.locator('.pil.rood').innerText()) === '12 dagen' && (await eersteRij.innerText()).includes('2 van 5 nagekeken') && (await eersteRij.locator('.pil').first().innerText()) === 'ENG',
+    'Vandaag: langst wachtende opdracht bovenaan, met vak, wachttijd en voortgang');
+  const startHref = await vd.locator('[data-start]').getAttribute('href');
+  check(startHref.startsWith('/@pjansen/assignment/vd-2/review?') && decodeURIComponent(startHref).includes('filters=reviewer:*|group:vg-mep1a|connectable:vc-o-eng-MEP1A') && startHref.includes('group=vg-mep1a'),
+    'Vandaag: "Start met langst wachtend" opent het beoordeelscherm van Simulise voor de oudste inlevering');
+  check((await vd.locator('.ring text').textContent()) === '0/5', 'Vandaag: ring begint op 0 nagekeken');
+  check(/^Goede(morgen|middag|navond)$/.test((await vd.locator('.groet').innerText()).trim()) && (await vd.locator('.held.ochtend, .held.middag, .held.avond').count()) === 1
+    && (await vd.locator('.week span').count()) === 5 && (await vd.locator('.week .ja').count()) === 0,
+    'Vandaag: begroeting bij het moment van de dag en vijf weekdagen, nog geen dag afgevinkt');
+  check((await vd.locator('.volgende b').innerText()) === 'ENG_1.5: True crime' && (await vd.locator('.volgende').innerText()).includes('12 dagen') && (await vd.locator('.chip').count()) === 3
+    && (await vd.locator('.chip', { hasText: 'MEP1A' }).innerText()).includes('4 wachten'),
+    'Vandaag: kaart Volgende met de langst wachtende opdracht, en een kaart per groep');
+  vandaagAfgerond.n = 42;
+  await vd.locator('[data-actie="ververs"]').click(); await sim.waitForTimeout(700);
+  check((await vd.locator('.ring text').textContent()) === '2/7' && (await vdTekst()).includes('2 nagekeken, nog 5 te gaan'), 'Vandaag: na verversen telt wat je sindsdien hebt afgerond');
+  check((await vd.locator('.week .ja').count()) === ([0, 6].includes(new Date().getDay()) ? 0 : 1), 'Vandaag: de dag van vandaag is afgevinkt in de week');
+  await vd.locator('[data-verborgen]').check(); await sim.waitForTimeout(100);
+  check((await vd.locator('a.rij').count()) === 4 && (await vd.locator('[data-teller="open"]').innerText()) === '7', 'Vandaag: "Toon ook wat het filter verbergt" laat de verborgen meetmomenten zien');
+  await vd.locator('[data-verborgen]').uncheck();
+  await vd.locator('.chip', { hasText: 'MR1A' }).click(); await sim.waitForTimeout(100);
+  check((await vd.locator('a.rij').count()) === 1 && (await vd.locator('[data-teller="open"]').innerText()) === '1' && (await vd.locator('.chip[aria-pressed="true"]').innerText()).startsWith('MR1A'), 'Vandaag: filteren op groep');
+  const pv = await nieuw(`chrome-extension://${id}/popup.html`);
+  const vdDag = await pv.evaluate(() => chrome.storage.local.get('vdDag').then((s) => s.vdDag));
+  check(vdDag?.start === 40 && vdDag.dagen.length === 1 && !/jansen|vd-\d|vg-/.test(JSON.stringify(vdDag)), 'Vandaag bewaart alleen tellers en datums, geen gegevens van studenten');
+  await sim.keyboard.press('Escape'); await sim.waitForTimeout(100);
+  check((await vd.count()) === 0 && (await sim.isVisible('#content table')), 'Vandaag sluit met Esc en Simulise staat er weer');
+  await sim.dispatchEvent('.sim-docent-vandaag', 'click'); await sim.waitForTimeout(200);
+  await sim.dispatchEvent('aside#nav a[href="/dashboard"]', 'click'); await sim.waitForTimeout(300);
+  check((await vd.count()) === 0, 'Vandaag sluit als je een ander menu-item kiest');
+  await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN#vandaag');
+  await vd.locator('a.rij').first().waitFor({ timeout: 20000 }).catch(() => {});
+  check((await vd.locator('a.rij').count()) === 3, 'Vandaag opent vanzelf bij een adres dat eindigt op #vandaag');
+  await pv.evaluate(() => chrome.storage.sync.set({ today: false })); await sim.waitForTimeout(400);
+  check((await vd.count()) === 0 && (await sim.locator('.sim-docent-vandaag-li').count()) === 0, 'module Vandaag uit: scherm en menu-item weg');
+  await pv.evaluate(() => chrome.storage.sync.set({ today: true })); await pv.close();
+
+  // Thema Helder met de nieuwe schil: zijbalk rond taken, gewone taal, kleur per klas, thuispagina per klas
+  const ps = await nieuw(`chrome-extension://${id}/popup.html`);
+  check((await ps.locator('input[name="theme"][value="helder"]').count()) === 1, 'thema Helder staat in de popup');
+  await ps.evaluate(() => chrome.storage.sync.set({ theme: 'helder', shellMeer: false }));
+  await sim.goto('https://ma.simulise.com/'); await sim.waitForTimeout(1200);
+  const zijbalk = () => sim.evaluate(() => [...document.querySelectorAll('aside#nav .nav-main > li')].filter((li) => getComputedStyle(li).display !== 'none')
+    .sort((a, b) => Number(getComputedStyle(a).order) - Number(getComputedStyle(b).order)).map((li) => li.textContent.replace(/\s+/g, ' ').trim()));
+  check((await sim.getAttribute('html', 'data-sim-theme')) === 'helder' && (await sim.getAttribute('html', 'data-sim-schil')) === '', 'thema Helder zet de schil aan');
+  let m1 = await zijbalk();
+  check(m1.slice(0, 6).join('|') === 'Vandaag|Nakijken|Mijn klassen|MEP1A|MIP1B|MR1A' && m1.includes('Meer') && !m1.includes('Dashboard'),
+    `schil: zijbalk rond taken, klassen op naam, gearchiveerde klas weg, rest onder Meer (${m1.join(', ')})`);
+  check((await sim.getAttribute('.sim-docent-klas[data-klas="vg-mep1a"]', 'data-wacht')) === '4' && (await sim.getAttribute('.sim-docent-klas[data-klas="x"]', 'data-wacht')) === null
+    && (await sim.evaluate(() => new Set([...document.querySelectorAll('li.sd-schil-klas')].map((li) => li.style.getPropertyValue('--sd-klas'))).size)) === 3,
+    'schil: elke klas een eigen kleur en het aantal dat op jou wacht');
+  await sim.dispatchEvent('.sd-schil-knop', 'click'); await sim.waitForTimeout(400);
+  m1 = await zijbalk();
+  check(m1.includes('Dashboard') && (await ps.evaluate(() => chrome.storage.sync.get('shellMeer').then((x) => x.shellMeer))) === true, 'schil: Meer klapt uit en dat wordt onthouden');
+  klasVerzoeken.length = 0;
+  await sim.dispatchEvent('.sim-docent-klas[data-klas="vg-mr1a"]', 'click');
+  await vd.locator('a.rij').first().waitFor({ timeout: 20000 }).catch(() => {});
+  check((await vd.locator('h1').innerText()).trim() === 'MR1A' && (await vd.locator('a.rij').count()) === 1 && klasVerzoeken.join() === 'vg-mr1a,vg-mr1a,vg-mr1a'
+    && (await vd.locator('[data-teller="open"]').innerText()) === '1' && (await vd.locator('[data-teller="laat"]').innerText()) === '1' && (await vd.locator('[data-teller="niet"]').innerText()) === '2' && (await vd.locator('[data-teller="klaar"]').innerText()) === '0',
+    'thuispagina per klas: alleen die klas opgevraagd, met Wacht op jou, Te laat, Nog niet gestart en Klaar');
+  check((await vd.locator('.snel a').count()) === 7 && (await vd.locator('.snel a', { hasText: 'Studenten' }).getAttribute('href')) === '/groups/school/vg-mr1a/students'
+    && (await vd.locator('.chips').count()) === 0 && !/bakker|jansen/i.test(await vd.locator('.scherm').innerText()),
+    'thuispagina per klas: snelkoppelingen naar de klas in Simulise, geen studenten in beeld');
+  await beeld(sim, 'klas');
+  check((await vd.locator('.strook').count()) === 2 && (await vd.locator('.strook').first().locator('.stippen i').count()) === 4 && (await vd.locator('.strook').first().locator('.stippen i.wacht').count()) === 1
+    && (await vd.locator('.strook').first().locator('.som').innerText()) === '1 wacht op jou · 1 te laat · 2 niet gestart' && (await vd.locator('.strook').nth(1).locator('.stippen i.bezig').count()) === 1,
+    'thuispagina per klas: stippenkaart met één stip per inlevering, de opdracht die op jou wacht bovenaan');
+  check((await vd.locator('.held.klas').count()) === 1 && (await vd.locator('.held').getAttribute('style')).startsWith('--k:#') && (await vd.locator('.week').count()) === 0, 'thuispagina per klas: kop in de kleur van de klas');
+  check(await sim.evaluate(() => document.querySelector('.sim-docent-klas[data-klas="vg-mr1a"]').parentElement.classList.contains('active') && !document.querySelector('.sim-docent-vandaag-li').classList.contains('active')), 'thuispagina per klas: de klas is gemarkeerd in de zijbalk');
+  await sim.dispatchEvent('.sim-docent-vandaag', 'click');
+  await vd.locator('.chips').waitFor({ timeout: 20000 }).catch(() => {});
+  await beeld(sim, 'vandaag');
+  check((await vd.locator('h1').innerText()).trim() === 'Vandaag' && (await vd.locator('a.rij').count()) === 3 && (await vd.locator('.groep .stip').count()) === 3, 'van een klas naar Vandaag: alle groepen weer, met de kleur van de klas');
+  await sim.keyboard.press('Escape');
+  await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN#klas=vg-mep1a');
+  await vd.locator('a.rij').first().waitFor({ timeout: 20000 }).catch(() => {});
+  check((await vd.locator('h1').innerText()).trim() === 'MEP1A' && (await vd.locator('a.rij').count()) === 2, 'thuispagina opent ook via een adres dat eindigt op #klas=<id>');
+  await sim.keyboard.press('Escape'); await sim.waitForTimeout(600);
+  check((await sim.locator('#content tbody .sd-klaschip').count()) === 7 && (await sim.locator('#content tbody .sd-klaschip').first().innerText()) === 'MIP1B', 'schil: klas met kleur bij elke rij in de Beoordelen-lijst');
+  check((await sim.locator('#content tbody .badge').first().innerText()) === 'Wacht op jou' && (await sim.locator('#content .header-text').innerText()).trim() === 'Nakijken'
+    && (await sim.locator('#content tbody').innerText()).includes('PS_1.8: Wie ben ik?') && (await sim.locator('#content thead').innerText()).includes('Opdracht titel'),
+    'schil: vaste woorden in gewone taal, titels en kolomkoppen blijven zoals ze zijn');
+  await ps.evaluate(() => chrome.storage.sync.set({ theme: 'light' })); await sim.waitForTimeout(600);
+  check((await sim.getAttribute('html', 'data-sim-schil')) === null && (await sim.locator('.sd-schil-klas, .sd-schil-kop, .sd-klaschip').count()) === 0
+    && (await sim.locator('#content tbody .badge').first().innerText()) === 'Te beoordelen' && (await sim.locator('#content .header-text').innerText()).trim() === 'Beoordelen'
+    && (await sim.evaluate(() => [...document.querySelectorAll('aside#nav .nav-main > li')].every((li) => !li.style.order))),
+    'ander thema: de schil zet alles terug (zijbalk, woorden, labels)');
+  const sdKlassen = await ps.evaluate(() => chrome.storage.local.get('sdKlassen').then((x) => x.sdKlassen));
+  check(sdKlassen.lijst.length === 3 && Object.keys(sdKlassen.lijst[0]).sort().join() === 'id,naam,wacht', 'klassen onthouden met alleen id, naam en aantal');
+  await ps.evaluate(() => chrome.storage.sync.set({ theme: 'auto' })); await ps.close();
+
+  // Focusmodus op het beoordeelscherm (module focus)
+  const pf = await nieuw(`chrome-extension://${id}/popup.html`);
+  await sim.goto('https://ma.simulise.com/@student2/assignment/00000000-0000-4000-8000-000000000002/review?nr=2&group=vg-mr1a'); await sim.waitForTimeout(800);
+  const fb = sim.locator('#sim-docent-focus');
+  const toont = (sel) => sim.evaluate((x) => { let el = document.querySelector(x); while (el) { if (getComputedStyle(el).display === 'none') return false; el = el.parentElement; } return true; }, sel);
+  check((await sim.getAttribute('html', 'data-sim-focus')) === '' && !(await toont('aside#nav')) && !(await toont('#app > header.navbar')) && (await toont('.review-group-panel')) && !(await toont('#content header.header-md'))
+    && (await toont('.assignment-status-bar')) && (await toont('textarea')), 'focusmodus: bovenbalk, zijbalk en kruimelkop weg; de lijst met studenten, de onderbalk en de feedback van Simulise blijven');
+  const plek = (sel) => sim.evaluate((x) => { const el = document.querySelector(x), r = el.getBoundingClientRect(); return { pos: getComputedStyle(el).position, links: Math.round(r.left), breed: Math.round(r.width), onder: Math.round(r.bottom), boven: Math.round(r.top) }; }, sel);
+  const venster = sim.viewportSize();
+  let kr = await plek('[data-sd-focus="rubric"]'), kf = await plek('[data-sd-focus="feedback"]'), kb = await plek('.assignment-status-bar');
+  check((await sim.getAttribute('html', 'data-sim-focus-kolom')) === '' && kr.pos === 'fixed' && kf.pos === 'fixed' && kb.pos === 'fixed' && kr.links === kf.links && kf.links === kb.links && kr.links > venster.width / 2
+    && kr.onder <= kf.boven && kf.onder <= kb.boven && kb.onder <= venster.height,
+    `zijkolom: rubric, feedback en de onderbalk staan vast rechts onder elkaar, binnen het venster (rubric ${kr.boven}-${kr.onder}, feedback ${kf.boven}-${kf.onder}, balk ${kb.boven}-${kb.onder})`);
+  check((await sim.evaluate(() => { const w = document.querySelector('[data-sd-focus="feedback"]').previousElementSibling.previousElementSibling; return w.querySelector('h2').textContent === 'Ingevulde pagina' && w.getBoundingClientRect().right; })) <= kr.links,
+    'zijkolom: het werk van de student staat links van de kolom, de blokken zijn niet verplaatst in de pagina');
+  check(await sim.evaluate(() => document.querySelector('.review-group-panel').classList.contains('expanded')), 'focusmodus klapt de lijst van Simulise uit, zodat de namen zonder plaatjes zichtbaar zijn');
+  const kaart = () => sim.evaluate(() => { const el = document.querySelector('.reflection-items .content > div:last-child'); return { klem: getComputedStyle(el).webkitLineClamp, hoog: Math.round(el.getBoundingClientRect().height) }; });
+  const dicht = await kaart();
+  await sim.hover('.reflection-items .content'); await sim.waitForTimeout(150);
+  const open = await kaart();
+  await sim.mouse.move(5, 5);
+  check(dicht.klem === '3' && dicht.hoog < 60 && open.hoog > dicht.hoog && !(await toont('.badges-title-wrapper img')),
+    `compacte rubric: omschrijving op drie regels (${dicht.hoog}px), de hele tekst als je eroverheen gaat (${open.hoog}px), niveaus zonder plaatjes`);
+  check(!(await toont('#oms')) && (await toont('.wrapper-reflection')), 'focusmodus: de omschrijving van de opdracht is dichtgeklapt, het werk staat bovenaan');
+  check((await fb.locator('.tel').innerText()).replace(/\s+/g, ' ').trim() === '2 van 5 1 wacht nog' && (await fb.locator('.stippen').count()) === 0
+    && (await fb.locator('.spring').count()) === 0 && !/jansen|vries/i.test(await fb.locator('.balk').innerHTML()), 'focusbalk: plek in de klas en wat nog wacht; geen stippen en geen namen (die staan in de lijst van Simulise)');
+  await fb.locator('[data-actie="kolom"]').click(); await sim.waitForTimeout(400);
+  kr = await plek('[data-sd-focus="rubric"]');
+  check((await sim.getAttribute('html', 'data-sim-focus-kolom')) === null && kr.pos !== 'fixed' && (await plek('.assignment-status-bar')).pos !== 'fixed' && (await fb.locator('.spring').count()) === 3
+    && (await pf.evaluate(() => chrome.storage.sync.get('focusKolom').then((x) => x.focusKolom))) === false, 'knop Zijkolom zet de kolom uit: alles weer onder elkaar, met springen naar werk, rubric en feedback');
+  await fb.locator('[data-actie="kolom"]').click(); await sim.waitForTimeout(400);
+  await sim.setViewportSize({ width: 1000, height: venster.height }); await sim.waitForTimeout(500);
+  check((await sim.getAttribute('html', 'data-sim-focus-kolom')) === null && (await fb.locator('[data-actie="kolom"]').count()) === 0, 'smal venster: geen zijkolom');
+  await sim.setViewportSize(venster); await sim.waitForTimeout(500);
+  check((await sim.getAttribute('html', 'data-sim-focus-kolom')) === '', 'breed venster: de zijkolom komt terug');
+  await fb.locator('[data-actie="opdracht"]').click(); await sim.waitForTimeout(200);
+  check((await toont('#oms')) && (await fb.locator('[data-actie="opdracht"]').getAttribute('aria-pressed')) === 'true', 'focusmodus: knop Opdracht toont de omschrijving');
+  await Promise.all([sim.waitForNavigation(), fb.locator('[data-actie="wacht"]').click()]); await sim.waitForTimeout(600);
+  check(new URL(sim.url()).searchParams.get('nr') === '4' && (await fb.locator('.tel').innerText()).replace(/\s+/g, ' ').trim() === '4 van 5 1 wacht nog' && !(await toont('#oms')), '"Volgende die wacht" gaat naar de eerstvolgende inlevering die op jou wacht');
+  await Promise.all([sim.waitForNavigation(), sim.keyboard.press('Alt+ArrowLeft')]); await sim.waitForTimeout(600);
+  check(new URL(sim.url()).searchParams.get('nr') === '3', 'Alt+pijl links: vorige student');
+  await sim.focus('textarea'); await sim.keyboard.press('Alt+ArrowRight'); await sim.waitForTimeout(300);
+  check(new URL(sim.url()).searchParams.get('nr') === '3', 'sneltoetsen doen niets terwijl je in het feedbackvak typt');
+  await sim.evaluate(() => document.activeElement.blur());
+  await sim.keyboard.press('Escape'); await sim.waitForTimeout(500);
+  check((await sim.getAttribute('html', 'data-sim-focus')) === null && (await sim.getAttribute('html', 'data-sim-focus-kolom')) === null && (await toont('aside#nav')) && (await plek('.assignment-status-bar')).pos !== 'fixed' && (await fb.locator('.los').count()) === 1
+    && (await pf.evaluate(() => chrome.storage.sync.get('focusAan').then((x) => x.focusAan))) === false, 'Esc zet de focusmodus uit: Simulise staat er weer, met een knop Focus; de keuze wordt onthouden');
+  await fb.locator('.los').click(); await sim.waitForTimeout(500);
+  check((await sim.getAttribute('html', 'data-sim-focus')) === '' && (await fb.locator('.balk').count()) === 1, 'knop Focus zet de focusmodus weer aan');
+  await pf.evaluate(() => chrome.storage.sync.set({ theme: 'helder' })); await sim.waitForTimeout(500);
+  const kleur = (sel, eig) => sim.evaluate(([x, e]) => getComputedStyle(document.querySelector(x))[e], [sel, eig]);
+  check((await kleur('.review-group-panel', 'backgroundColor')) === 'rgb(255, 253, 249)' && (await kleur('.user-status.bg-backport-warning', 'backgroundColor')) === 'rgb(253, 240, 213)'
+    && (await kleur('.assignment-status-bar .ladda-button', 'backgroundColor')) === 'rgb(79, 91, 213)' && !['rgba(0, 0, 0, 0)', 'rgb(255, 255, 255)'].includes(await kleur('.review-group-panel .selected.item', 'backgroundColor')),
+    'focusmodus in thema Helder: lichte lijst met de gekozen student gemarkeerd, status als label, knop in de accentkleur');
+  const variabele = (naam) => sim.evaluate((n) => document.documentElement.style.getPropertyValue(n), naam);
+  check((await variabele('--sdf-kop')) === '"MR1A · student 3 van 5"' && (await variabele('--sdf-tel')) === '"2 wachten op jou · 1 klaar · 1 te laat · 1 nog niet gestart"' && /^#[0-9a-f]{6}$/.test(await variabele('--sdf-klas'))
+    && (await kleur('.width-filling-header', 'backgroundImage')).startsWith('linear-gradient') && (await sim.evaluate(() => getComputedStyle(document.querySelector('.assignment-details'), '::before').content)) === '"MR1A · student 3 van 5"',
+    'focusmodus in Helder: kop als band in de kleur van de klas, met klas, plek en tellers; geen namen');
+  const vlak = await sim.evaluate(() => { const s = getComputedStyle(document.querySelector('#content'), '::after'); return { kleur: s.backgroundColor, breed: parseFloat(s.width), pos: s.position }; });
+  check((await fb.locator('.ring').count()) === 1 && vlak.kleur === 'rgb(255, 255, 255)' && vlak.pos === 'fixed' && vlak.breed <= 352 && (await kleur('[data-sd-focus="rubric"]', 'backgroundColor')) === 'rgba(0, 0, 0, 0)',
+    `focusmodus in Helder: ring in de balk, en rechts één smal wit vlak (${Math.round(vlak.breed)}px) met rubric, feedback en onderbalk zonder eigen kader`);
+  const knop = await sim.evaluate(() => { const c = document.querySelector('.reflection-items .content'); return { tekst: getComputedStyle(c.querySelector(':scope > div:last-child')).display, naam: getComputedStyle(c.querySelector('strong')).display, hoog: Math.round(c.getBoundingClientRect().height),
+    rond: getComputedStyle(document.querySelector('.reflection-items .authors img')).borderRadius, binnen: document.querySelector('.reflection-items .authors').getBoundingClientRect().bottom <= c.getBoundingClientRect().bottom + 1 }; });
+  check(knop.tekst === 'none' && knop.naam === 'flex' && knop.hoog <= 34 && knop.rond === '50%' && knop.binnen, `rubric in Helder: niveaus als knoppen met alleen de naam (${knop.hoog}px hoog), het plaatje rond en binnen de knop`);
+  await sim.hover('.reflection-items .content'); await sim.waitForTimeout(150);
+  const tip = fb.locator('.tip');
+  check((await tip.isVisible()) && (await tip.innerText()).startsWith('Algemeen · Voldaan') && (await tip.innerText()).includes('Een lange omschrijving van het niveau.')
+    && (await tip.evaluate((el) => el.getBoundingClientRect().right)) < (await plek('[data-sd-focus="rubric"]')).links, 'rubric in Helder: de omschrijving verschijnt als toelichting links van de balk als je een niveau aanwijst');
+  await sim.mouse.move(5, 5); await sim.waitForTimeout(150);
+  check(!(await tip.isVisible()), 'de toelichting verdwijnt als je het niveau loslaat');
+  const fbv = await plek('[data-sd-focus="feedback"]'), rbv = await plek('[data-sd-focus="rubric"]'), blv = await plek('.assignment-status-bar');
+  check(fbv.boven >= rbv.onder && fbv.onder <= blv.boven && fbv.onder - fbv.boven > 150 && (await plek('[data-sd-focus="feedback"] textarea')).onder >= fbv.onder - 4,
+    `feedback in Helder staat tussen rubric en afronding (${fbv.onder - fbv.boven}px hoog), het tekstvak vult het deel`);
+  const kopje = (sel, pseudo) => sim.evaluate(([x, ps]) => getComputedStyle(document.querySelector(x), ps).content, [sel, pseudo]);
+  check((await kopje('[data-sd-focus="rubric"] > h2', '::before')) === '"Rubric"' && (await kopje('[data-sd-focus="feedback"] > h2', '::before')) === '"Feedback"' && (await kopje('.assignment-status-bar', '::before')) === '"Afronden"'
+    && (await kleur('.reflection-items', 'backgroundColor')) === 'rgb(241, 238, 231)' && (await sim.evaluate(() => { const w = document.querySelector('.reflection-wrapper'); return w.querySelector('h4').getBoundingClientRect().bottom <= w.querySelector('.reflection-items').getBoundingClientRect().top; })) && parseFloat(await kleur('.assignment-status-bar .ladda-button', 'minHeight')) === 44,
+    'rechterbalk in Helder: drie delen met een kopje (Rubric, Feedback, Afronden), per onderdeel de naam met de schuifknop eronder, en één grote knop');
+  await sim.evaluate(() => document.querySelector('.review-group-panel .circle-button').click()); await sim.waitForTimeout(200);
+  const rondje = await sim.evaluate(() => { const i = document.querySelector('.review-group-panel img.avatar'), r = i.getBoundingClientRect(); return { b: Math.round(r.width), h: Math.round(r.height), straal: getComputedStyle(i).borderRadius }; });
+  const rijIn = await sim.evaluate(() => Math.round(document.querySelector('.review-group-panel .groups-table > .item').getBoundingClientRect().height));
+  check(rondje.b === 24 && rondje.h === 24 && rondje.straal === '50%', `ingeklapte lijst in Helder: ronde plaatjes (${rondje.b}x${rondje.h})`);
+  const knopPlek = () => sim.evaluate(() => { const k = document.querySelector('.review-group-panel > .circle-button').getBoundingClientRect(), p = document.querySelector('.review-group-panel').getBoundingClientRect(); return k.top >= 0 && k.bottom <= 48 && k.right <= p.right && k.left >= p.left; });
+  const ingeklapt = await knopPlek();
+  await sim.evaluate(() => document.querySelector('.review-group-panel .circle-button').click()); await sim.waitForTimeout(200);
+  const rijUit = await sim.evaluate(() => Math.round(document.querySelector('.review-group-panel .groups-table > .item').getBoundingClientRect().height));
+  const stip = await sim.evaluate(() => { const st = (sel) => { const el = document.querySelector(sel); const s = getComputedStyle(el, '::before'); return { b: s.width, h: s.height, r: s.borderRadius, k: s.backgroundColor }; };
+    return { nu: st('.review-group-panel .selected.item .usercard'), ander: st('.review-group-panel a.item .usercard'), rand: getComputedStyle(document.querySelector('.review-group-panel .selected.item')).boxShadow }; });
+  check(stip.rand === 'none' && stip.nu.b === '8px' && stip.nu.h === '8px' && stip.nu.r === '50%' && stip.nu.k !== 'rgba(0, 0, 0, 0)' && stip.ander.k === 'rgba(0, 0, 0, 0)' && stip.ander.b === '8px',
+    'uitgeklapte lijst in Helder: geen streep links, een ronde stip bij de student die je bekijkt, de andere rijen houden dezelfde ruimte vrij');
+  check(rijIn === 30 && rijUit === 30, `lijst in Helder: de rijen zijn ingeklapt en uitgeklapt even hoog (${rijIn}px en ${rijUit}px)`);
+  check(ingeklapt && (await knopPlek()) && (await kleur('.review-group-panel', 'overflowY')) === 'hidden' && (await kleur('.review-group-panel .groups-table', 'overflowY')) === 'auto',
+    'lijst in Helder: de knop om in of uit te klappen staat altijd rechtsboven in beeld; de lijst scrolt binnen het paneel');
+  const kopjes = await sim.evaluate(() => { const h = document.querySelector('[data-sd-focus="rubric"] > h2'); return { tekst: getComputedStyle(h).fontSize, rij: getComputedStyle(document.querySelector('.reflection-wrapper')).backgroundColor,
+    lucht: parseFloat(getComputedStyle(document.querySelector('.full-width-wrapper')).paddingTop) - Math.round(document.querySelector('#sim-docent-focus').shadowRoot.querySelector('.balk').getBoundingClientRect().bottom) }; });
+  const strook = await sim.evaluate(() => { const b = document.querySelector('#sim-docent-focus').shadowRoot.querySelector('.balk').getBoundingClientRect(), p = document.querySelector('.review-group-panel').getBoundingClientRect(), r = document.querySelector('[data-sd-focus="rubric"]').getBoundingClientRect();
+    const v = getComputedStyle(document.querySelector('#content'), '::after'); return { boven: Math.round(b.top), links: Math.round(b.left - p.right), rechts: Math.round((window.innerWidth - parseFloat(v.width)) - b.right), voorKolom: b.right <= r.left }; });
+  check(strook.boven === 0 && Math.abs(strook.links) <= 1 && Math.abs(strook.rechts) <= 1 && strook.voorKolom, `de balk bovenaan is een vaste strook die aansluit op de lijst links en de kolom rechts (verschil ${strook.links}px en ${strook.rechts}px)`);
+  check(kopjes.tekst === '0px' && kopjes.rij === 'rgba(0, 0, 0, 0)' && kopjes.lucht >= 8 && kopjes.lucht <= 20, `Helder: geen dubbel kopje bij de rubric, regels zonder grijze achtergrond, ${kopjes.lucht}px lucht tussen de balk en de kop`);
+  await pf.evaluate(() => chrome.storage.sync.set({ theme: 'auto' })); await sim.waitForTimeout(400);
+  await sim.goto('https://ma.simulise.com/assignments/assigned?filters=status:HANDED_IN'); await sim.waitForTimeout(600);
+  check((await fb.count()) === 0 && (await sim.getAttribute('html', 'data-sim-focus')) === null && (await toont('aside#nav')), 'buiten het beoordeelscherm is er geen focusmodus');
+  await pf.close();
 
   // Rapportprofielen en voorvertoning van het voortgangsrapport
   const prof = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);

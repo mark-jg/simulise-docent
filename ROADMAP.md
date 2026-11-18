@@ -28,12 +28,29 @@ Status: ✅ klaar · 🔧 in ontwikkeling · ⏳ gepland · 💡 idee · ⛔ bui
 | 1.9 | MCA-huisstijl als extra thema | 💡 | Design tokens bestaan al in het MCA design system |
 | 1.10 | Statusbadges in gewone taal (concept, ingeleverd, wacht op reflectie, beoordeeld) | 💡 | Ook relevant voor studentkant |
 
+## 1b. Nieuwe schil (thema Helder, proef)
+
+| # | Item | Status | Opmerking |
+|---|------|--------|-----------|
+| 7.1 | Thema Helder | 🔧 v0.19 | Tokenblok plus zachtere vormen; de schil hieronder werkt alleen bij dit thema |
+| 7.2 | Zijbalk rond taken: Vandaag, Nakijken, Mijn klassen, Maken, Inzicht, Meer | 🔧 v0.19 | modules/schil.js; volgorde met CSS order, items van Simulise blijven bestaan. Nog bevestigen in Simulise zelf, ook met ingeklapte zijbalk |
+| 7.3 | Gewone taal voor vaste woorden | 🔧 v0.19 | Woordenlijst TAAL in schil.js; alleen tekst die precies overeenkomt |
+| 7.4 | Kleur per klas | 🔧 v0.19 | modules/klassen.js; zijbalk, Vandaag en label per rij in Beoordelen. Later: zelf een kleur kiezen, ook in de matrix |
+| 7.5 | Thuispagina per klas | 🔧 v0.19 | Scherm Vandaag voor één klas (#klas=<uuid>): Wacht op jou, Te laat, Nog niet gestart, Klaar, snelkoppelingen. Later: wie loopt achter, komende deadlines, stippenkaart van de matrix |
+| 7.5b | Levendiger Vandaag en klaspagina | 🔧 v0.19 | Begroeting per dagdeel, weekstippen, kaart Volgende, kaart per groep met ring, stippenkaart per opdracht (zonder namen), confetti als alles klaar is. Schermafbeeldingen: `SD_BEELD=<map> node tools/rooktest.js` |
+| 7.6 | Focusmodus bij het beoordelen | 🔧 v0.19 | modules/focus.js: bovenbalk, zijbalk en kruimelkop weg, lijst met studenten compacter, omschrijving dichtgeklapt, zijkolom met rubric, feedback en de onderbalk van Simulise, eigen balk met vorige, volgende en volgende die wacht; sneltoetsen. De opmaak (ook de zijkolom) is op de echte pagina uitgeprobeerd, de balk alleen in de rooktest. Dekt ook 2.4. Stippen per student geprobeerd en weer weggehaald: de lijst van Simulise met namen werkt beter. Later: statusbalk met open criteria (2.3) |
+| 7.6c | Beoordeelscherm: namenlijst en compacte rubric | 🔧 v0.19 | Focusmodus klapt de lijst van Simulise uit (namen zonder plaatjes), 190px breed, rijen van 27px. Rubric in de zijkolom: niveaus zonder plaatjes, omschrijving op drie regels en volledig bij aanwijzen; op de echte pagina van 512 naar 311px. Nog te beoordelen in gebruik: is drie regels genoeg |
+| 7.6b | Beoordeelscherm in Helder: één samenhangend ontwerp | 🔧 v0.19 | Eén blok onderaan theme.css ("Focusmodus in het thema Helder"), in zijn geheel op de echte pagina geproefd: kop als band in de klaskleur met 12px lucht onder de balk, werk in themakleuren, lijst links (uitgeklapt namen, ingeklapt ronde plaatjes, inklapknop altijd rechtsboven, lijst scrolt binnen het paneel) en een witte balk rechts (264 tot 320px) met Rubric (per onderdeel de naam met de schuifknop eronder, toelichting bij aanwijzen), Feedback (direct onder de rubric) en Afronden. Vervangt drie gestapelde blokken die met elkaar botsten (dubbel kopje, grijze regels). Niet gezien: gekozen standen, de toelichting, rubrics met meer niveaus |
+| 7.7 | Opdracht aanmaken als recept | 💡 | Stappen van Simulise als doorlopende lijst met vinkjes |
+| 7.8 | Rustig einde van de dag, weekoverzicht, thema dat meekleurt met de dag | 💡 | |
+| 7.9 | Persoonlijk en toegankelijk: lettergrootte, leesvriendelijk lettertype, hoog contrast | 💡 | |
+
 ## 2. Beoordelen voor docenten (L2/L3)
 
 | # | Item | Status | Opmerking |
 |---|------|--------|-----------|
 | 2.1 | **Filter in Beoordelen**: Mijn groepen / Verberg meetmomenten / Alles | 🔧 v0.6, prioriteit | Klaar: Alles / Mijn opleidingen (meetmomenten op opleidingscode in de titel), uitsluitwoorden, verborgen aantal, "toon even alles", alles op één pagina (v0.7), Mijn groepen (v0.8). Nog: dashboardtegel |
-| 2.2 | Beoordeelqueue over alle groepen heen | ⏳ v0.3 | Per-groep actionable-lijsten samenvoegen: student, opdracht, groep, ingeleverd op, wachttijd |
+| 2.2 | Beoordeelqueue over alle groepen heen | 🔧 v0.18 | Scherm Vandaag (modules/vandaag.js): wachtrij per opdracht en groep met vak, wachttijd en voortgang, ring met wat vandaag is nagekeken, "Start met langst wachtend". Getest in de rooktest; nog bevestigen in Simulise zelf (eigen vraag sdDocentVandaag, link naar het beoordeelscherm) |
 | 2.3 | Beoordeelscherm met statusbalk | ⏳ | Welke rubrics mag je invullen, wat doet afronden met het competentiediagram, hoeveel criteria nog leeg |
 | 2.4 | "Volgende student"-knop binnen één opdracht | ⏳ | Hele klas achter elkaar nakijken |
 | 2.5 | Sneltoetsen en Cmd+K (groepen, opdrachten, studenten) | 🔧 v0.4 | Cmd+K/Ctrl+K: menu-items, groepen (+ "te beoordelen") en extensie-opdrachten. Studenten bewust niet (privacy); opdrachten volgen met de Beoordelen-rapporten |
@@ -78,11 +95,23 @@ testaccount.
 
 ---
 
+## Uit de analyse van november 2026 (live bekeken, nog niet gebouwd)
+
+| # | Item | Status | Opmerking |
+|---|------|--------|-----------|
+| 6.1 | Vakken aanzetten voor Opdrachten | ⏳ vraag aan beheer | Het label Vakken bestaat al (op 20 rubrics); in het opdrachtformulier ontbreekt het. Geen code nodig |
+| 6.2 | "Mijn groepen" in Beoordelen via het eigen URL-filter van Simulise | 💡 | `filters=group:<uuid>,<uuid>` werkt; telling en paginering kloppen dan vanzelf |
+| 6.3 | Opdrachtenmatrix: cellen zonder actie dimmen | 💡 | L1, op `td[data-status]` |
+| 6.4 | Naamgevingscontrole in de opdrachtenlijst | 💡 | Sjabloon bestaat: "[Vakcode] [periode week]: [type opdracht] [titel opdracht] [klas]" |
+| 6.5 | Cmd+K: Nieuwe opdracht, Beoordelen per groep, matrix Actie nodig | 💡 | Vaste adressen |
+| 6.6 | Groepstellers op het dashboard: "van mij: N" | 💡 | De teller telt alle beoordelaars |
+| 6.7 | Eén eigen formulier voor opdracht aanmaken | ⛔ voorlopig | Kan technisch (vijf mutaties), maar laat bij een fout een halve opdracht achter |
+
 ## Benodigde input (bijgewerkt na v0.6)
 
 Ontvangen: Beoordelen-lijst, beoordeelscherm, opdrachten van een groep. Nog nodig:
 - Dashboard (voor de Beoordelen-tegel).
-- Controleren of de URL verandert als je in Simulise zelf een Groep-filter aanzet in Beoordelen.
+- (Beantwoord: een Groep-filter in Beoordelen komt in de URL als `filters=group:<uuid>,<uuid>|status:...`.)
 
 ## Oorspronkelijk gevraagd voor v0.3
 

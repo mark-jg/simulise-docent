@@ -36,7 +36,25 @@
       mo.observe(document.body, { childList: true, subtree: true });
       return () => { clearTimeout(t); mo.disconnect(); };
     },
-    isOn(id) {
+/* Een vraag aan Simulise via de brug in de pagina (modules/gql.js), met je eigen sessie.
+     * Geeft { data, errors }; bij geen antwoord een fout na 20 seconden. */
+    gql(operationName, query, variables) {
+      if (!SD._gqlWacht) {
+        SD._gqlWacht = new Map();
+        window.addEventListener('message', (e) => {
+          if (e.source !== window || e.data?.type !== 'sd-gql-antwoord') return;
+          const klaar = SD._gqlWacht.get(e.data.id);
+          if (klaar) { SD._gqlWacht.delete(e.data.id); klaar(e.data); }
+        });
+      }
+      return new Promise((klaar) => {
+        const id = `sd-kern-${Date.now()}-${SD._gqlWacht.size}-${Math.random().toString(36).slice(2, 8)}`;
+        const t = setTimeout(() => { SD._gqlWacht.delete(id); klaar({ data: null, errors: ['Simulise gaf geen antwoord. Herlaad de pagina en probeer opnieuw.'] }); }, 20000);
+        SD._gqlWacht.set(id, (a) => { clearTimeout(t); klaar(a); });
+        window.postMessage({ type: 'sd-gql', id, operationName, query, variables }, location.origin);
+      });
+    },
+        isOn(id) {
       const meta = globalThis.SD_MODULES.find((m) => m.id === id);
       return meta ? SD.settings[meta.key] !== false : true;
     },

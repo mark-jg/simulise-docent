@@ -101,6 +101,33 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.19.0: nieuw thema Helder met een nieuwe schil (proef). De zijbalk is ingedeeld rond taken: Vandaag, Nakijken, Mijn
+  klassen, Maken, Inzicht en Meer. Elke klas heeft een eigen kleur, in de zijbalk en bij elke rij in Beoordelen. Vaste
+  woorden van Simulise staan in gewone taal ("Wacht op jou" in plaats van "Te beoordelen"). Klik op een klas voor de
+  thuispagina van die klas: wat op jou wacht, wat te laat is en snelkoppelingen naar de klas in Simulise. Bij een ander
+  thema blijft Simulise zoals het was.
+  Vandaag en de klaspagina zijn levendiger: een begroeting die meekleurt met het moment van de dag, de werkdagen van
+  deze week waarop je hebt nagekeken, een kaart Volgende, een kaart per groep met een eigen ring, en op de klaspagina
+  een stippenkaart met één stip per inlevering. Is alles nagekeken, dan valt er even confetti.
+  Nieuw is ook de focusmodus op het beoordeelscherm: het werk van de student met rubric, feedback en "beoordeling
+  toekennen" vast in een kolom ernaast, zodat je tijdens het nakijken kunt typen zonder te scrollen. De lijst met
+  studenten blijft staan, compacter. De omschrijving van de opdracht klapt dicht. Bovenaan een balk met vorige,
+  volgende en "volgende die wacht". Alt+F of Esc zet de focusmodus uit; de knop Zijkolom zet alleen de kolom uit.
+  In het thema Helder volgt het beoordeelscherm dezelfde stijl: lichte lijst, zachte vlakken, één accentkleur.
+  De lijst links toont alleen namen (zonder plaatjes) en de rubric is compact: niveaus als één regel, omschrijvingen op
+  drie regels, de hele tekst als je er met de muis overheen gaat.
+  In Helder heeft het beoordeelscherm de vormtaal van Vandaag en de klaspagina's: een kop in de kleur van de klas met
+  de plek in de klas en de tellers, een ring in de balk, en rechts een witte balk met drie delen: Rubric (per onderdeel
+  de naam met eronder een schuifknop voor het niveau; de omschrijving verschijnt als toelichting als je een niveau aanwijst), Feedback (een
+  tekstvak met de knoppen erin) en Afronden (de keuzes en één grote knop). De lijst links heeft ruimte: namen als hij is
+  uitgeklapt, ronde plaatjes als hij is ingeklapt.
+  De knop om de lijst in of uit te klappen staat altijd rechtsboven in de lijst.
+  De balk bovenaan is een vaste strook die aansluit tussen de lijst links en de balk rechts.
+- 0.18.0: nieuw scherm Vandaag, een eigen startscherm in Simulise zelf (bovenbalk en zijbalk blijven staan) met je
+  beoordeelwachtrij over alle groepen. Per opdracht en
+  groep één regel met vak, wachttijd en voortgang; een ring met wat je vandaag hebt nagekeken; knop "Start met langst
+  wachtend" die het beoordeelscherm van Simulise opent. Openen via "Vandaag" bovenaan de zijbalk, Cmd+K of een adres
+  dat eindigt op #vandaag. Toont geen studenten en bewaart alleen tellers en datums.
 - 0.17.0: rapporten verschijnen nu in Simulise zelf, als gewone pagina in de opmaak van Simulise, in plaats van in
   een apart afdrukvenster. Weergaven: Meetmomenten naast elkaar, Groepsoverzicht en Per student (diagram,
   leerlijnen, norm en gespreksadvies, met bladeren tussen studenten; klik op een naam). Knop Terug brengt de pagina

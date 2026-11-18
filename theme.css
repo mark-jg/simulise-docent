@@ -54,6 +54,18 @@ html[data-sim-theme="discord"] {
 }
 
 /* Tiimo: zacht lila, grote rondingen, vriendelijk, ronde letter */
+html[data-sim-theme="helder"] {
+  --sim-bg: #f6f4ef;        --sim-surface: #ffffff;   --sim-surface-2: #f1eee7;
+  --sim-text: #24222a;      --sim-text-2: #5f5b6b;    --sim-text-3: #948f9f;
+  --sim-border: #e7e2d8;    --sim-border-2: #d8d1c3;
+  --sim-accent: #4f5bd5;    --sim-accent-soft: #e8eafc; --sim-accent-text: #3a45b8;
+  --sim-warn: #9a5b00;      --sim-warn-soft: #fdf0d5;
+  --sim-danger: #c8364b;    --sim-danger-soft: #fde7ea;
+  --sim-nav-bg: #fffdf9;    --sim-nav-text: #55516a;  --sim-nav-active-bg: #eceefb;
+  --sim-radius: 16px;       --sim-radius-sm: 10px;
+  --sim-shadow: 0 2px 10px rgba(60, 50, 30, 0.06);
+  --sim-font: "Inter", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+}
 html[data-sim-theme="tiimo"] {
   --sim-bg: #f3effb;        --sim-surface: #ffffff;   --sim-surface-2: #f8f5fe;
   --sim-text: #2c2545;      --sim-text-2: #6b6388;    --sim-text-3: #9a93b3;
@@ -486,3 +498,353 @@ html[data-sim-theme="mocha"] aside#nav .nav-main > li > a i { opacity: .7; }
 @media (prefers-reduced-motion: reduce) {
   html[data-sim-theme] * { transition: none !important; }
 }
+
+/* ---------- Schil (modules/schil.js, alleen bij thema Helder): zijbalk rond taken, kleur per klas ---------- */
+html[data-sim-schil] aside#nav .nav-main { display: flex; flex-direction: column; }
+html[data-sim-schil] aside#nav .nav-main > .line { display: none; }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-kop { padding: 14px 16px 4px; font-size: 12px; color: var(--sim-text-3); cursor: default; user-select: none; }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-kop.sd-schil-knop { cursor: pointer; }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-kop.sd-schil-knop:hover { color: var(--sim-accent); }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-kop.sd-schil-knop::after { content: " ▸"; }
+html[data-sim-schil][data-sim-meer] aside#nav .nav-main > li.sd-schil-kop.sd-schil-knop::after { content: " ▾"; }
+html[data-sim-schil]:not([data-sim-meer]) aside#nav .nav-main > li[data-sd-deel="meer"] { display: none; }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-klas > a { display: flex; align-items: center; gap: 10px; }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-klas > a > i.sd-stip { flex: none; width: 12px; height: 12px; border-radius: 50%; background: var(--sd-klas, var(--sim-accent)); margin: 0 4px; opacity: 1; }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-klas > a > span { flex: 1; }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-klas > a[data-wacht]::after { content: attr(data-wacht); flex: none; min-width: 22px; padding: 1px 7px; border-radius: 999px; text-align: center;
+  font-size: 12px; font-weight: 600; background: color-mix(in srgb, var(--sd-klas, var(--sim-accent)) 16%, transparent); color: var(--sd-klas, var(--sim-accent-text)); }
+html[data-sim-schil] aside#nav .nav-main > li.sd-schil-klas.active > a { box-shadow: inset 3px 0 0 var(--sd-klas, var(--sim-accent)); }
+/* Ingeklapte zijbalk (van Simulise zelf of van de extensie): alleen iconen en stippen. */
+html[data-sim-schil] aside#nav.nav-xs .nav-main > li.sd-schil-kop,
+html[data-sim-schil][data-sim-nav-mini] aside#nav .nav-main > li.sd-schil-kop { padding: 0; height: 1px; margin: 8px 12px; background: var(--sim-border); font-size: 0; }
+html[data-sim-schil] aside#nav.nav-xs .nav-main > li.sd-schil-kop::after,
+html[data-sim-schil][data-sim-nav-mini] aside#nav .nav-main > li.sd-schil-kop::after { content: none !important; }
+html[data-sim-schil] aside#nav.nav-xs .nav-main > li.sd-schil-klas > a,
+html[data-sim-schil][data-sim-nav-mini] aside#nav .nav-main > li.sd-schil-klas > a { justify-content: center; }
+html[data-sim-schil] aside#nav.nav-xs .nav-main > li.sd-schil-klas > a > span,
+html[data-sim-schil] aside#nav.nav-xs .nav-main > li.sd-schil-klas > a::after,
+html[data-sim-schil][data-sim-nav-mini] aside#nav .nav-main > li.sd-schil-klas > a > span,
+html[data-sim-schil][data-sim-nav-mini] aside#nav .nav-main > li.sd-schil-klas > a::after { display: none; }
+html[data-sim-schil] aside#nav.nav-xs .nav-main > li.sd-schil-klas > a > i.sd-stip,
+html[data-sim-schil][data-sim-nav-mini] aside#nav .nav-main > li.sd-schil-klas > a > i.sd-stip { width: 16px; height: 16px; margin: 0; }
+/* Klas bij een rij in de Beoordelen-lijst */
+.sd-klaschip { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 500;
+  background: color-mix(in srgb, var(--sd-klas, #888) 14%, transparent); color: var(--sim-text, inherit); white-space: nowrap; vertical-align: middle; }
+.sd-klaschip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sd-klas, #888); }
+/* Helder: zachtere, ruimere vormen */
+html[data-sim-theme="helder"] .panel, html[data-sim-theme="helder"] .s-card { border-radius: var(--sim-radius); }
+html[data-sim-theme="helder"] .btn { border-radius: 999px; }
+html[data-sim-theme="helder"] .badge, html[data-sim-theme="helder"] .label { border-radius: 999px; font-weight: 500; }
+html[data-sim-theme="helder"] aside#nav .nav-main > li > a { border-radius: var(--sim-radius-sm); margin: 1px 8px; }
+html[data-sim-theme="helder"] .badge.bg-warning { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
+
+/* ---------- Focusmodus bij het beoordelen (modules/focus.js): alleen het werk, de rubric en de feedback ---------- */
+html[data-sim-focus] #app > header.navbar,
+html[data-sim-focus] aside#nav,
+html[data-sim-focus] a.support-button,
+html[data-sim-focus] #content header.header-md { display: none !important; }
+/* Het vak onder de bovenbalk schuift naar boven; Simulise animeert dat, wat hier alleen maar hapert. */
+html[data-sim-focus] #app > section { top: 0 !important; transition: none !important; }
+html[data-sim-focus] #scrollable-page-wrapper { top: 0 !important; }
+/* Omslag: geen foto, alleen de titel en de datum, links uitgelijnd onder de eigen balk. */
+html[data-sim-focus] .width-filling-header { min-height: 0 !important; height: auto !important; padding: 64px 0 4px !important; background: transparent !important; background-image: none !important; }
+html[data-sim-focus] .width-filling-header::before, html[data-sim-focus] .width-filling-header::after { display: none !important; }
+html[data-sim-focus] .width-filling-header > :not(.assignment-details) { display: none !important; }
+html[data-sim-focus] .width-filling-header .assignment-details { flex: 1 1 auto !important; width: auto !important; max-width: none !important; margin: 0 !important; padding: 0 15px !important;
+  display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; align-items: center !important; gap: 4px 14px !important; text-align: left !important; }
+html[data-sim-focus] .width-filling-header .assignment-details,
+html[data-sim-focus] .width-filling-header .assignment-details h1,
+html[data-sim-focus] .width-filling-header .footer-details,
+html[data-sim-focus] .width-filling-header .footer-details * { color: var(--sim-text, #24222a) !important; text-shadow: none !important; }
+html[data-sim-focus] .width-filling-header .assignment-details h1 { font-size: 22px !important; line-height: 1.25 !important; height: auto !important; margin: 0 !important; text-align: left !important; }
+html[data-sim-focus] .width-filling-header .assignment-details > div { margin: 0 !important; width: auto !important; }
+html[data-sim-focus] .width-filling-header .footer-details { margin: 0 0 0 auto !important; font-size: 13px !important; opacity: .75; }
+html[data-sim-focus] #scrollable-page-wrapper .fluid-container-max-width h2 { scroll-margin-top: 76px; }
+html[data-sim-focus]:not([data-sim-focus-opdracht]) [data-sd-focus="omschrijving"] { display: none !important; }
+/* Zonder zijkolom: de inhoud in het midden. */
+html[data-sim-focus]:not([data-sim-focus-kolom]) #scrollable-page-wrapper .fluid-container-max-width { max-width: 980px !important; margin-left: auto !important; margin-right: auto !important; }
+/* De lijst met studenten van Simulise blijft, maar compacter: de hele klas in beeld. */
+html[data-sim-focus] .review-group-panel .groups-table > .item { height: 30px !important; min-height: 30px !important; font-size: 13px !important; }
+html[data-sim-focus] .review-group-panel .usercard, html[data-sim-focus] .review-group-panel .user-status { height: 30px !important; min-height: 30px !important; }
+html[data-sim-focus] .review-group-panel .usercard img.avatar, html[data-sim-focus] .review-group-panel .usercard .avatar { width: 24px !important; height: 24px !important; min-width: 24px !important; line-height: 24px !important; font-size: 10px !important; }
+html[data-sim-focus] .review-group-panel { height: 100vh !important; max-height: 100vh !important; box-sizing: border-box !important; }
+html[data-sim-focus] .review-group-panel.expanded { width: 220px !important; min-width: 220px !important; flex-basis: 220px !important; }
+html[data-sim-focus] .review-group-panel.expanded .usercard { width: auto !important; flex: 1 1 auto !important; min-width: 0 !important; }
+html[data-sim-focus] .review-group-panel.expanded .user-name { display: block !important; height: auto !important; padding: 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html[data-sim-focus] .review-group-panel.expanded .user-status { width: 34px !important; flex: none !important; }
+/* Zijkolom: één rustig paneel rechts met rubric, feedback en de onderbalk van Simulise. De hoogtes (--sdf-balk,
+   --sdf-onder) meet modules/focus.js. De blokken blijven op hun plek in de pagina van Simulise; alleen de plaatsing verandert. */
+html[data-sim-focus-kolom] { --sdf-w: clamp(380px, 31vw, 520px); --sdf-rand: 28px; }
+html[data-sim-focus-kolom] #content::after { content: ""; position: fixed; top: 0; right: 0; bottom: 0; width: calc(var(--sdf-w) + var(--sdf-rand)); z-index: 29;
+  background: var(--sim-surface, #fff); border-left: 1px solid var(--sim-border, #e3e6ea); }
+html[data-sim-focus-kolom] #scrollable-page-wrapper .full-width-wrapper,
+html[data-sim-focus-kolom] #scrollable-page-wrapper .flex-column.flex-grow > .fluid-container-max-width { max-width: none !important; margin-left: 0 !important; margin-right: 0 !important;
+  padding-right: calc(var(--sdf-w) + var(--sdf-rand) + 15px) !important; box-sizing: border-box !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"],
+html[data-sim-focus-kolom] [data-sd-focus="feedback"],
+html[data-sim-focus-kolom] .assignment-status-bar { position: fixed !important; right: 14px !important; left: auto !important; width: var(--sdf-w) !important; z-index: 30 !important; margin: 0 !important;
+  box-sizing: border-box !important; background: transparent !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] { top: 8px !important; max-height: calc(100vh - 18px - var(--sdf-onder, 300px)) !important; overflow-y: auto !important; padding: 0 4px 8px 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] { bottom: calc(10px + var(--sdf-balk, 150px)) !important; max-height: 30vh !important; overflow-y: auto !important; padding: 4px 0 8px !important;
+  border-top: 1px solid var(--sim-border, #e3e6ea) !important; }
+html[data-sim-focus-kolom] .assignment-status-bar { bottom: 8px !important; top: auto !important; padding: 8px 0 0 !important; border-top: 1px solid var(--sim-border, #e3e6ea) !important; }
+/* Kopjes van de kolom: klein en rustig. */
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] > h2, html[data-sim-focus-kolom] [data-sd-focus="feedback"] > h2 { font-size: 12px !important; font-weight: 600 !important; letter-spacing: .02em !important;
+  margin: 6px 0 4px !important; padding: 0 !important; color: var(--sim-text-3, #8a93a0) !important; }
+/* Rubric: zonder kaart eromheen, kleinere koppen en plaatjes, dichter op elkaar. */
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .wrapper-reflection { padding: 0 !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] h3 { font-size: 15px !important; line-height: 1.3 !important; padding: 4px 0 !important; margin: 0 !important; align-items: center !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] h3 .title { font-size: 15px !important; letter-spacing: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] h3 .circle-button { width: 26px !important; height: 26px !important; min-width: 26px !important; box-shadow: none !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] h3 .circle-button i { font-size: 13px !important; padding: 0 !important; width: auto !important; height: auto !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .badge-description { margin: 0 !important; padding: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .badges-title-wrapper { margin: 0 !important; padding: 4px 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .badges-title-wrapper .item { padding: 0 4px !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .badges-title-wrapper img { width: 28px !important; height: 28px !important; margin: 0 auto !important; display: block !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .badges-title-wrapper .badge-small-screen { font-size: 12px !important; letter-spacing: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .reflection-wrapper { margin: 0 !important; padding: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .reflection-wrapper h4 { font-size: 13.5px !important; margin: 8px 0 0 !important; letter-spacing: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .reflection-items { margin: 4px -4px 8px !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .reflection-items > .item { padding: 0 4px !important; font-size: 12.5px !important; line-height: 1.4 !important; letter-spacing: 0 !important; min-width: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="rubric"] .reflection-items > .item * { font-size: inherit !important; line-height: inherit !important; letter-spacing: 0 !important; }
+/* Feedback: alleen het tekstvak met de twee knoppen ernaast. */
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] > * { max-width: none !important; width: auto !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] .rounded-content-wrapper { margin: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; border: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] .new-chat-item { padding: 0 !important; margin: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] .new-chat-item .author { display: none !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] .message.input-group { display: flex !important; flex-wrap: nowrap !important; align-items: stretch !important; width: 100% !important; margin: 0 !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] textarea { flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; min-height: 84px !important; box-sizing: border-box !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] .message.input-group > .btn-info { flex: none !important; height: auto !important; }
+html[data-sim-focus-kolom] [data-sd-focus="feedback"] .mt-4 { margin-top: 0 !important; }
+/* Onderbalk: de drie keuzes als nette regels (rondje links, tekst ernaast), daaronder de knop over de hele breedte. */
+html[data-sim-focus-kolom] .assignment-status-bar .fluid-container-max-width { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .progress-wrapper { padding: 0 !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .progress-items > .d-flex { flex-direction: column !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .assignment-review-container, html[data-sim-focus-kolom] .assignment-status-bar .group-list-items { width: 100% !important; max-width: none !important; margin: 0 !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .group-list-items > div { flex-direction: row !important; align-items: center !important; flex-wrap: wrap !important; padding: 4px 10px !important; text-align: left !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .group-list-items .control { margin: 0 10px 0 0 !important; flex: none !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .group-list-items .extra { margin-left: auto !important; font-size: 12px !important; text-align: right !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .assignment-review-submit { padding: 0 !important; margin: 8px 0 0 !important; display: flex !important; align-items: center !important; gap: 12px !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .assignment-status-bar-submit-button { margin: 0 !important; flex: 1 1 auto !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .ladda-button { padding-top: 6px !important; padding-bottom: 6px !important; min-height: 0 !important; height: auto !important; }
+html[data-sim-focus-kolom] .assignment-status-bar .assignment-review-submit > .mt-2 { margin: 0 !important; width: auto !important; font-size: 12px !important; text-align: right !important; flex: none !important; }
+
+/* ---------- Focusmodus: lijst met alleen namen, en een compacte rubric ---------- */
+/* De uitgeklapte lijst van Simulise toont namen zonder plaatjes; modules/focus.js klapt hem uit. Hier smal en dicht
+   op elkaar, in de kleuren van het thema (de hele klas past zonder scrollen). */
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel { background: var(--sim-nav-bg, #fff) !important; border-right: 1px solid var(--sim-border, #e3e6ea) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded { width: 190px !important; min-width: 190px !important; flex-basis: 190px !important; padding: 12px 8px !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded > a { color: var(--sim-text-2, #5b6470) !important; padding: 0 6px !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .spacing-bottom-15 { margin: 0 !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table-header { margin-top: 10px !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table { background: transparent !important; width: auto !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table > .item { height: 27px !important; min-height: 27px !important; font-size: 13px !important; width: auto !important; border-radius: 8px !important;
+  align-items: center !important; color: var(--sim-text, #1e2328) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table > a.item:hover { background: var(--sim-surface-2, #eef0f3) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table > .selected.item { background: var(--sim-nav-active-bg, #e6f4f1) !important; box-shadow: inset 3px 0 0 var(--sim-accent, #0e8a74) !important; font-weight: 600 !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .usercard { width: auto !important; flex: 1 1 auto !important; min-width: 0 !important; height: 27px !important; min-height: 0 !important; padding: 0 8px !important;
+  border: 0 !important; background: transparent !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-name { display: block !important; height: auto !important; padding: 0 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;
+  color: var(--sim-text, #1e2328) !important; line-height: 27px !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status { width: 24px !important; height: 20px !important; min-height: 0 !important; flex: none !important; margin: 0 4px 0 0 !important; border: 0 !important;
+  border-radius: 999px !important; background: transparent !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status i { font-size: 12px !important; color: var(--sim-text-3, #8a93a0) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status.bg-backport-success { background: var(--sim-accent-soft, #e6f4f1) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status.bg-backport-success i { color: var(--sim-accent-text, #0b6f5e) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status.bg-backport-warning { background: var(--sim-warn-soft, #fdf3d7) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status.bg-backport-warning i { color: var(--sim-warn, #8a6100) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status.bg-backport-danger { background: var(--sim-danger-soft, #fbe6e3) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-status.bg-backport-danger i { color: var(--sim-danger, #c0392b) !important; }
+html[data-sim-focus] #scrollable-page-wrapper .review-group-panel .circle-button { background: var(--sim-surface, #fff) !important; color: var(--sim-text-2, #5b6470) !important; border-color: var(--sim-border, #e3e6ea) !important; margin: 8px auto 0 !important; }
+/* Rubric in de zijkolom: niveaus als één regel tekst (zonder plaatjes), omschrijvingen op drie regels. Ga je met de
+   muis over een onderdeel (of zet je er de focus op), dan staat de hele tekst er. */
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] > h2 { margin: 6px 0 2px !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 { font-size: 14px !important; padding: 2px 0 !important; color: var(--sim-text, #1e2328) !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 .title { font-size: 14px !important; font-weight: 600 !important; color: var(--sim-text, #1e2328) !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 .circle-button { width: 22px !important; height: 22px !important; min-width: 22px !important; background: transparent !important; color: var(--sim-text-3, #8a93a0) !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 .circle-button i { font-size: 12px !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .badges-title-wrapper { padding: 2px 0 4px !important; background: var(--sim-surface, #fff) !important; border-radius: 0 !important; border-bottom: 1px solid var(--sim-border, #e3e6ea) !important; top: 0 !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .badges-title-wrapper .item { padding: 0 3px !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .badges-title-wrapper img { display: none !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .badges-title-wrapper .badge-small-screen { font-size: 11.5px !important; font-weight: 600 !important; color: var(--sim-text-2, #5b6470) !important; text-align: left !important; padding: 0 9px !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-wrapper h4 { font-size: 12.5px !important; font-weight: 600 !important; margin: 7px 0 0 !important; color: var(--sim-text, #1e2328) !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items { margin: 3px -3px 2px !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items > .item { padding: 0 3px !important; min-height: 0 !important; min-width: 0 !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content { padding: 6px 9px !important; font-size: 12px !important; line-height: 1.35 !important; border-radius: 8px !important; box-shadow: none !important;
+  background: var(--sim-surface-2, #eef0f3) !important; color: var(--sim-text, #1e2328) !important; outline: 1px solid transparent !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content > div:last-child { display: -webkit-box !important; -webkit-box-orient: vertical !important; -webkit-line-clamp: 3 !important; overflow: hidden !important;
+  font-size: 12px !important; line-height: 1.35 !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items:hover .item .content > div:last-child,
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items:focus-within .item .content > div:last-child { -webkit-line-clamp: unset !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item:not(.disabled):hover .content:not(.selected) { background: var(--sim-accent-soft, #e6f4f1) !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content.selected { background: var(--sim-accent-soft, #e6f4f1) !important; outline: 2px solid var(--sim-accent, #0e8a74) !important; color: var(--sim-accent-text, #0b6f5e) !important; }
+html[data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .authors { transform: scale(.6) !important; transform-origin: left bottom !important; bottom: -6px !important; left: 6px !important; }
+
+/* ---------- Focusmodus in het thema Helder (één samenhangend ontwerp) ----------
+   Dit blok is het hele Helder-ontwerp van het beoordeelscherm: kop, werk, lijst links en balk rechts. Het is in zijn
+   geheel op de echte pagina geproefd. Pas het als geheel aan; stapel er geen losse correcties op (dat gaf eerder
+   botsende regels, zoals een dubbel kopje). `:root:root` in de selectors laat dit blok winnen van de algemene
+   focusregels hierboven. modules/focus.js levert de variabelen: --sdf-klas, --sdf-klasnaam, --sdf-kop, --sdf-tel
+   (klas en tellers) en --sdf-balk, --sdf-rubric (gemeten hoogtes). */
+
+/* Basis: geen extra ruimte tussen letters, warme achtergrond, themakleuren voor meldingen. */
+html:root:root[data-sim-theme="helder"][data-sim-focus] .smls-ui, html:root:root[data-sim-theme="helder"][data-sim-focus] .smls-ui *:not(i) { letter-spacing: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #content, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper { background: var(--sim-bg) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] .text-brand-warning { color: var(--sim-warn) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] .text-brand-danger { color: var(--sim-danger) !important; }
+
+/* Kop: een band in de kleur van de klas, met 12px lucht onder de eigen balk (52px hoog, bovenaan vast). */
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .full-width-wrapper { padding-top: 64px !important; padding-left: 15px !important; margin-bottom: 10px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus]:not([data-sim-focus-kolom]) #scrollable-page-wrapper .full-width-wrapper { padding-right: 15px !important; max-width: 980px !important; margin-left: auto !important; margin-right: auto !important; box-sizing: border-box !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header { padding: 14px 20px 16px !important; border-radius: 20px !important;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--sdf-klas, var(--sim-accent)) 30%, #fff), color-mix(in srgb, var(--sdf-klas, var(--sim-accent)) 9%, #fff)) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details { padding: 0 !important; gap: 2px 14px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details h1, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .footer-details, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .footer-details * { color: #24222a !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details::before { content: var(--sdf-kop, ""); flex: 0 0 100%; font-size: 13px; opacity: .8; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details::after { content: var(--sdf-tel, ""); flex: 0 0 100%; order: 9; font-size: 13px; opacity: .8; margin-top: 2px; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details h1 { font-size: 26px !important; font-weight: 700 !important; line-height: 1.2 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .footer-details { opacity: .8; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .badge-pill { background: rgba(255, 255, 255, .7) !important; color: #24222a !important; }
+
+/* Het werk van de student. */
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .flex-column.flex-grow > .fluid-container-max-width > :not([data-sd-focus]) > h2 { color: var(--sim-text) !important; font-size: 17px !important; font-weight: 600 !important; margin: 8px 0 8px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper h3.collapsable, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper h3.collapsable .title { color: var(--sim-text) !important; font-weight: 600 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper h3.collapsable .circle-button { background: var(--sim-surface-2) !important; color: var(--sim-text-2) !important; box-shadow: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .rounded-content-wrapper { border: 1px solid var(--sim-border) !important; border-radius: var(--sim-radius) !important; box-shadow: none !important; color: var(--sim-text-2) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .assignment-deliverable-items .deliverable-item { border-color: var(--sim-accent) !important; outline-color: var(--sim-accent) !important; border-radius: var(--sim-radius-sm) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .assignment-deliverable-items .deliverable-item .icon { background: var(--sim-accent) !important; }
+
+/* Lijst links. Het paneel zelf scrolt niet; de lijst scrolt binnen het paneel. De knop om in of uit te klappen
+   staat daardoor altijd rechtsboven in beeld. */
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel { position: sticky !important; top: 0 !important; display: flex !important; flex-direction: column !important; height: 100vh !important; max-height: 100vh !important; box-sizing: border-box !important; overflow: hidden !important;
+  padding: 12px 10px !important; background: var(--sim-nav-bg) !important; border-right: 1px solid var(--sim-border) !important; color: var(--sim-text-2) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel > a { flex: none !important; color: var(--sim-text-2) !important; padding: 4px 6px !important; margin-right: 34px !important; white-space: nowrap !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel > .spacing-bottom-15 { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; margin: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .groups-table-header { flex: none !important; height: auto !important; margin: 8px 0 4px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table-header::before { content: var(--sdf-klasnaam, ""); display: block; font-size: 13px; font-weight: 600; color: var(--sim-text); padding: 0 8px 0 24px;
+  background: radial-gradient(circle 5px at 13px 50%, var(--sdf-klas, var(--sim-accent)) 98%, transparent) no-repeat; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .groups-table { flex: 1 1 auto !important; min-height: 0 !important; max-height: none !important; height: auto !important; overflow-y: auto !important; background: transparent !important; width: auto !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .groups-table-footer { display: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .groups-table > .item { display: flex !important; box-sizing: border-box !important; overflow: hidden !important; width: auto !important; border-radius: 10px !important; align-items: center !important; color: var(--sim-text) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .groups-table > a.item:hover { background: var(--sim-surface-2) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .groups-table > .selected.item { background: color-mix(in srgb, var(--sdf-klas, var(--sim-accent)) 13%, #fff) !important; box-shadow: inset 3px 0 0 var(--sdf-klas, var(--sim-accent)) !important; font-weight: 600 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .usercard { border: 0 !important; background: transparent !important; min-height: 0 !important; color: inherit !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-name { color: var(--sim-text) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status { flex: none !important; width: 26px !important; height: 22px !important; min-height: 0 !important; margin: 0 6px 0 0 !important; border: 0 !important; border-radius: 999px !important; background: transparent !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status i { font-size: 12px !important; color: var(--sim-text-3) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status.bg-backport-success { background: var(--sim-accent-soft) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status.bg-backport-success i { color: var(--sim-accent-text) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status.bg-backport-warning { background: var(--sim-warn-soft) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status.bg-backport-warning i { color: var(--sim-warn) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status.bg-backport-danger { background: var(--sim-danger-soft) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel .user-status.bg-backport-danger i { color: var(--sim-danger) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel > .circle-button { position: absolute !important; top: 11px !important; right: 10px !important; margin: 0 !important; width: 26px !important; height: 26px !important;
+  background: var(--sim-surface) !important; color: var(--sim-text-2) !important; border: 1px solid var(--sim-border) !important; }
+/* Uitgeklapt: namen. */
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded { width: 232px !important; min-width: 232px !important; flex-basis: 232px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table > .item { height: 30px !important; min-height: 30px !important; font-size: 13.5px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .usercard { width: auto !important; flex: 1 1 auto !important; min-width: 0 !important; height: 30px !important; padding: 0 10px !important; }
+/* Uitgeklapt geen streep links; een ronde stip in de kleur van de klas wijst de student aan die je bekijkt. Elke rij
+   houdt dezelfde ruimte vrij voor de stip, zodat de namen onder elkaar blijven staan. */
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .groups-table > .selected.item { box-shadow: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .usercard { display: flex !important; align-items: center !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .usercard::before { content: ""; flex: none; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: transparent; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .selected.item .usercard::before { background: var(--sdf-klas, var(--sim-accent)); }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-name { flex: 1 1 auto !important; min-width: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel.expanded .user-name { display: block !important; height: auto !important; padding: 0 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; line-height: 30px !important; }
+/* Ingeklapt: ronde plaatjes, met dezelfde rijhoogte als uitgeklapt (30px), zodat de lijst in beide standen even hoog is.
+   Van "terug" blijft alleen het pijltje over, zodat de knop ernaast past. */
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel:not(.expanded) { width: 104px !important; min-width: 104px !important; flex-basis: 104px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel:not(.expanded) > a { font-size: 0 !important; margin-right: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel:not(.expanded) > a i { font-size: 14px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel:not(.expanded) .groups-table > .item { height: 30px !important; min-height: 30px !important; justify-content: space-between !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel:not(.expanded) .usercard { width: auto !important; height: 30px !important; padding: 0 0 0 6px !important; flex: none !important; display: flex !important; align-items: center !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .review-group-panel:not(.expanded) .usercard img.avatar { width: 24px !important; height: 24px !important; min-width: 24px !important; max-width: none !important; max-height: none !important; aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important; object-fit: cover !important; flex: none !important; display: block !important; }
+
+/* Balk rechts: één wit vlak met drie delen, elk met een klein kopje. Rubric en Feedback staan bovenaan onder elkaar,
+   Afronden staat onderaan boven een dunne lijn. */
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] { --sdf-w: clamp(264px, 20vw, 320px); --sdf-rand: 32px; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #content::after { content: "" !important; position: fixed !important; top: 0 !important; right: 0 !important; bottom: 0 !important; width: calc(var(--sdf-w) + var(--sdf-rand)) !important; z-index: 29 !important;
+  background: var(--sim-surface) !important; border-left: 1px solid var(--sim-border) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"], html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"], html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar { position: fixed !important; right: 16px !important; left: auto !important; width: var(--sdf-w) !important; z-index: 30 !important; margin: 0 !important; box-sizing: border-box !important;
+  background: transparent !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] { top: 14px !important; max-height: calc(100vh - 230px - var(--sdf-balk, 240px)) !important; overflow-y: auto !important; padding: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] { top: calc(34px + var(--sdf-rubric, 200px)) !important; bottom: auto !important; height: min(240px, calc(100vh - 72px - var(--sdf-rubric, 200px) - var(--sdf-balk, 240px))) !important; min-height: 110px !important;
+  max-height: none !important; overflow: visible !important; padding: 0 !important; display: flex !important; flex-direction: column !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar { bottom: 14px !important; top: auto !important; padding: 14px 0 0 !important; border-top: 1px solid var(--sim-border) !important; }
+/* Kopjes: de tekst van Simulise ("Reflecties") maakt plaats voor een eigen, rustig kopje. */
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] > h2, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] > h2 { font-size: 0 !important; line-height: 0 !important; color: transparent !important; margin: 0 0 8px !important; padding: 0 !important; flex: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] > h2::before, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] > h2::before, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar::before { display: block; align-self: flex-start; font-size: 12px; font-weight: 600; line-height: 1.3; text-align: left; color: var(--sim-text-3); }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] > h2::before { content: "Rubric"; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] > h2::before { content: "Feedback"; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar::before { content: "Afronden"; margin: 0 0 8px; }
+
+/* Rubric: de naam in de tint van de klas; per onderdeel de naam met daaronder een schuifknop over de hele breedte.
+   De omschrijving van een niveau staat in de toelichting van modules/focus.js. */
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .rounded-content-wrapper, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .wrapper-reflection, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .badge-wrapper, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .avoid-page-break { padding: 0 !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: 0 !important; border-radius: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 { font-size: 14px !important; line-height: 1.3 !important; padding: 10px 12px !important; margin: 0 !important; align-items: center !important; border: 0 !important; box-shadow: none !important;
+  border-radius: 12px !important; background: color-mix(in srgb, var(--sdf-klas, var(--sim-accent)) 11%, #fff) !important; color: var(--sim-text) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 .title { font-size: 14px !important; font-weight: 600 !important; color: var(--sim-text) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 .invisible { display: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 .circle-button { width: 22px !important; height: 22px !important; min-width: 22px !important; background: transparent !important; box-shadow: none !important; color: var(--sim-text-2) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] h3 .circle-button i { font-size: 12px !important; padding: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .badge-description, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .badges-title-wrapper { display: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-wrapper { display: block !important; margin: 0 !important;
+  padding: 10px 12px 11px !important; background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--sim-border) !important; border-radius: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-wrapper:last-child { border-bottom: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-wrapper h4 { font-size: 13px !important; font-weight: 500 !important; margin: 0 0 6px !important; color: var(--sim-text) !important; line-height: 1.3 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items { margin: 0 !important; padding: 3px !important; gap: 2px !important; flex-direction: row !important; flex-wrap: nowrap !important; background: var(--sim-surface-2) !important; border-radius: 999px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items > .item { padding: 0 !important; min-height: 0 !important; min-width: 0 !important; flex: 1 1 0 !important; border: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content { display: flex !important; box-sizing: border-box !important; flex-direction: row !important; align-items: center !important; justify-content: center !important; gap: 5px !important;
+  padding: 4px 8px !important; min-height: 28px !important; height: auto !important; border-radius: 999px !important; box-shadow: none !important; outline: 0 !important; background: transparent !important;
+  color: var(--sim-text-2) !important; font-size: 12.5px !important; line-height: 1.2 !important; text-align: center !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item:has(.authors.d-md-flex .avatar) .content { padding-right: 26px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content > strong { display: flex !important; white-space: nowrap !important; font-weight: 500 !important; font-size: 12.5px !important; padding: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content > strong .authors { display: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content > div:last-child { display: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item:not(.disabled):hover .content:not(.selected) { background: var(--sim-surface) !important; color: var(--sim-text) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .content.selected { background: var(--sim-accent) !important; color: #fff !important; outline: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .authors.d-md-flex { position: absolute !important; top: 50% !important; bottom: auto !important; left: auto !important; right: 7px !important; transform: translateY(-50%) !important;
+  width: 16px !important; height: 16px !important; margin: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .authors.d-md-flex .avatar, html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="rubric"] .reflection-items .item .authors.d-md-flex img { width: 16px !important; height: 16px !important; min-width: 16px !important; border: 0 !important;
+  box-shadow: none !important; border-radius: 50% !important; object-fit: cover !important; display: block !important; overflow: hidden !important; }
+
+/* Feedback: een zacht gevuld tekstvak, met de microfoon en de bijlage als ronde knoppen rechtsonder in het vak. */
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] > * { max-width: none !important; width: auto !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .rounded-content-wrapper { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; flex-direction: column !important; padding: 0 !important; margin: 0 !important;
+  background: transparent !important; border: 0 !important; box-shadow: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .new-chat-item { flex: 1 1 auto !important; min-height: 0 !important; display: flex !important; align-items: stretch !important; padding: 0 !important; margin: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .new-chat-item .author { display: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .message.input-group { position: relative !important; flex: 1 1 auto !important; display: flex !important; width: 100% !important; height: auto !important; margin: 0 !important; gap: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] textarea { flex: 1 1 auto !important; align-self: stretch !important; width: 100% !important; height: 100% !important; min-height: 0 !important; max-height: none !important; resize: none !important;
+  box-sizing: border-box !important; border: 1px solid transparent !important; border-radius: 14px !important; background: var(--sim-surface-2) !important; color: var(--sim-text) !important;
+  padding: 12px 14px 48px !important; font-size: 14px !important; line-height: 1.5 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] textarea:focus { background: var(--sim-surface) !important; border-color: var(--sim-accent) !important; outline: none !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .message.input-group > .btn-info { position: absolute !important; bottom: 8px !important; right: 46px !important; width: 32px !important; height: 32px !important; padding: 0 !important; align-self: auto !important;
+  display: flex !important; align-items: center !important; justify-content: center !important; border-radius: 50% !important; background: var(--sim-surface) !important; color: var(--sim-text-2) !important;
+  border: 1px solid var(--sim-border) !important; z-index: 2 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .message.input-group > .btn-info + .btn-info { right: 8px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .message.input-group > .btn-info:hover { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper [data-sd-focus="feedback"] .mt-4 { display: none !important; }
+
+/* Afronden: de drie keuzes als regels met een rand (alleen de niet-gekozen stand wordt aangepast), daaronder één grote knop. */
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .fluid-container-max-width { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .progress-wrapper { padding: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .progress-items > .d-flex { flex-direction: column !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .assignment-review-container { width: 100% !important; margin: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items { width: 100% !important; margin: 0 !important; display: flex !important; flex-direction: column !important; gap: 6px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items > div { flex-direction: row !important; align-items: center !important; justify-content: flex-start !important; flex-wrap: wrap !important; padding: 8px 12px !important; border-radius: 12px !important; text-align: left !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items > div.background-brand-light-3 { background: var(--sim-surface) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items > div.border-gray-c { border: 1px solid var(--sim-border) !important; border-radius: 12px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items > div:hover { background: var(--sim-accent-soft) !important; border-color: var(--sim-accent) !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items .control { margin: 0 10px 0 0 !important; flex: none !important; width: 18px !important; height: 18px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items .meta { color: var(--sim-text) !important; text-align: left !important; flex: 1 1 auto !important; font-size: 14px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .group-list-items .extra { flex: 1 1 100% !important; margin: 2px 0 0 28px !important; font-size: 12px !important; text-align: left !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .assignment-review-submit { padding: 0 !important; margin: 10px 0 0 !important; display: block !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .assignment-status-bar-submit-button { margin: 0 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .ladda-button { min-height: 44px !important; padding-top: 8px !important; padding-bottom: 8px !important; font-size: 15px !important; background: var(--sim-accent) !important; border-color: var(--sim-accent) !important;
+  color: #fff !important; border-radius: 999px !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .ladda-button.disabled { opacity: .45 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .ladda-button .ladda-label { white-space: nowrap !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .assignment-review-submit > .mt-2 { margin: 6px 0 0 !important; width: 100% !important; font-size: 12px !important; text-align: center !important; }

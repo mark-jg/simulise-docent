@@ -7,6 +7,9 @@
  */
 globalThis.SD_MODULES = [
   { id: 'thema', naam: 'Thema', uitleg: 'Opmaak en thema\'s voor Simulise', key: 'enabled' },
+  { id: 'vandaag', naam: 'Vandaag', uitleg: 'Eigen startscherm met je beoordeelwachtrij over alle groepen; bovenaan de zijbalk en via Cmd+K', key: 'today' },
+  { id: 'schil', naam: 'Nieuwe schil (thema Helder)', uitleg: 'Zijbalk rond taken, gewone taal en een kleur per klas; werkt alleen met het thema Helder', key: 'shell' },
+  { id: 'focus', naam: 'Focusmodus bij beoordelen', uitleg: 'Het werk met rubric, feedback en beoordeling toekennen ernaast, en een compacte lijst van de klas; Alt+F', key: 'focus' },
   { id: 'beoordelen', naam: 'Filter in Beoordelen', uitleg: 'Meetmomenten van andere opleidingen verbergen; instellingen in de filterbalk', key: 'grading' },
   { id: 'meldingen', naam: 'Filter in Meldingen', uitleg: 'Meldingen over meetmomenten van andere opleidingen verbergen (menu en pagina)', key: 'notifFilter' },
   { id: 'rapporten', naam: 'Voortgangsrapporten', uitleg: 'Knop op het profiel van een student en in het menu bij Groepen', key: 'reports' },
@@ -26,6 +29,12 @@ globalThis.SD_DEFAULTS = {
   reports: true,      // module rapporten
   search: true,       // module zoeken
   grading: true,      // module beoordelen
+  today: true,        // module vandaag
+  focus: true,        // module focus
+  focusAan: true,     // focusmodus staat aan op het beoordeelscherm
+  focusKolom: true,   // focusmodus: rubric, feedback en onderbalk in een zijkolom
+  shell: true,        // module schil (alleen actief bij thema helder)
+  shellMeer: false,   // schil: groep Meer in de zijbalk uitgeklapt
   bdModus: 'mijn',    // filter Beoordelen: 'alles', 'mijn' (opleidingen) of 'groepen'
   bdOpleidingen: 'MEP, MIP, MR',
   bdUitsluiten: '',
