@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.15.0)
+## Huidige staat (v0.16.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -54,7 +54,13 @@ rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel
                 nieuw tabblad (alleen geheugen) met een werkbalk (rapporten.js toonRapport): soort
                 (student | gesprek | groep), peildatum (historisch via historie), vergelijkMet, onderdelen,
                 opleidingen, nadruk, sorteer, filter, CSV. Keuzes in chrome.storage.local rpOpties.
-                render.js: SDRapport.paginas/shell/csv/modellen naast html.
+                render.js: SDRapport.paginas/shell/csv/modellen naast html. Soort `perioden` ("Meetmomenten
+                naast elkaar"): per leerlijn een kolom per periode met de stap aan het eind ervan (stapOp).
+                Op /analytics/educationbygroups/result knop "Overzicht & rapporten" (analyticsRapport): herhaalt
+                de getResults-vraag van de app (gql.js kijkt mee) voor alle pagina's (hasMore) en voor elke
+                opleiding uit /api/autocomplete/analytics/educations die het profiel herkent (picker EDUCATION
+                vervangen, pickers met ASPECT/LEERLIJN alleen bij de huidige opleiding); rijen per student
+                samengevoegd; opleidingen zonder enige beoordeling (ander cohort) vallen weg.
 content.js      Start de modules (SD.start())
 popup.html/.js  Aan/uit per module (uit registry), themakeuze, compact, updatemelding
 ROADMAP.md      Roadmap en backlog met status per item; bijwerken als iets klaar is
@@ -205,6 +211,16 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   GraphQL `analyticsQueryTypes { type icon title color description reportCount }`. Wat een rapportage
   "Leerlijnen" ophaalt is nog niet gezien (kan de voortgang van een hele groep in één keer geven).
   rapporten.js voegt een zevende kaart "Voortgangsrapporten" toe (groepen uit sdGroups).
+- **Analytics, Opleiding per groep** (`/analytics/educationbygroups/result?type=educationbygroups&view=table&education=…&users=…&timerange=…`):
+  GraphQL `getResults($reportId, $query: AnalyticsQueryInput)` -> `analyticsQuery { table { rows { header { link value { ... on User
+  { id name username } } } columns { ... on EducationByGroupsTableRowCell { aspect { id name skill { id color } } phases { phase score
+  color maxScore scoreName aspectPhaseUrl reviewProgress reviewsAchieved reviewsRequired weights { level title } reviews { id score
+  color title maxScore } } } } } header { columns { value { id ... on Skill { name } } } } total hasMore } }`. Variabelen
+  `{ reportId: null, query: { type, pickers: [{ key, values }] x4 (EDUCATION en andere), options, page, orderBy { field: LASTNAME } } }`;
+  25 rijen per pagina, knop "Laad meer...". Fasen: beroeps 4, BAVA 5. Opleidingen: `/api/autocomplete/analytics/educations?query=&page=1`
+  ([{ id text value prefix }]). Kop: `header .header-title` met `div.btn-group` Filters en `a.btn.btn-info` met `i.fa-download`;
+  keuzes als `ul.list-inline li.list-group-item` (opleiding met `i.fa-school`, groep, tijdsbereik, weergave tabel/diagram).
+  Tabel `#scrollable-page-wrapper table.table-index`, cellen `a.score-dot[href=/@{gebruiker}/education/aspect/{uuid}/phase/{n}]`.
 - Op /groups staan in het groepsmenu links met teksten als "Studenten"; zoeken.js slaat links in
   `.nav-tabs, .dropdown-menu, .btn-group` over en ruimt zulke namen op (GEEN_NAAM).
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.

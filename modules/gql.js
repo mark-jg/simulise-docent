@@ -15,7 +15,7 @@
   window.__sdGql = true;
   let bron = null;
   const wachtrij = [];
-  const MEEKIJKEN = new Set(['dashboardTileEducationDiagram', 'getUserEducationDiagram', 'dashboardDiscoverUser', 'dashboardTileProfile']);
+  const MEEKIJKEN = new Set(['dashboardTileEducationDiagram', 'getUserEducationDiagram', 'dashboardDiscoverUser', 'dashboardTileProfile', 'getResults']);
   const app = { vragen: {}, variabelen: {}, opleidingen: null, gebruikerId: null };
 
   const voer = async (v) => {

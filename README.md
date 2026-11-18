@@ -101,6 +101,11 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.16.0: Analytics, Opleiding per groep: knop "Overzicht & rapporten" op de resultatenpagina. Die haalt alle
+  studenten op (niet alleen de eerste 25) en ook de andere opleiding uit je profiel (beroeps en BAVA), en zet alles
+  samen. Nieuwe soort "Meetmomenten naast elkaar": per leerlijn een kolom per periode (M1, M2, ...), gekleurd als de
+  doelstap van die periode gehaald is. Voortgangsrapporten, gespreksformulieren, groepsoverzicht en CSV werken ook
+  met deze gegevens.
 - 0.15.0: voortgangsrapporten ook vanaf Analytics: een extra kaart "Voortgangsrapporten" naast de rapportages van
   Simulise, met een keuzelijst van je groepen. Zoeken onthield bij Groepen soms "Studenten" of "Community" als
   groepsnaam; dat is opgelost en zulke namen worden opgeruimd.

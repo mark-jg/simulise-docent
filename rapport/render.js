@@ -376,9 +376,60 @@
   }
   const kortNaam = (naam) => { const t = String(naam).replace(/\s*\([^)]*\)\s*/g, ' ').trim(); return t.length > 22 ? `${t.slice(0, 21)}…` : t; };
 
+  /* ---------- Meetmomenten naast elkaar (liggend): per leerlijn een kolom per periode ----------
+   * De stap aan het eind van elke periode (of op de peildatum voor de lopende periode), uit de historie.
+   * Groen: de doelstap van die periode gehaald. Zo staan de meetmomenten naast elkaar, zonder te schakelen. */
+  function periodenTabel(ms, profiel) {
+    if (!ms.length) return '<section class="pagina liggend"><p>Geen studenten die aan het filter voldoen.</p></section>';
+    const eerste = ms[0], datum = eerste.datum;
+    let ps = (profiel.perioden || []).filter((p) => p.van <= datum);
+    if (!ps.length) ps = (profiel.perioden || []).slice(0, 1);
+    const rollen = [];
+    for (const m of ms) for (const o of getoond(m)) if (!rollen.some((r) => r.rol === o.rol)) rollen.push({ rol: o.rol, conf: o.conf, naam: o.naam });
+    const volg = (r) => { const i = (profiel.opleidingen || []).findIndex((x) => x.rol === r.rol); return i < 0 ? 99 : i; };
+    rollen.sort((a, b) => volg(a) - volg(b));
+    const groep = [...new Set(ms.map((m) => m.g.student.groep).filter(Boolean))].join(', ');
+    const stapIn = (l, p) => (p.tot >= datum || !Array.isArray(l.historie) ? l.stap : stapOp(l, p.tot));
+    return rollen.map((r, ri) => {
+      const voorbeeld = ms.map((m) => m.opleidingen.find((o) => o.rol === r.rol)).find(Boolean);
+      const kolommen = voorbeeld.lijnen.map((l) => ({ naam: l.naam, kort: kortNaam(l.naam), kleur: l.kleur }));
+      const doelVan = (p) => (voorbeeld.cats ? null : p.doel?.[r.rol] ?? null);
+      const rijen = ms.map((m) => {
+        const o = m.opleidingen.find((x) => x.rol === r.rol);
+        const cellen = kolommen.map((k, ki) => {
+          const l = o?.lijnen.find((x) => norm(x.naam) === norm(k.naam));
+          return ps.map((p, pi) => {
+            const rand = pi === 0 && ki > 0 ? ' rand' : '';
+            if (!l) return `<td class="cel leeg${rand}">–</td>`;
+            const s = stapIn(l, p), doel = doelVan(p);
+            const klas = doel != null ? (s >= doel ? 'op' : s > 0 || l.beoordeeldNiet ? 'niet' : 'leeg') : (s > 0 ? 'op' : 'leeg');
+            const ster = p.tot >= datum && l.soort === 'boven' ? '<sup>★</sup>' : '';
+            return `<td class="cel ${klas}${rand}" style="--k:${esc(l.kleur)}"><b>${s}</b>${ster}</td>`;
+          }).join('');
+        }).join('');
+        const koers = m.opKoers == null ? '–' : m.opKoers ? '<span class="ja">✓</span>' : '<span class="nee">✗</span>';
+        return `<tr><td class="studnaam">${esc(m.g.student.naam)}</td>${cellen}<td class="num">${koers}</td></tr>`;
+      }).join('');
+      const catKop = voorbeeld.cats ? `<tr class="catrij"><th></th>${voorbeeld.cats.filter((c) => c.aantal).map((c) => `<th colspan="${c.aantal * ps.length}" style="background:${esc(c.kleur)}">${esc(c.naam)}</th>`).join('')}<th></th></tr>` : '';
+      const doelen = ps.map((p) => (doelVan(p) != null ? `${esc(p.code)}: stap ${doelVan(p)}` : null)).filter(Boolean).join(', ');
+      return `<section class="pagina liggend">
+        <header class="rkop"><div class="merk"><b>MA</b><span>Mediacollege<br>Amsterdam</span></div>
+          <div class="rechts"><b>MEETMOMENTEN NAAST ELKAAR · ${esc(r.conf.kop || r.naam)}</b><span>${esc(groep)} · ${ms.length} studenten · peildatum ${langeDatum(datum)}</span></div></header>
+        <p class="sub">${esc(r.naam)} · per leerlijn de behaalde stap aan het eind van ${ps.map((p) => esc(p.code)).join(', ')}${doelen ? ` · doelen ${doelen}` : ''}</p>
+        <table class="overzicht perioden">
+          <thead>${catKop}<tr><th class="studnaam" rowspan="2">Student</th>${kolommen.map((k, ki) => `<th class="ll${ki ? ' rand' : ''}" colspan="${ps.length}" title="${esc(k.naam)}" style="border-bottom:3px solid ${esc(k.kleur)}"><span>${esc(k.kort)}</span></th>`).join('')}<th class="num" rowspan="2">Op koers</th></tr>
+          <tr class="perrij">${kolommen.map((k, ki) => ps.map((p, pi) => `<th class="${pi === 0 && ki > 0 ? 'rand' : ''}">${esc(p.code)}</th>`).join('')).join('')}</tr></thead>
+          <tbody>${rijen}</tbody></table>
+        <p class="legenda">Cijfer: behaalde stap aan het eind van de periode (lopende periode: op de peildatum). Gekleurd: doelstap van die periode gehaald, roze: beoordeeld maar doel nog niet gehaald, grijs: nog geen stap. ★ boven verwachting · ✓/✗ op koers voor de norm.</p>
+        <footer class="rvoet"><span>Bron: Simulise, leerlijndiagrammen. Normen: ${esc(profiel.bron || profiel.naam)}.</span><span>${ri + 1}/${rollen.length}</span></footer>
+      </section>`;
+    }).join('');
+  }
+
   function paginas(studenten, profiel, opties = {}) {
     const ms = modellen(studenten, profiel, opties);
     if (opties.soort === 'groep') return overzicht(ms, profiel, opties);
+    if (opties.soort === 'perioden') return periodenTabel(ms, profiel);
     if (!ms.length) return '<section class="pagina"><p>Geen studenten die aan het filter voldoen.</p></section>';
     return ms.map(studentPaginas).join('');
   }
@@ -388,10 +439,23 @@
     const ms = modellen(studenten, profiel, opties);
     const kolommen = [];
     for (const m of ms) for (const o of getoond(m)) for (const l of o.lijnen) if (!kolommen.some((k) => k.rol === o.rol && norm(k.naam) === norm(l.naam))) kolommen.push({ rol: o.rol, naam: l.naam });
+    if (opties.soort === 'perioden' && ms.length) { // een kolom per leerlijn en periode
+      const datum = ms[0].datum;
+      const ps = (profiel.perioden || []).filter((p) => p.van <= datum);
+      if (ps.length) {
+        const uit = kolommen.flatMap((k) => ps.map((p) => ({ ...k, p })));
+        kolommen.splice(0, kolommen.length, ...uit);
+      }
+    }
+    const waarde = (m, k) => {
+      const l = m.opleidingen.find((o) => o.rol === k.rol)?.lijnen.find((x) => norm(x.naam) === norm(k.naam));
+      if (!l) return '';
+      return k.p && k.p.tot < m.datum && Array.isArray(l.historie) ? stapOp(l, k.p.tot) : l.stap;
+    };
     const cel = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-    const kop = ['Student', 'Groep', 'Peildatum', 'Op koers', ...kolommen.map((k) => k.naam)];
+    const kop = ['Student', 'Groep', 'Peildatum', 'Op koers', ...kolommen.map((k) => (k.p ? `${k.naam} ${k.p.code}` : k.naam))];
     const rijen = ms.map((m) => [m.g.student.naam, m.g.student.groep, m.datum, m.opKoers == null ? '' : m.opKoers ? 'ja' : 'nee',
-      ...kolommen.map((k) => m.opleidingen.find((o) => o.rol === k.rol)?.lijnen.find((l) => norm(l.naam) === norm(k.naam))?.stap ?? '')]);
+      ...kolommen.map((k) => waarde(m, k))]);
     return [kop, ...rijen].map((r) => r.map(cel).join(';')).join('\r\n');
   }
 
@@ -461,7 +525,8 @@
     table.overzicht .studnaam { text-align: left; white-space: nowrap; font-weight: 600; } table.overzicht .catrij th { color: #fff; font-size: 9px; letter-spacing: .04em; }
     td.cel b { font-size: 11px; } td.cel small { color: #8a93a0; font-size: 8px; margin-right: 1px; } td.cel sup { font-size: 8px; }
     td.cel.op { background: color-mix(in srgb, var(--k) 22%, #fff); } td.cel.niet { background: #fff4f8; } td.cel.leeg { color: #b0b6bd; }
-    td.num { width: 12mm; } table.overzicht .ja { color: #1f9d55; font-weight: 700; } table.overzicht .nee { color: var(--accent-waarde); font-weight: 700; }
+    table.overzicht.perioden th.ll { height: 30mm; } table.overzicht .perrij th { font-size: 8px; font-weight: 500; color: #5b6470; padding: 2px; } table.overzicht .rand { border-left: 2px solid #8a93a0; }
+        td.num { width: 12mm; } table.overzicht .ja { color: #1f9d55; font-weight: 700; } table.overzicht .nee { color: var(--accent-waarde); font-weight: 700; }
     @media print { body { background: #fff; } .geen-print { display: none; } .pagina { margin: 0; width: auto; min-height: auto; height: 273mm; padding: 0; overflow: hidden; }
       .pagina.liggend { height: auto; overflow: visible; } [contenteditable="true"]:hover, [contenteditable="true"]:focus { box-shadow: none; } }
   `;

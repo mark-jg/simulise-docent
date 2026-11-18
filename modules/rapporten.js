@@ -34,9 +34,11 @@ SD.register({
     this._klik = (e) => {
       const groep = e.target.closest?.('.sim-docent-rapport');
       const profiel = e.target.closest?.('.sim-docent-rapportknop');
-      if (!groep && !profiel) return;
+      const analyse = e.target.closest?.('.sim-docent-analyseknop');
+      if (!groep && !profiel && !analyse) return;
       e.preventDefault(); e.stopPropagation();
-      if (groep) this.groepsrapport(groep.dataset.groep, groep.dataset.naam);
+      if (analyse) this.analyticsRapport();
+      else if (groep) this.groepsrapport(groep.dataset.groep, groep.dataset.naam);
       else this.studentrapport(decodeURIComponent(location.pathname.match(/^\/@([^/]+)/)[1]));
     };
     document.addEventListener('click', this._klik, true);
@@ -51,7 +53,7 @@ SD.register({
     window.removeEventListener('message', this._bericht);
     document.removeEventListener('click', this._klik, true);
     this._stop?.();
-    document.querySelectorAll('.sim-docent-rapport-li, .sim-docent-rapportknop, .sim-docent-kaart').forEach((el) => el.remove());
+    document.querySelectorAll('.sim-docent-rapport-li, .sim-docent-rapportknop, .sim-docent-kaart, .sim-docent-analyseknop').forEach((el) => el.remove());
     this.SD = null;
   },
 
@@ -60,6 +62,7 @@ SD.register({
     this.groepsMenus();
     this.profielKnop();
     this.analyticsKaart();
+    this.analyticsResultaat();
   },
 
   /* ---------- Knoppen ---------- */
@@ -119,6 +122,118 @@ SD.register({
       kol.append(kaart);
       rij.append(kol);
     } finally { this._kaartBezig = false; }
+  },
+
+  /* ---------- Analytics: Opleiding per groep ----------
+   * Op /analytics/educationbygroups/result vraagt Simulise met getResults de stappen van alle studenten in
+   * één opleiding op (25 per keer, "Laad meer"). De knop "Overzicht & rapporten" stelt dezelfde vraag
+   * opnieuw, voor alle pagina's en ook voor de andere opleidingen uit het profiel (beroeps en BAVA), en
+   * voegt alles per student samen. Zo staan de meetmomenten naast elkaar, zonder te schakelen. */
+  RESULTAAT: /^\/analytics\/educationbygroups\/result\/?$/,
+
+  analyticsResultaat() {
+    if (!this.RESULTAAT.test(location.pathname) || document.querySelector('.sim-docent-analyseknop')) return;
+    const download = document.querySelector('#content header i.fa-download')?.closest('a, button') || document.querySelector('#content header a.btn.btn-info[data-original-title]');
+    const kop = document.querySelector('#content p.header-text');
+    const plek = download?.parentElement || kop?.parentElement;
+    if (!plek) return;
+    const knop = Object.assign(document.createElement('button'), { type: 'button', className: 'btn btn-sm btn-success sim-docent-analyseknop', textContent: 'Overzicht & rapporten' });
+    knop.title = 'Alle studenten en beide opleidingen naast elkaar, met voortgangsrapporten (Simulise Docent)';
+    knop.style.cssText = 'margin-right:6px';
+    knop.prepend(Object.assign(document.createElement('i'), { className: 'fa fa-fw fa-file-chart-line' }), ' ');
+    if (download) download.before(knop); else plek.append(knop);
+  },
+
+  /* Groepsnaam uit de keuzes boven de tabel (een van je bekende groepen), anders leeg. */
+  async resultaatGroep() {
+    const { sdGroups } = await chrome.storage.local.get({ sdGroups: {} });
+    const namen = new Set(Object.values(sdGroups || {}).map((n) => n.trim().toLowerCase()));
+    const chips = [...document.querySelectorAll('#content ul.list-inline li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const delen = chips.flatMap((t) => t.split(/\s*,\s*/));
+    return delen.find((t) => namen.has(t.toLowerCase())) || '';
+  },
+
+  async analyticsOpleidingen(huidig) {
+    let lijst = [];
+    try {
+      const r = await fetch('/api/autocomplete/analytics/educations?query=&page=1', { credentials: 'same-origin', headers: { accept: 'application/json', 'x-requested-with': 'XMLHttpRequest' } });
+      if (r.ok) lijst = await r.json();
+    } catch { /* dan alleen de huidige opleiding */ }
+    if (!Array.isArray(lijst)) lijst = [];
+    // Welk veld Simulise in de keuze zet (id of value) zien we aan de huidige opleiding.
+    const veld = lijst.some((e) => String(e.value) === String(huidig)) && !lijst.some((e) => String(e.id) === String(huidig)) ? 'value' : 'id';
+    return lijst.map((e) => ({ waarde: String(e[veld] ?? e.id), naam: String(e.text || '').trim() }));
+  },
+
+  async analyticsRapport() {
+    const groepNaam = await this.resultaatGroep();
+    const titel = `Overzicht ${groepNaam || 'Opleiding per groep'}`.trim();
+    const w = this.venster(titel);
+    if (!w) return;
+    try {
+      const profiel = await this.profiel();
+      let app = await this.appInfo();
+      for (let i = 0; i < 10 && !app.vragen?.getResults; i++) { await new Promise((r) => setTimeout(r, 500)); app = await this.appInfo(); }
+      const q = app.vragen?.getResults, v = app.variabelen?.getResults;
+      if (!q || !v?.query?.pickers) throw new Error('de vraag van Simulise voor deze tabel is nog niet gezien. Herlaad de pagina, wacht tot de tabel er staat en probeer opnieuw.');
+      const isOpl = (p) => /^EDUCATION$/i.test(p.key);
+      const huidig = String(v.query.pickers.find(isOpl)?.values?.[0] ?? '');
+      const huidigNaam = (document.querySelector('#content ul.list-inline li .fa-school')?.parentElement?.textContent || document.querySelector('#content p.header-text')?.textContent.split('/').pop() || '').replace(/\s+/g, ' ').trim();
+      const alle = await this.analyticsOpleidingen(huidig);
+      const opl = alle.filter((e) => e.waarde !== huidig && SDRapport.rolVan(e.naam, profiel));
+      opl.unshift({ waarde: huidig, naam: alle.find((e) => e.waarde === huidig)?.naam || huidigNaam, huidig: true });
+
+      const studenten = new Map();
+      const fouten = [];
+      for (const [oi, ed] of opl.entries()) {
+        // Leerlijnen horen bij één opleiding: die keuze alleen voor de huidige opleiding meenemen.
+        const pickers = v.query.pickers.filter((p) => ed.huidig || !/ASPECT|LEERLIJN/i.test(p.key)).map((p) => (isOpl(p) ? { ...p, values: [ed.waarde] } : p));
+        const rijen = [];
+        let skills = {};
+        for (let page = 1; page <= 20; page++) {
+          this.voortgang(w, `Gegevens ophalen uit Simulise… ${ed.naam || 'opleiding'} (${oi + 1} van ${opl.length}), ${rijen.length} studenten`);
+          const r = await this.gql('getResults', q, { ...v, reportId: v.reportId ?? null, query: { ...v.query, pickers, page } });
+          const t = r.data?.analyticsQuery?.table;
+          if (!t) { if (ed.huidig) throw new Error(r.errors?.[0] || 'leeg antwoord van Simulise'); fouten.push(`${ed.naam}: ${r.errors?.[0] || 'leeg antwoord'}`); break; }
+          for (const c of t.header?.columns || []) if (c?.value?.__typename === 'Skill' && c.value.id) skills[c.value.id] = c.value.name;
+          rijen.push(...(t.rows || []));
+          if (!t.hasMore || !(t.rows || []).length) break;
+        }
+        let ietsBeoordeeld = false;
+        for (const rij of rijen) {
+          const u = rij.header?.value || {};
+          const sleutel = u.id || u.username || u.name;
+          if (!sleutel) continue;
+          const cellen = (rij.columns || []).filter((c) => c?.aspect && Array.isArray(c.phases));
+          if (!cellen.length) continue;
+          const diagram = {
+            phaseCount: Math.max(1, ...cellen.flatMap((c) => c.phases.map((f) => f.phase))),
+            aspects: cellen.map((c) => ({ aspect: { name: c.aspect.name, skill: { color: c.aspect.skill?.color, name: skills[c.aspect.skill?.id] } },
+              phases: c.phases.map((f) => ({ ...f, currentScore: f.currentScore ?? f.score })) })),
+          };
+          if (cellen.some((c) => c.phases.some((f) => (f.reviews || []).length || f.reviewsAchieved > 0))) ietsBeoordeeld = true;
+          const s = studenten.get(sleutel) || { student: { naam: u.name || '?', groep: groepNaam }, peildatum: new Date().toISOString().slice(0, 10), opleidingen: [] };
+          s.opleidingen.push({ ...this.naarOpleiding(ed.naam || huidigNaam, diagram), __leeg: !cellen.some((c) => c.phases.some((f) => (f.reviews || []).length)) });
+          studenten.set(sleutel, s);
+        }
+        // Een andere opleiding (bijv. een ander cohort) waarin deze studenten niets hebben: weglaten.
+        if (!ed.huidig && !ietsBeoordeeld) for (const s of studenten.values()) s.opleidingen = s.opleidingen.filter((o) => o.naam !== ed.naam);
+      }
+      // Per student per rol één opleiding: die met de meeste beoordelingen.
+      const klaar = [...studenten.values()].map((g) => {
+        const per = new Map();
+        for (const o of g.opleidingen) {
+          const rol = SDRapport.rolVan(o.naam, profiel)?.rol || o.naam;
+          const oud = per.get(rol);
+          if (!oud || (oud.__leeg && !o.__leeg)) per.set(rol, o);
+        }
+        g.opleidingen = [...per.values()].map(({ __leeg, ...o }) => o);
+        return this.sorteer(g, profiel);
+      }).filter((g) => g.opleidingen.length);
+      if (!klaar.length) throw new Error('geen studenten in de tabel gevonden');
+      klaar.sort((a, b) => a.student.naam.localeCompare(b.student.naam, 'nl'));
+      await this.toonRapport(w, klaar, profiel, titel, fouten, 'perioden');
+    } catch (e) { this.fout(w, e.message || e); }
   },
 
   profielKnop() {
@@ -298,13 +413,13 @@ SD.register({
    * De gegevens blijven in het geheugen van dit script; de werkbalk tekent het rapport opnieuw bij elke
    * keuze, zonder opnieuw op te halen. Keuzes (geen studentgegevens) staan in chrome.storage.local rpOpties.
    * Zelf aangepaste teksten (gespreksadvies, gespreksvakken) blijven bewaard tijdens het wisselen. */
-  async toonRapport(w, studenten, profiel, titel, fouten = []) {
+  async toonRapport(w, studenten, profiel, titel, fouten = [], startSoort = null) {
     if (!w || w.closed) return;
     const groep = studenten.length > 1;
     const bewaard = (await chrome.storage.local.get({ rpOpties: {} })).rpOpties || {};
     const vandaag = new Date().toISOString().slice(0, 10);
     const opties = {
-      soort: groep ? (bewaard.soortGroep || 'student') : (bewaard.soortStudent === 'groep' ? 'student' : bewaard.soortStudent || 'student'),
+      soort: startSoort || (groep ? (bewaard.soortGroep || 'student') : (bewaard.soortStudent === 'groep' ? 'student' : bewaard.soortStudent || 'student')),
       peildatum: vandaag, vergelijkMet: bewaard.vergelijkMet || 'vorige',
       onderdelen: { kpis: true, diagram: true, tabel: true, normen: true, advies: true, ...(bewaard.onderdelen || {}) },
       opleidingen: null, nadruk: bewaard.nadruk ?? null, sorteer: bewaard.sorteer || 'naam', filter: 'alle',
@@ -356,7 +471,7 @@ SD.register({
     }
     balk.append(
       el('b', { textContent: titel }),
-      el('span', { className: 'groepje' }, ['Soort', keuze('sd-soort', [['student', 'Voortgangsrapport'], ['gesprek', 'Gespreksformulier'], ['groep', 'Groepsoverzicht']], opties.soort, (v) => { opties.soort = v; })]),
+      el('span', { className: 'groepje' }, ['Soort', keuze('sd-soort', [['student', 'Voortgangsrapport'], ['gesprek', 'Gespreksformulier'], ['groep', 'Groepsoverzicht'], ['perioden', 'Meetmomenten naast elkaar']], opties.soort, (v) => { opties.soort = v; })]),
       el('span', { className: 'groepje' }, ['Peildatum', datum]),
       el('span', { className: 'groepje' }, ['Vergelijk met', keuze('sd-vergelijk', [['vorige', 'vorige periode'], ['geen', 'niets'], ...(profiel.perioden || []).map((p) => [p.code, `${p.code} (${p.naam || ''})`])], opties.vergelijkMet, (v) => { opties.vergelijkMet = v; })]),
       el('span', { className: 'groepje', id: 'sd-rollen' }, rollen.map((x) => vink(x.titel, true, (v) => { v ? gekozenRollen.add(x.rol) : gekozenRollen.delete(x.rol); opties.opleidingen = [...gekozenRollen]; }))),
@@ -373,7 +488,7 @@ SD.register({
         if (bewerkt[x.dataset.bewerk] != null) { x.innerText = bewerkt[x.dataset.bewerk]; x.dataset.aangepast = '1'; }
         x.addEventListener('input', () => { x.dataset.aangepast = '1'; });
       });
-      const overzicht = opties.soort === 'groep';
+      const overzicht = opties.soort === 'groep' || opties.soort === 'perioden';
       onderdeelVakjes.hidden = overzicht;
       groepVakjes.hidden = !groep && !overzicht;
       csvKnop.hidden = !groep && !overzicht;

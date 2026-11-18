@@ -135,6 +135,18 @@ const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-ma
 <table class="table table-bordered rotated-header"><thead><tr><th></th><th class="text-center rotated"><div class="rotated-header-container"><a href="/@studenta/assignments"><div class="rotated-header-content">Anna Test</div></a></div></th>
 <th class="text-center rotated"><div class="rotated-header-container"><a href="/@studentb/assignments"><div class="rotated-header-content">Bram Test</div></a></div></th></tr></thead></table></section></div></body></html>`;
 
+
+// Analytics, Opleiding per groep (resultaat): de app vraagt getResults voor één opleiding, 25 rijen per keer.
+const RESULTAAT = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><div class="vbox"><div class="vbox">
+<header class="header header-md"><div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/analytics">Analytics</a></span><span>/</span><span><a href="/analytics/educationbygroups/reports">Opleiding per groep</a></span></p>
+<span class="header-title-divider">·</span><div class="btn-group"><a class="btn btn-info" href="#"><i class="fas fa-filter"></i><span>Filters</span></a></div><a class="btn btn-info" href="#" data-original-title="Download"><i class="fa fa-fw fa-download"></i></a></div></header>
+<section id="scrollable-page-wrapper"><div class="row"><div class="col-lg-12"><ul class="list-inline m-l-none"><li class="list-group-item"><div><i class="fa fa-fw fa-school"></i><span><span>BAVA 4</span></span></div></li><li class="list-group-item"><div><i class="fa fa-users"></i><span>MEP1A</span></div></li></ul></div></div></section></div></div></div>
+<script>fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-test': 'app' }, body: JSON.stringify({ operationName: 'getResults',
+  query: 'query getResults($reportId: ID, $query: AnalyticsQueryInput) { analyticsQuery(input: {reportId: $reportId, query: $query}) { table { rows { header { value { ... on User { id name } } } columns { ... on EducationByGroupsTableRowCell { aspect { id name skill { id color } } phases { phase score reviewsAchieved reviewsRequired weights { level title } reviews { id score title } } } } } total hasMore } } }',
+  variables: { reportId: null, query: { type: 'educationbygroups', pickers: [{ key: 'EDUCATION', values: ['ed-bava'] }, { key: 'ASPECTS', values: ['x'] }, { key: 'USERS', values: ['group:g'] }, { key: 'TIMERANGE', values: ['2026-08-01', '2027-08-01'] }], options: [], page: 1, orderBy: { field: 'LASTNAME', direction: 'ASC' } } } }) });</script></body></html>`;
+// 30 verzonnen studenten, zodat er een tweede pagina nodig is.
+const RES_STUDENTEN = Array.from({ length: 30 }, (_, i) => ({ id: `u-res${i}`, name: `Test Student ${String(i + 1).padStart(2, '0')}` }));
+
 const ext = path.resolve(process.argv[2] || path.join(__dirname, '..'));
 const fouten = [];
 const check = (ok, tekst) => { console.log(`${ok ? 'ok  ' : 'FOUT'} ${tekst}`); if (!ok) fouten.push(tekst); };
@@ -163,6 +175,10 @@ function bouwZip() {
     const u = new URL(r.request().url()), p = u.pathname;
     if (p.startsWith('/@')) return r.fulfill({ contentType: 'text/html', body: PROFIEL });
     if (p === '/analytics') return r.fulfill({ contentType: 'text/html', body: ANALYTICS });
+    if (p === '/analytics/educationbygroups/result') return r.fulfill({ contentType: 'text/html', body: RESULTAAT });
+    if (p === '/api/autocomplete/analytics/educations') return r.fulfill({ contentType: 'application/json', body: JSON.stringify([
+      { id: 'ed-bava', text: 'BAVA 4', value: 'ed-bava', prefix: '' }, { id: 'ed-beroeps', text: 'Mediaproducer / Music Industry Professional', value: 'ed-beroeps', prefix: '' },
+      { id: 'ed-oud', text: 'Mediaproducer (Cohort 2024)', value: 'ed-oud', prefix: '' }, { id: 'ed-sd', text: 'Software Developer', value: 'ed-sd', prefix: '' }]) });
     if (p === '/groups') return r.fulfill({ contentType: 'text/html', body: GROEPEN });
     if (/^\/groups\/school\/[^/]+\/students$/.test(p)) return r.fulfill({ contentType: 'text/html', body: STUDENTEN });
     if (p === '/notifications') return r.fulfill({ contentType: 'text/html', body: MELDINGENPAGINA(parseInt(u.searchParams.get('page'), 10) || 1) });
@@ -186,6 +202,7 @@ function bouwZip() {
   const graphqlVerzoeken = [];
   const meldVerzoeken = [];
   const rapportVerzoeken = [];
+  const resultaatVerzoeken = [];
   let tellerVerzoeken = 0;
   await ctx.route('https://api.simulise.com/graphql', (r) => {
     const verzoek = JSON.parse(r.request().postData() || '{}');
@@ -209,6 +226,18 @@ function bouwZip() {
       if (verzoek.query.includes('skill { id name color }')) return antw({ errors: [{ message: 'Cannot query field "name" on type "EducationSkill".' }], data: null });
       if (!String(verzoek.variables.userId).startsWith('u-')) return antw({ errors: [{ message: 'onbekende gebruiker' }], data: { user: null } });
       return antw({ data: { user: { id: verzoek.variables.userId, diagram: DIAGRAM[verzoek.variables.educationId] } } });
+    }
+    if (verzoek.operationName === 'getResults') {
+      const q = verzoek.variables.query, ed = q.pickers.find((x) => x.key === 'EDUCATION').values[0];
+      resultaatVerzoeken.push(`${ed}/${q.page}/${q.pickers.some((x) => x.key === 'ASPECTS') ? 'met' : 'zonder'}-leerlijnen`);
+      const bron = DIAGRAM[ed === 'ed-bava' ? 'e-bava' : 'e-beroeps'];
+      const leeg = ed === 'ed-oud'; // ander cohort: niets beoordeeld
+      const stuk = RES_STUDENTEN.slice((q.page - 1) * 25, q.page * 25);
+      return antw({ data: { analyticsQuery: { table: {
+        header: { columns: [{ value: { __typename: 'Skill', id: 's', name: ed === 'ed-bava' ? 'Taal' : 'Beroeps' } }] },
+        rows: stuk.map((u, i) => ({ header: { value: { __typename: 'User', ...u } }, columns: bron.aspects.map((a) => ({ __typename: 'EducationByGroupsTableRowCell', aspect: a.aspect,
+          phases: a.phases.map((f) => (leeg ? { ...f, reviews: [], reviewsAchieved: 0, score: null } : { ...f, score: f.currentScore, currentScore: undefined, reviewsAchieved: i % 2 && f.phase === 2 ? 0 : f.reviewsAchieved })) })) })),
+        total: RES_STUDENTEN.length, hasMore: q.page * 25 < RES_STUDENTEN.length } } } });
     }
     if (verzoek.operationName === 'sdDocentTeller') {
       tellerVerzoeken++;
@@ -584,6 +613,23 @@ function bouwZip() {
   await aTab.waitForFunction(() => document.querySelectorAll('.pagina').length >= 4, null, { timeout: 20000 }).catch(() => {});
   { const n = await aTab.locator('.pagina').count(); const tk = await aTab.evaluate(() => document.body.innerText.slice(0, 200)); check(n === 2 && (await aTab.locator('table.overzicht tbody tr').count()) === 4 && tk.includes('Voortgangsrapporten MEP1A'), `analytics: groepsrapport vanaf de kaart, met de onthouden keuze groepsoverzicht (${n} pagina's, "${tk.replace(/\n/g, ' ')}")`); }
   await aTab.close();
+
+  // Analytics, Opleiding per groep: alle studenten en beide opleidingen naast elkaar
+  await sim.goto('https://ma.simulise.com/analytics/educationbygroups/result?type=educationbygroups&view=table'); await sim.waitForTimeout(800);
+  check(await sim.isVisible('.sim-docent-analyseknop'), 'resultaatpagina: knop Overzicht & rapporten naast de download-knop');
+  const [resTab] = await Promise.all([ctx.waitForEvent('page'), sim.click('.sim-docent-analyseknop')]);
+  await resTab.waitForFunction(() => document.querySelectorAll('table.overzicht.perioden').length >= 2, null, { timeout: 20000 }).catch(() => {});
+  { const rt2 = await resTab.evaluate(() => document.getElementById('sd-inhoud')?.innerText || document.body.innerText);
+    const rijen = await resTab.locator('table.overzicht.perioden').first().locator('tbody tr').count();
+    check(rijen === 30 && rt2.includes('MEETMOMENTEN NAAST ELKAAR') && rt2.includes('BEROEPSLEERLIJNEN') && rt2.includes('BASISVAARDIGHEDEN') && rt2.includes('MEP1A'),
+      `resultaatpagina: alle 30 studenten (2 pagina's) met beroeps en BAVA naast elkaar (${rijen} rijen; "${rt2.slice(0, 120).replace(/\n/g, ' ')}")`);
+    check(resultaatVerzoeken.includes('ed-bava/2/met-leerlijnen') && resultaatVerzoeken.includes('ed-beroeps/1/zonder-leerlijnen') && !resultaatVerzoeken.some((x) => x.startsWith('ed-sd')),
+      `resultaatpagina: dezelfde vraag van de app per opleiding uit het profiel, alle pagina's (${[...new Set(resultaatVerzoeken)].join(', ')})`);
+    check((await resTab.locator('table.overzicht.perioden').count()) === 2, 'resultaatpagina: ander cohort zonder beoordelingen weggelaten (één tabel per rol)');
+    await resTab.selectOption('#sd-soort', 'student');
+    check((await resTab.locator('.pagina').count()) === 60, `resultaatpagina: voortgangsrapporten voor de hele groep (${await resTab.locator('.pagina').count()} pagina's)`);
+  }
+  await resTab.close();
 
   // Rapportprofielen en voorvertoning van het voortgangsrapport
   const prof = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);
