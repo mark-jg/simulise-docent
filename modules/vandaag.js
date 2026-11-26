@@ -122,6 +122,11 @@ SD.register({
     h2 { margin: 26px 0 10px; font-size: var(--sim-title-2, 17px); font-weight: 600; }
     .strook { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 6px 18px; align-items: center; padding: 12px 0; border-top: 1px solid var(--sim-border, #e3e6ea); }
     .strook:first-child { border-top: 0; }
+    .strook .titel { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+    .strook .titel > a:first-child { max-width: 100%; color: var(--sim-text, #1e2328); font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .strook .titel > a:first-child:hover { color: var(--sim-accent-text, #0b6f5e); text-decoration: underline; }
+    .strook a.nakijk { padding: 3px 11px; border-radius: 999px; background: var(--k, var(--sim-accent, #0e8a74)); color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .strook a.nakijk:hover { filter: brightness(.93); }
     .strook .som { grid-column: 2; font-size: 12px; color: var(--sim-text-2, #5b6470); }
     .stippen { display: flex; flex-wrap: wrap; gap: 5px; }
     .stippen i { width: 13px; height: 13px; border-radius: 50%; box-sizing: border-box; }
@@ -407,6 +412,9 @@ SD.register({
     this._adres = location.pathname + location.search;
     this.markeer(true);
     this.scherm.addEventListener('click', (e) => {
+      // Een link naar de opdrachten van deze klas terwijl die pagina al open staat: alleen het adres verandert, dus zelf sluiten.
+      const naarMatrix = e.target.closest('a[href*="#sd-opdracht="]');
+      if (naarMatrix && new URL(naarMatrix.href, location.href).pathname === location.pathname) setTimeout(() => this.sluit(), 0);
       const el = e.target.closest('[data-actie]');
       if (!el) return;
       const actie = el.dataset.actie;
@@ -469,8 +477,10 @@ SD.register({
       for (const r of bron?.rijen || []) {
         const id = r.assignment?.id || r.id;
         let x = per.get(id);
-        if (!x) per.set(id, x = { titel: r.assignment?.title || '', klaar: 0, wacht: 0, bezig: 0, laat: 0, niet: 0 });
+        if (!x) per.set(id, x = { titel: r.assignment?.title || '', klaar: 0, wacht: 0, bezig: 0, laat: 0, niet: 0, link: '' });
         x[this.SOORT[r.status] || 'niet']++;
+        // De eerste inlevering die op jou wacht: daar gaat de knop Nakijken heen.
+        if (bron === this.bron.open && !x.link) x.link = this.link(r);
       }
     }
     return [...per.values()].sort((a, b) => b.wacht - a.wacht || a.titel.localeCompare(b.titel));
@@ -560,10 +570,11 @@ SD.register({
         <span>Klik op een regel om de langst wachtende inlevering te beoordelen.</span>
       </div>
       ${stroken?.length ? `<h2>Alle opdrachten in deze klas</h2>
-      <div class="lijst kaart"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}>${stroken.map((x) => `<div class="strook"><span class="titel" title="${esc(x.titel)}">${esc(x.titel)}</span>
+      <div class="lijst kaart"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}>${stroken.map((x) => `<div class="strook"><span class="titel"><a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="${esc(x.titel)}: open het overzicht per student">${esc(x.titel)}</a>
+          ${x.wacht && x.link ? `<a class="nakijk" href="${esc(x.link)}" title="Open de eerste inlevering die op jou wacht">Nakijken (${x.wacht})</a>` : ''}</span>
         <span class="stippen" role="img" aria-label="${x.klaar} klaar, ${x.wacht} wachten op jou, ${x.bezig} bezig, ${x.laat} te laat, ${x.niet} niet gestart">${['klaar', 'wacht', 'bezig', 'laat', 'niet'].map((soort) => `<i class="${soort}"></i>`.repeat(Math.min(x[soort], 60))).join('')}</span>
         <span class="som">${[[x.klaar, 'klaar'], [x.wacht, x.wacht === 1 ? 'wacht op jou' : 'wachten op jou'], [x.bezig, 'bezig'], [x.laat, 'te laat'], [x.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`).join('')}</div>
-      <p class="legenda"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}><span><i class="klaar"></i>Klaar</span><span><i class="wacht"></i>Wacht op jou</span><span><i class="bezig"></i>Student is bezig</span><span><i class="laat"></i>Te laat</span><span><i class="niet"></i>Nog niet gestart</span><span>Eén stip is één inlevering.</span></p>` : ''}
+      <p class="legenda"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}><span><i class="klaar"></i>Klaar</span><span><i class="wacht"></i>Wacht op jou</span><span><i class="bezig"></i>Student is bezig</span><span><i class="laat"></i>Te laat</span><span><i class="niet"></i>Nog niet gestart</span><span>Eén stip is één inlevering. Klik op een titel voor het overzicht per student.</span></p>` : ''}
       ${k ? `<p class="uitleg">Te laat, Nog niet gestart en Klaar tellen de inleveringen in deze klas waarvan jij beoordelaar bent.</p>
       <div class="snel" aria-label="Deze klas in Simulise">${[['assignments', 'Alle opdrachten'], ['students', 'Studenten'], ['teachers', 'Docenten'], ['templates', 'Sjablonen'], ['community', 'Community'], ['files', 'Bestanden'], ['settings', 'Instellingen']]
     .map(([pad, naam]) => `<a class="knop" href="/groups/school/${esc(encodeURIComponent(k.id))}/${pad}">${naam}</a>`).join('')}</div>` : ''}</div>`;

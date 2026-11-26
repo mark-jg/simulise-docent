@@ -953,6 +953,9 @@ function bouwZip() {
   check((await vd.locator('.strook').count()) === 2 && (await vd.locator('.strook').first().locator('.stippen i').count()) === 4 && (await vd.locator('.strook').first().locator('.stippen i.wacht').count()) === 1
     && (await vd.locator('.strook').first().locator('.som').innerText()) === '1 wacht op jou · 1 te laat · 2 niet gestart' && (await vd.locator('.strook').nth(1).locator('.stippen i.bezig').count()) === 1,
     'thuispagina per klas: stippenkaart met één stip per inlevering, de opdracht die op jou wacht bovenaan');
+  { const sl = await vd.locator('.strook').first().evaluate((el) => ({ overzicht: el.querySelector('.titel > a')?.getAttribute('href') || '', nakijk: el.querySelector('a.nakijk')?.getAttribute('href') || '', tekst: el.querySelector('a.nakijk')?.textContent || '', tweede: !!el.parentElement.children[1].querySelector('a.nakijk') }));
+    check(/^\/groups\/school\/[^/]+\/assignments#sd-opdracht=/.test(sl.overzicht) && /^\/@[^/]+\/assignment\/[^/]+\/review\?/.test(sl.nakijk) && sl.tekst === 'Nakijken (1)' && !sl.tweede,
+      `klaspagina: de titel van een opdracht opent het overzicht per student, "Nakijken" de eerste inlevering die op jou wacht (${sl.overzicht.replace(/=.*/, '=…')}; ${sl.tekst})`); }
   check((await vd.locator('.held.klas').count()) === 1 && (await vd.locator('.held').getAttribute('style')).startsWith('--k:#') && (await vd.locator('.week').count()) === 0, 'thuispagina per klas: kop in de kleur van de klas');
   check(await sim.evaluate(() => document.querySelector('.sim-docent-klas[data-klas="vg-mr1a"]').parentElement.classList.contains('active') && !document.querySelector('.sim-docent-vandaag-li').classList.contains('active')), 'thuispagina per klas: de klas is gemarkeerd in de zijbalk');
   await sim.dispatchEvent('.sim-docent-vandaag', 'click');
@@ -1082,6 +1085,7 @@ function bouwZip() {
 
   // Opdrachtenmatrix van een klas als stippenkaart (module matrix)
   const pm = await nieuw(`chrome-extension://${id}/popup.html`);
+  await pm.evaluate(() => chrome.storage.sync.set({ matrixDraai: false })); // eerst de tabel van Simulise als stippenkaart; de gedraaide tabel volgt hieronder
   await sim.goto(`https://ma.simulise.com/groups/school/${UUID}/assignments`); await sim.waitForTimeout(700);
   const balkM = sim.locator('.sd-matrix-balk'), ov = sim.locator('.sd-matrix-overzicht');
   check((await sim.getAttribute('html', 'data-sim-matrix-overzicht')) === '' && (await sim.evaluate(() => getComputedStyle(document.querySelector('[data-sd-matrix-tabel]')).display)) === 'none'
@@ -1117,6 +1121,21 @@ function bouwZip() {
     && (await sim.evaluate(() => getComputedStyle(document.querySelector('td[data-sd-mij] > a'), '::before').opacity)) === '1' && (await pm.evaluate(() => chrome.storage.sync.get('matrixMij').then((x) => x.matrixMij))) === true,
     'matrix: "Alleen van mij" maakt de rest lichter en wordt onthouden');
   await pm.evaluate(() => chrome.storage.sync.set({ matrixMij: false }));
+  // Gedraaid: studenten onder elkaar, opdrachten als kolommen met een korte code
+  await balkM.locator('[data-sd-matrix="draai"]').click(); await sim.waitForTimeout(500);
+  const dr = () => sim.evaluate(() => { const t = document.querySelector('.sd-matrix-draai table.sd-md'); if (!t) return null; const g = (el, ps) => getComputedStyle(el, ps);
+    return { koppen: [...t.querySelectorAll('thead th')].map((th) => th.textContent.trim().replace(/\s+/g, ' ')).join(' | '), tips: [...t.querySelectorAll('thead th[data-kol]')].map((th) => th.title).join(' | '),
+      rijen: [...t.querySelectorAll('tbody tr')].map((tr) => `${tr.querySelector('.sd-md-naam').textContent}:${[...tr.querySelectorAll('.sd-md-stip')].map((a) => a.className.replace('sd-md-stip ', '')).join(',')}`).join(' | '),
+      link: t.querySelector('tbody tr .sd-md-stip')?.getAttribute('href'), naamLink: t.querySelector('tbody .sd-md-naam a')?.getAttribute('href'), simulise: g(document.querySelector('[data-sd-matrix-tabel]')).display,
+      groot: g(t.querySelector('.sd-md-stip.mij'), '::before').width, plak: g(t.querySelector('tbody .sd-md-naam')).position, hier: [...t.querySelectorAll('thead th.sd-m-hier')].map((th) => th.querySelector('a, span').textContent).join(',') }; });
+  let d1 = await dr();
+  check(d1 && d1.koppen === 'Student | ENG_1.525-11 | PS_1.825-11 | LOB25-11 | BUR25-11' && /^ENG_1\.5: True crime · Deadline 25 november/.test(d1.tips) && d1.rijen === 'Anna Test:mij,mij,klaar,laat | Bram Test:collega,collega,niet,bezig'
+    && d1.simulise === 'none' && d1.groot === '18px' && d1.plak === 'sticky' && d1.link === '/@studenta/assignment/00000000-0000-4000-8000-000000000000/view' && d1.naamLink === '/@studenta/assignments'
+    && (await pm.evaluate(() => chrome.storage.sync.get('matrixDraai').then((x) => x.matrixDraai))) === true,
+    `matrix gedraaid: studenten onder elkaar, opdrachten als kolommen met een korte code en de hele titel als toelichting, dezelfde stippen en links (${d1 ? `${d1.koppen} // ${d1.rijen}` : 'geen tabel'})`);
+  await sim.evaluate(() => { location.hash = '#sd-opdracht=' + encodeURIComponent('LOB - werkveld verkennen'); }); await sim.waitForTimeout(500);
+  d1 = await dr();
+  check(d1.hier === 'LOB' && (await sim.evaluate(() => location.hash)) === '', `matrix gedraaid: het adres van de klaspagina (#sd-opdracht) markeert de kolom van die opdracht (${d1.hier})`);
   await balkM.locator('.sim-docent-klas').click();
   await vd.locator('h1').waitFor({ timeout: 20000 }).catch(() => {});
   check((await vd.count()) === 1 && !(await sim.evaluate(() => document.querySelector('.sd-matrix-balk').classList.contains('active'))), 'matrix: de knop "Thuispagina van de klas" opent de klaspagina');
@@ -1124,7 +1143,7 @@ function bouwZip() {
   await pm.evaluate(() => chrome.storage.sync.set({ matrixView: false })); await sim.waitForTimeout(500);
   check((await sim.getAttribute('html', 'data-sim-matrix')) === null && (await sim.getAttribute('html', 'data-sim-matrix-student')) === null && (await balkM.count()) === 0 && (await ov.count()) === 0
     && (await sim.locator('td[data-sd-mij], [data-sd-matrix-tabel]').count()) === 0, 'module matrix uit: de matrix van Simulise staat er weer zoals hij was');
-  await pm.evaluate(() => chrome.storage.sync.set({ matrixView: true, matrixWeergave: 'overzicht' })); await pm.close();
+  await pm.evaluate(() => chrome.storage.sync.set({ matrixView: true, matrixWeergave: 'overzicht', matrixDraai: true })); await pm.close();
 
   // Inzicht: Analytics als vragen, en de keuzes voor een rapportage in gewone taal (module inzicht)
   const pz = await nieuw(`chrome-extension://${id}/popup.html`);

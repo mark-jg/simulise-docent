@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.23.0)
+## Huidige staat (v0.24.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -110,6 +110,11 @@ rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel
                 { niveau: onder | bespreek | ok | geen, redenen } en m.aanwezig; weergave "vergader" (Vergaderlijst) in
                 weergave.js en als afdruk/CSV in render.js. Profiel: aanwezigheid { grens, kolommen }, vergadering
                 { netAan, onbeoordeeld }.
+matrix.js, aanvulling v0.24: in de weergave per student de knop "Draaien" (instelling matrixDraai, standaard aan): eigen tabel
+                .sd-matrix-draai table.sd-md met studenten als rijen en opdrachten als kolommen (code() maakt de korte kop uit de titel),
+                html[data-sim-matrix-draai] verbergt dan de tabel van Simulise. Het adres #sd-opdracht=<titel> (links op de klaspagina van
+                vandaag.js) opent de weergave per student en markeert die kolom of rij. Op de klaspagina linkt de titel van een strook
+                daarheen en a.nakijk naar de eerste inlevering die op jou wacht.
 modules/media.js: media bij het nakijken (instelling reviewMedia). Op /@gebruiker/assignment/<uuid>/review komt onder het vak met het
                 ingeleverde werk een blok .sd-media met de bestanden en links van de ingeleverde portfoliopagina: eigen vraag sdNakijkMedia
                 (assignmentAssignedForUser, zelfde opbouw als getUserAssignmentForReview plus PortfolioPage.blocks), spelers voor VIDEO en

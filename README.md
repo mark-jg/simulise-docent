@@ -101,6 +101,11 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.24.0: de opdrachten van een klas per student kun je draaien. Met de knop "Draaien" staan de studenten onder elkaar
+  en de opdrachten als kolommen, met bovenaan een korte code uit de titel (PS_1.8, ENG_2.3); de hele titel en de
+  deadline zie je als je de code aanwijst. De keuze wordt onthouden. Op de klaspagina zijn de opdrachten doorklikbaar:
+  de titel opent het overzicht per student met die opdracht gemarkeerd, de knop "Nakijken" de eerste inlevering die op
+  jou wacht.
 - 0.23.0: media bij het nakijken. Simulise toont een ingeleverde portfoliopagina op het beoordeelscherm als pdf, waarin
   video en audio niet afspelen. Onder die pdf staat nu "Media op deze pagina": een speler voor elke video en elk
   audiobestand, afbeeldingen, en voor andere bestanden een knop die de voorvertoning van Simulise in de pagina opent,

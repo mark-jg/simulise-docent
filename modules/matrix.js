@@ -6,9 +6,15 @@
  *   Overzicht (standaard)  Eerst een blok "Wacht op jou" met de opdrachten waar jij iets moet nakijken; daaronder de
  *                          opdrachten per vak (de code uit de titel, zoals BUR of CREA), inklapbaar, met per opdracht
  *                          één balk: klaar, ingeleverd, te laat, niet gestart. Geen studenten in beeld.
+ *   Per student, gedraaid  (standaard, instelling matrixDraai) Een eigen tabel met de studenten onder elkaar en de opdrachten
+ *                          als kolommen: bovenaan een korte code uit de titel (PS_1.8, ENG_2.3) met de hele titel en de
+ *                          deadline als toelichting, per inlevering één stip met dezelfde link als bij Simulise. De knop
+ *                          "Draaien" wisselt terug naar de tabel van Simulise. Opmaak in theme.css (.sd-matrix-draai).
  *   Per student            De matrix van Simulise als stippenkaart: smalle kolommen met de naam verticaal, per rij de
  *                          titel met de deadline eronder, per inlevering één stip. Opmaak in theme.css onder
  *                          html[data-sim-matrix-student].
+ *
+ * Vanaf de klaspagina (modules/vandaag.js) opent het adres #sd-opdracht=<titel> de weergave per student met die opdracht gemarkeerd.
  *
  * Alles komt uit de tabel die Simulise al op de pagina zet (door de server gemaakt, geen Vue): er wordt niets
  * opgevraagd of bewaard. Het overzicht toont dus wat het filter van Simulise op dat moment doorlaat.
@@ -32,11 +38,14 @@ SD.register({
       if (!el) return;
       const wat = el.dataset.sdMatrix;
       if (wat === 'mij') { e.preventDefault(); chrome.storage.sync.set({ matrixMij: !(this.SD.settings.matrixMij === true) }); }
+      else if (wat === 'draai') { e.preventDefault(); chrome.storage.sync.set({ matrixDraai: this.SD.settings.matrixDraai === false }); }
       else if (wat === 'weergave') { e.preventDefault(); chrome.storage.sync.set({ matrixWeergave: el.dataset.w }); }
       else if (wat === 'vak') { e.preventDefault(); const v = el.dataset.vak; if (this.open.has(v)) this.open.delete(v); else this.open.add(v); this._teken = null; this.pas(); }
       else if (wat === 'rij') { e.preventDefault(); this._naarRij = Number(el.dataset.rij); chrome.storage.sync.set({ matrixWeergave: 'student' }); }
     };
     document.addEventListener('click', this._klik, true);
+    this._hash = () => this.pas();
+    window.addEventListener('hashchange', this._hash);
     this._ontvolg = SD.klassen.volg(() => this.pas());
     SD.ready(() => {
       if (!this.SD) return;
@@ -50,6 +59,7 @@ SD.register({
 
   destroy() {
     document.removeEventListener('click', this._klik, true);
+    window.removeEventListener('hashchange', this._hash);
     this._ontvolg?.();
     this._stop?.();
     this.ruimOp();
@@ -59,9 +69,9 @@ SD.register({
   ruimOp() {
     const root = document.documentElement;
     if (!root.hasAttribute('data-sim-matrix') && !document.querySelector('.sd-matrix-balk')) return;
-    for (const a of ['data-sim-matrix', 'data-sim-matrix-student', 'data-sim-matrix-overzicht', 'data-sim-matrix-mij']) root.removeAttribute(a);
+    for (const a of ['data-sim-matrix', 'data-sim-matrix-student', 'data-sim-matrix-overzicht', 'data-sim-matrix-mij', 'data-sim-matrix-draai']) root.removeAttribute(a);
     document.querySelectorAll('[data-sd-mij]').forEach((el) => el.removeAttribute('data-sd-mij'));
-    document.querySelectorAll('.sd-matrix-balk, .sd-matrix-overzicht').forEach((el) => el.remove());
+    document.querySelectorAll('.sd-matrix-balk, .sd-matrix-overzicht, .sd-matrix-draai').forEach((el) => el.remove());
     document.querySelectorAll('[data-sd-matrix-tabel]').forEach((el) => el.removeAttribute('data-sd-matrix-tabel'));
     this._teken = null;
   },
@@ -107,31 +117,78 @@ SD.register({
       if (!cellen.length) return;
       const tel = { mij: 0, collega: 0, bezig: 0, laat: 0, niet: 0, klaar: 0, overig: 0 };
       let link = '';
-      for (const td of cellen) {
+      // Per student (kolom) de cel: de eerste cel van de rij is de titel.
+      const perStudent = [...tr.children].slice(1).map((td) => {
+        if (!td.dataset?.status) return null;
         const a = td.querySelector('a');
-        const soort = this.soort(td.dataset.status, a?.dataset.title || a?.getAttribute('data-original-title') || a?.title, ik);
+        const tip = (a?.dataset.title || a?.getAttribute('data-original-title') || a?.title || '').replace(/\s+/g, ' ').trim();
+        const soort = this.soort(td.dataset.status, tip, ik);
         tel[soort]++;
         if ((soort === 'mij') !== td.hasAttribute('data-sd-mij')) td.toggleAttribute('data-sd-mij', soort === 'mij');
         if (soort === 'mij' && !link) link = a?.getAttribute('href') || '';
-      }
-      const titel = (tr.querySelector('a.divider-plan')?.textContent || '').replace(/\s+/g, ' ').trim();
-      rijen.push({ nr, titel, vak: this.vak(titel), deadline: this.deadline(tr.querySelector('small.reviewers > a > small')?.textContent), tel, totaal: cellen.length, link });
+        return { soort, tip, href: a?.getAttribute('href') || '' };
+      });
+      const kopLink = tr.querySelector('a.divider-plan');
+      const titel = (kopLink?.textContent || '').replace(/\s+/g, ' ').trim();
+      const dl = tr.querySelector('small.reviewers > a > small')?.textContent;
+      rijen.push({ nr, titel, vak: this.vak(titel), deadline: this.deadline(dl), dag: (String(dl || '').match(/(\d{1,2})-(\d{1,2})-\d{4}/) || []).slice(1, 3).join('-'), tel, totaal: cellen.length, link, cellen: perStudent,
+        href: /^(#|javascript:)?$/i.test(kopLink?.getAttribute('href') || '') ? '' : kopLink.getAttribute('href') });
     });
     return rijen;
+  },
+
+  /* Korte code voor boven een kolom: "PS_1.8: Skills Portfolio" wordt PS_1.8, "M1BUR - casus" wordt M1BUR, anders het begin van de titel. */
+  code(titel) {
+    const t = String(titel || '').trim();
+    const m = t.match(/^([A-Za-z]{1,6}[_ ]?\d+(?:[.,]\d+)*[a-z]?|M\d{1,2}[A-Z]{2,5}|[A-Z]{2,6})(?=\s*[:|\-–]|\s|$)/);
+    if (m && m[1].length <= 9) return m[1].replace(/\s+/g, '');
+    const mm = t.match(/^meetmoment\s+(\S+).*?\b(M\d{1,2})\b/i);
+    if (mm) return `MM ${mm[1].slice(0, 3)} ${mm[2]}`;
+    return t.length > 9 ? `${t.slice(0, 8)}…` : t;
+  },
+
+  /* De studenten uit de kop van de tabel van Simulise, in de volgorde van de kolommen. */
+  studenten(tabel) {
+    return [...tabel.querySelectorAll('thead th')].slice(1).map((th) => {
+      const a = th.querySelector('a');
+      return { naam: (th.querySelector('.rotated-header-content')?.textContent || a?.textContent || '').replace(/\s+/g, ' ').trim(), href: a?.getAttribute('href') || '' };
+    });
+  },
+
+  /* De gedraaide tabel: studenten als rijen, opdrachten als kolommen. */
+  draai(rijen, studenten) {
+    const esc = this.esc;
+    const NAAM = { mij: 'wacht op jou', collega: 'bij een collega', bezig: 'student bezig', laat: 'te laat', niet: 'niet gestart', klaar: 'klaar', overig: '' };
+    const kop = rijen.map((r, i) => `<th data-kol="${i}" class="${i && r.vak !== rijen[i - 1].vak ? 'sd-md-rand' : ''}" title="${esc(r.titel)}${r.deadline ? ` · ${esc(r.deadline)}` : ''}">${r.href ? `<a href="${esc(r.href)}">${esc(this.code(r.titel))}</a>` : `<span>${esc(this.code(r.titel))}</span>`}<small>${esc(r.dag || '')}</small></th>`).join('');
+    const lijf = studenten.map((st, k) => `<tr><th class="sd-md-naam">${st.href ? `<a href="${esc(st.href)}">${esc(st.naam)}</a>` : esc(st.naam)}</th>${rijen.map((r, i) => {
+      const c = r.cellen[k];
+      return `<td data-kol="${i}" class="${i && r.vak !== rijen[i - 1].vak ? 'sd-md-rand' : ''}">${c ? `<a class="sd-md-stip ${c.soort}" href="${esc(c.href || '#')}" title="${esc(this.code(r.titel))}: ${esc(c.tip || NAAM[c.soort])}" aria-label="${esc(r.titel)}: ${esc(c.tip || NAAM[c.soort])}"></a>` : ''}</td>`;
+    }).join('')}</tr>`).join('');
+    return `<div class="sd-md-rol"><table class="sd-md"><thead><tr><th class="sd-md-naam">Student</th>${kop}</tr></thead><tbody>${lijf}</tbody></table></div>
+      <p class="sd-md-voet">Boven elke kolom staat de code van de opdracht; wijs hem aan voor de hele titel en de deadline. Klik op een stip om die inlevering te openen.</p>`;
   },
 
   pas() {
     if (!this.SD) return;
     const klasId = location.pathname.match(this.PAD)?.[1];
+    // Vanaf de klaspagina: #sd-opdracht=<titel> opent de weergave per student met die opdracht gemarkeerd.
+    const uitAdres = klasId && location.hash.match(/^#sd-opdracht=(.*)$/);
+    if (uitAdres) {
+      try { this._naarTitel = decodeURIComponent(uitAdres[1]); } catch { this._naarTitel = null; }
+      history.replaceState(null, '', location.pathname + location.search);
+      if (this.SD.settings.matrixWeergave !== 'student') { chrome.storage.sync.set({ matrixWeergave: 'student' }); return; }
+    }
     const tabel = klasId && document.querySelector('table.table-group-assignments-overview, table.rotated-header');
     if (!tabel || !tabel.querySelector('td[data-status]')) { this.ruimOp(); return; }
     const root = document.documentElement, s = this.SD.settings;
-    const student = s.matrixWeergave === 'student', alleenMij = student && s.matrixMij === true;
+    const student = s.matrixWeergave === 'student', alleenMij = student && s.matrixMij === true, draai = student && s.matrixDraai !== false;
     if (!root.hasAttribute('data-sim-matrix')) root.setAttribute('data-sim-matrix', '');
     root.toggleAttribute('data-sim-matrix-student', student);
     root.toggleAttribute('data-sim-matrix-overzicht', !student);
     root.toggleAttribute('data-sim-matrix-mij', alleenMij);
+    root.toggleAttribute('data-sim-matrix-draai', draai);
     const rijen = this.lees(tabel);
+    if (this._naarTitel != null) { const raak = rijen.find((r) => r.titel === this._naarTitel); if (student) { this._naarRij = raak ? raak.nr : null; this._naarTitel = null; } }
     const tel = { mij: 0, collega: 0, bezig: 0, laat: 0, niet: 0, klaar: 0, overig: 0 };
     for (const r of rijen) for (const k of Object.keys(tel)) tel[k] += r.tel[k];
     const K = this.SD.klassen;
@@ -140,29 +197,42 @@ SD.register({
     const kleur = K.kleur(klasId) || '';
     const thuis = this.SD.isOn('vandaag');
     const filter = [...document.querySelectorAll('#content-wrapper .selectize-input .item')].map((el) => el.textContent.replace(/[×\s]+$/, '').replace(/\s+/g, ' ').trim()).filter(Boolean);
-    const teken = JSON.stringify([klasId, naam, kleur, rijen.map((r) => [r.titel, r.deadline, r.tel]), student, alleenMij, thuis, filter, [...this.open]]);
+    const studenten = draai ? this.studenten(tabel) : [];
+    const teken = JSON.stringify([klasId, naam, kleur, rijen.map((r) => [r.titel, r.deadline, r.tel, draai ? r.cellen : 0]), student, alleenMij, draai, studenten, thuis, filter, [...this.open]]);
     const anker = tabel.closest('.row') || tabel.closest('.panel') || tabel;
     if (!anker.hasAttribute('data-sd-matrix-tabel')) anker.setAttribute('data-sd-matrix-tabel', ''); // in het overzicht verbergt de opmaak dit deel
-    let balk = document.querySelector('.sd-matrix-balk'), overzicht = document.querySelector('.sd-matrix-overzicht');
-    if (balk && overzicht && teken === this._teken) return;
+    let balk = document.querySelector('.sd-matrix-balk'), overzicht = document.querySelector('.sd-matrix-overzicht'), gedraaid = document.querySelector('.sd-matrix-draai');
+    if (balk && overzicht && gedraaid && teken === this._teken && this._naarRij == null) return;
     this._teken = teken;
     if (!balk) { balk = Object.assign(document.createElement('div'), { className: 'sd-matrix-balk' }); anker.before(balk); }
     if (!overzicht) { overzicht = Object.assign(document.createElement('div'), { className: 'sd-matrix-overzicht' }); anker.before(overzicht); }
     const esc = this.esc;
-    for (const el of [balk, overzicht]) { if (kleur) el.style.setProperty('--sd-klas', kleur); else el.style.removeProperty('--sd-klas'); }
+    if (!gedraaid) { gedraaid = Object.assign(document.createElement('div'), { className: 'sd-matrix-draai' }); anker.before(gedraaid); }
+    for (const el of [balk, overzicht, gedraaid]) { if (kleur) el.style.setProperty('--sd-klas', kleur); else el.style.removeProperty('--sd-klas'); }
     const kort = [[tel.mij, tel.mij === 1 ? 'wacht op jou' : 'wachten op jou'], [tel.laat, 'te laat']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ') || 'Niets wacht op jou';
     balk.innerHTML = `<span class="sd-m-klas"><i></i>${esc(naam)}</span>
       ${student ? this.SOORTEN.map(([soort, een, meer]) => `<span class="sd-m-tel${soort === 'mij' && tel.mij ? ' sd-m-nu' : ''}" data-soort="${soort}"><i class="sd-m-stip ${soort}"></i><b>${tel[soort]}</b> ${tel[soort] === 1 ? een : meer}</span>`).join('')
     : `<span class="sd-m-kort">${esc(kort)}</span>`}
       <span class="sd-m-ruimte"></span>
+      ${student ? `<button type="button" class="sd-m-knop${draai ? ' aan' : ''}" data-sd-matrix="draai" aria-pressed="${draai}" title="Studenten onder elkaar en de opdrachten als kolommen, of andersom zoals Simulise">Draaien</button>` : ''}
       ${student ? `<button type="button" class="sd-m-knop${alleenMij ? ' aan' : ''}" data-sd-matrix="mij" aria-pressed="${alleenMij}" title="Alles behalve wat op jou wacht wordt lichter">Alleen van mij</button>` : ''}
       <span class="sd-m-seg" role="group" aria-label="Weergave"><button type="button" data-sd-matrix="weergave" data-w="overzicht" class="${student ? '' : 'aan'}" aria-pressed="${!student}">Overzicht</button><button type="button" data-sd-matrix="weergave" data-w="student" class="${student ? 'aan' : ''}" aria-pressed="${student}">Per student</button></span>
       ${thuis ? `<a class="sd-m-knop sim-docent-klas" data-klas="${esc(klasId)}" href="#klas=${esc(klasId)}">Thuispagina van de klas</a>` : ''}`;
     overzicht.innerHTML = student ? '' : this.overzicht(rijen, filter);
+    gedraaid.innerHTML = draai ? this.draai(rijen, studenten) : '';
     if (student && this._naarRij != null) {
-      const tr = tabel.querySelectorAll('tbody > tr')[this._naarRij];
+      const nr = this._naarRij;
       this._naarRij = null;
-      if (tr) { tr.scrollIntoView({ block: 'center' }); tr.classList.add('sd-m-hier'); setTimeout(() => tr.classList.remove('sd-m-hier'), 2500); }
+      if (draai) { // de kolom van die opdracht
+        const kol = rijen.findIndex((r) => r.nr === nr);
+        const cellen = [...gedraaid.querySelectorAll(`[data-kol="${kol}"]`)];
+        cellen[0]?.scrollIntoView({ block: 'nearest', inline: 'center' });
+        cellen.forEach((el) => el.classList.add('sd-m-hier'));
+        setTimeout(() => cellen.forEach((el) => el.classList.remove('sd-m-hier')), 2500);
+      } else {
+        const tr = tabel.querySelectorAll('tbody > tr')[nr];
+        if (tr) { tr.scrollIntoView({ block: 'center' }); tr.classList.add('sd-m-hier'); setTimeout(() => tr.classList.remove('sd-m-hier'), 2500); }
+      }
     }
   },
 

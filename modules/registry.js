@@ -40,6 +40,7 @@ globalThis.SD_DEFAULTS = {
   qaStandaard: {},    // snelle opdracht: je vaste keuzes (deadline, inleverstukken, labels, actief)
   matrixView: true,   // module matrix
   matrixMij: false,   // matrix: alles behalve wat op jou wacht lichter
+  matrixDraai: true,  // matrix per student gedraaid: studenten als rijen, opdrachten als kolommen
   matrixWeergave: 'overzicht', // opdrachten van een klas: 'overzicht' (per vak) of 'student' (stippenkaart)
   focus: true,        // module focus
   focusAan: true,     // focusmodus staat aan op het beoordeelscherm

@@ -110,6 +110,7 @@ testaccount.
 | 6.6 | Groepstellers op het dashboard: "van mij: N" | 💡 | De teller telt alle beoordelaars |
 | 6.7 | Eén eigen formulier voor opdracht aanmaken | 🔧 v0.22 | modules/opdracht.js: scherm Snelle opdracht in de indeling van Teams (inhoud links, alle kleine instellingen in de smalle kolom rechts, knoppen bovenin, rubrics in een popup), met alle instellingen van de vier pagina's van Simulise; opslaan in de vijf stappen met herstel per stap. Alleen getest tegen een nagebootste server; de eerste echte opdracht moet Mark zelf maken (geen testklas). Nog niet: afbeelding, bestanden en video, paginasjabloon als inleverstuk, virtuele groepen en losse studenten, meer dan één groep beoordelaars (en dus de volgorde van beoordelaars), een bestaande opdracht als vertrekpunt |
 | 6.8 | Media bij het nakijken | 🔧 v0.23 | modules/media.js: onder de pdf van een ingeleverde portfoliopagina spelers voor video en audio, afbeeldingen, andere bestanden (voorvertoning van Simulise op verzoek) en links. De vraag en het afspelen van een video zijn geproefd op een echte inlevering; de module zelf alleen in de rooktest. Audio, afbeeldingen en andere bestandssoorten zijn niet op een echte inlevering gezien |
+| 6.9 | Matrix draaien en doorklikken vanaf de klaspagina | 🔧 v0.24 | Knop Draaien in de weergave per student (studenten als rijen, opdrachten als kolommen met een korte code); titels op de klaspagina openen het overzicht per student, knop Nakijken de eerste wachtende inlevering. Alleen in de rooktest gezien |
 
 ## Benodigde input (bijgewerkt na v0.6)
 

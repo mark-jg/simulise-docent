@@ -1220,3 +1220,32 @@ html .sd-media .sd-media-kop a:hover, html .sd-media .sd-media-kop button:hover 
 .sd-media audio { display: block; width: 100%; margin-top: 10px; }
 .sd-media iframe { display: block; width: 100%; height: 70vh; margin-top: 10px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius-sm, 8px); background: #fff; }
 @media print { .sd-media { display: none; } }
+
+/* ---------- Matrix gedraaid (modules/matrix.js): studenten als rijen, opdrachten als kolommen ---------- */
+html[data-sim-matrix-draai] [data-sd-matrix-tabel] { display: none !important; }
+html:not([data-sim-matrix-draai]) .sd-matrix-draai { display: none; }
+.sd-matrix-draai { --sdm-klaar: var(--sim-success, #2f9e6e); --sdm-collega: #8d93b5; color: var(--sim-text, #1e2328); font-family: var(--sim-font, inherit); }
+.sd-matrix-draai .sd-md-rol { max-height: calc(100vh - 170px); overflow: auto; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); }
+html:root:root .sd-matrix-draai table.sd-md { border-collapse: separate; border-spacing: 0; width: auto; margin: 0; background: transparent; }
+html:root:root .sd-matrix-draai table.sd-md th, html:root:root .sd-matrix-draai table.sd-md td { padding: 0 !important; border: 0 !important; border-bottom: 1px solid var(--sim-border, #e3e6ea) !important; background: var(--sim-surface, #fff) !important; text-align: center; vertical-align: middle; }
+html:root:root .sd-matrix-draai table.sd-md thead th { position: sticky; top: 0; z-index: 2; min-width: 58px; height: 46px; padding: 6px 4px !important; background: var(--sim-surface-2, #eef0f3) !important; font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; color: var(--sim-text, #1e2328); }
+html:root:root .sd-matrix-draai table.sd-md thead th a { color: var(--sim-text, #1e2328) !important; text-decoration: none; }
+html:root:root .sd-matrix-draai table.sd-md thead th a:hover { color: var(--sim-accent-text, #0b6f5e) !important; text-decoration: underline; }
+.sd-matrix-draai table.sd-md thead th small { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 400; color: var(--sim-text-3, #8a93a0); min-height: 12px; }
+html:root:root .sd-matrix-draai table.sd-md .sd-md-naam { position: sticky; left: 0; z-index: 1; min-width: 190px; max-width: 240px; padding: 0 14px !important; text-align: left; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 1px 0 0 var(--sim-border, #e3e6ea); }
+html:root:root .sd-matrix-draai table.sd-md thead .sd-md-naam { z-index: 3; color: var(--sim-text-2, #5b6470); font-size: 12px; font-weight: 600; }
+html:root:root .sd-matrix-draai table.sd-md .sd-md-naam a { color: var(--sim-text, #1e2328) !important; text-decoration: none; }
+html:root:root .sd-matrix-draai table.sd-md .sd-md-naam a:hover { color: var(--sim-accent-text, #0b6f5e) !important; }
+html:root:root .sd-matrix-draai table.sd-md .sd-md-rand { border-left: 1px solid var(--sim-border-2, #d4d9df) !important; }
+html:root:root .sd-matrix-draai table.sd-md tbody tr:hover > * { background: var(--sim-surface-2, #eef0f3) !important; }
+html:root:root .sd-matrix-draai table.sd-md .sd-m-hier { background: color-mix(in srgb, var(--sd-klas, var(--sim-accent, #0e8a74)) 14%, var(--sim-surface, #fff)) !important; }
+.sd-matrix-draai .sd-md-stip { display: flex; align-items: center; justify-content: center; width: 100%; height: 34px; }
+.sd-matrix-draai .sd-md-stip::before { content: ""; width: 12px; height: 12px; border-radius: 50%; box-sizing: border-box; background: var(--sim-surface, #fff); border: 1.5px solid var(--sim-border-2, #d4d9df); transition: transform .12s; }
+.sd-matrix-draai .sd-md-stip:hover::before { transform: scale(1.35); }
+.sd-matrix-draai .sd-md-stip.klaar::before { background: var(--sdm-klaar); border: 0; }
+.sd-matrix-draai .sd-md-stip.collega::before { background: var(--sdm-collega); border: 0; }
+.sd-matrix-draai .sd-md-stip.bezig::before { background: color-mix(in srgb, var(--sdm-klaar) 30%, var(--sim-surface, #fff)); border: 0; }
+.sd-matrix-draai .sd-md-stip.laat::before { background: var(--sim-danger, #c93c3c); border: 0; }
+.sd-matrix-draai .sd-md-stip.mij::before { width: 18px; height: 18px; background: var(--sim-accent, #0e8a74); border: 0; box-shadow: 0 0 0 3px color-mix(in srgb, var(--sim-accent, #0e8a74) 22%, transparent); }
+html[data-sim-matrix-mij] .sd-matrix-draai .sd-md-stip:not(.mij)::before { opacity: .22; }
+.sd-matrix-draai .sd-md-voet { margin: 8px 2px 0; font-size: 12px; color: var(--sim-text-3, #8a93a0); }
