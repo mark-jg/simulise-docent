@@ -36,6 +36,7 @@ globalThis.SD_DEFAULTS = {
   grading: true,      // module beoordelen
   today: true,        // module vandaag
   insight: true,      // module inzicht
+  vdDeadlines: 'mij', // klaspagina, blok Deadlines: 'mij' (waar jij beoordelaar bent) of 'klas' (alle opdrachten van de klas)
   quickAssign: true,  // module opdracht (snelle opdracht)
   reviewMedia: true,  // module media (media bij het nakijken)
   qaStandaard: {},    // snelle opdracht: je vaste keuzes (deadline, inleverstukken, labels, actief)

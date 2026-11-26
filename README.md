@@ -101,6 +101,10 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.25.1: de opdrachtenpagina van een klas past weer in het venster: de pagina schuift nu en de gedraaide tabel is
+  op de hoogte van het venster afgestemd. Het blok Deadlines op de klaspagina heeft een tweede weergave "alle
+  opdrachten van de klas": alle deadlines in de gekozen periode op datum, ook die van collega's, met de meetmomenten
+  apart.
 - 0.25.0: de instellingen staan in een zijpaneel naast de pagina (klik op het icoon), niet meer in een venster
   eroverheen. Onderdelen staan per soort werk, en er is een blok "Periodes en normen": periodes met begin en eind,
   de norm in woorden en de doelstap per opleiding. Die periodes gelden overal: voortgangsrapport en vergaderlijst, een

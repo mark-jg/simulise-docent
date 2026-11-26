@@ -1258,3 +1258,8 @@ html[data-sim-matrix] [data-sd-matrix-tabel] { margin-bottom: 32px !important; }
 html:root:root .sd-matrix-draai .sd-md-kies select { width: auto; height: auto; font: inherit; font-size: 13px; padding: 4px 26px 4px 10px; border: 1px solid var(--sim-border-2, #d4d9df); border-radius: var(--sim-pill, 999px); background-color: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); }
 .sd-matrix-draai .sd-md-aantal { margin-left: auto; color: var(--sim-text-3, #8a93a0); }
 .sd-matrix-draai .sd-md-leeg { padding: 24px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); color: var(--sim-text-2, #5b6470); }
+
+/* Matrix: de opdrachtenpagina van Simulise schuift zelf niet (#content-wrapper is absoluut met een vaste hoogte en body knipt af).
+   Met de balk en het overzicht van de extensie erboven moet de pagina kunnen schuiven, anders valt de onderkant buiten het venster. */
+html[data-sim-matrix] #content-wrapper { overflow-y: auto !important; overflow-x: hidden !important; }
+html:root:root .sd-matrix-draai .sd-md-rol { max-height: max(260px, calc(100vh - 300px)); }

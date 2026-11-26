@@ -150,6 +150,7 @@ SD.register({
     .dl-rij > a { color: var(--sim-text, #1e2328); font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .dl-rij > a:hover { color: var(--sim-accent-text, #0b6f5e); text-decoration: underline; }
     .dl-rij .som { grid-column: 2; font-size: 12px; color: var(--sim-text-2, #5b6470); }
+    .dl-rij.voorbij { opacity: .55; }
     .dl-leeg { margin: 8px 0 0; font-size: 13px; color: var(--sim-text-3, #8a93a0); }
     .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font-size: 12px; color: var(--sim-text-2, #5b6470); }
     .legenda span { display: inline-flex; align-items: center; gap: 6px; }
@@ -409,6 +410,8 @@ SD.register({
       this.sluit(); // van Vandaag naar een klas of andersom
     }
     this.klas = klas?.id ? { id: String(klas.id) } : null;
+    this.alleDl = null; // alle opdrachten van de klas met hun deadline (uit de opdrachtenpagina van Simulise)
+    if (this.klas) this.klasDeadlines(this.klas.id).then((lijst) => { this.alleDl = lijst; if (this.host) this.teken(); }, () => { this.alleDl = []; });
     this.periode = null; // deadlines: begint bij de periode van vandaag (modules/perioden.js)
     this.SD.perioden.laad().then(() => { if (this.host && this.klas) this.teken(); }, () => {});
     this.groep = ''; // elke keer beginnen met alle groepen
@@ -443,6 +446,7 @@ SD.register({
     this.scherm.addEventListener('change', (e) => {
       if (e.target.matches('[data-verborgen]')) { this.toonVerborgen = e.target.checked; this.teken(); }
       if (e.target.matches('[data-periode]')) { this.periode = e.target.value; this.teken(); }
+      if (e.target.matches('[data-dlweergave]')) { chrome.storage.sync.set({ vdDeadlines: e.target.value }); this.SD.settings.vdDeadlines = e.target.value; this.teken(); }
     });
     this.laad();
   },
@@ -499,6 +503,26 @@ SD.register({
   },
   dagTekst(iso, metJaar = false) { const [j, m, d] = iso.split('-').map(Number); return new Date(j, m - 1, d).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'long', ...(metJaar ? { year: 'numeric' } : {}) }); },
 
+  /* Alle opdrachten van een klas met hun deadline, ook die van collega's: uit de opdrachtenpagina van de klas
+   * (/groups/school/<id>/assignments, door de server gemaakt). Per opdracht de titel, de deadline en hoeveel inleveringen
+   * klaar, ingeleverd, bezig, te laat of niet gestart zijn. Geen namen. */
+  async klasDeadlines(id) {
+    const res = await fetch(`/groups/school/${encodeURIComponent(id)}/assignments?filters=`, { credentials: 'same-origin' });
+    if (!res.ok) return [];
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    const SOORT = { FINISHED: 'klaar', HANDED_IN: 'in', FEEDBACK_ASKED: 'in', BEING_PROCESSED: 'in', PARTLY_REVIEWED: 'in', IN_PROGRESS: 'bezig', DOOVER: 'bezig', DEADLINE_PAST: 'laat' };
+    const uit = [];
+    for (const tr of doc.querySelectorAll('table.table-group-assignments-overview tbody > tr, table.rotated-header tbody > tr')) {
+      const cellen = tr.querySelectorAll('td[data-status]');
+      const titel = (tr.querySelector('a.divider-plan')?.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!cellen.length || !titel) continue;
+      const tel = { klaar: 0, in: 0, bezig: 0, laat: 0, niet: 0 };
+      for (const td of cellen) tel[SOORT[td.dataset.status] || 'niet']++;
+      uit.push({ titel, deadline: this.datum((tr.querySelector('small.reviewers > a > small')?.textContent || '').replace(/^[^\d]*/, '')), meet: /^meetmoment\b/i.test(titel), tel, n: cellen.length });
+    }
+    return uit;
+  },
+
   /* De deadlines van een klas in één periode: wat nog komt (eerst de dichtstbijzijnde) en wat voorbij is (laatste eerst). */
   deadlines(stroken, k) {
     const esc = this.esc, P = this.SD.perioden, nu = P.vandaag();
@@ -514,12 +538,28 @@ SD.register({
       <span class="som">${[[x.klaar, 'klaar'], [x.wacht, x.wacht === 1 ? 'wacht op jou' : 'wachten op jou'], [x.bezig, 'bezig'], [x.laat, 'te laat'], [x.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`;
     const zonder = stroken.filter((x) => !x.deadline).length;
     const p = P.vind(code);
+    const klasView = this.SD.settings.vdDeadlines === 'klas';
+    const kies = `<label>Toon <select data-dlweergave><option value="mij"${klasView ? '' : ' selected'}>waar ik beoordelaar ben</option><option value="klas"${klasView ? ' selected' : ''}>alle opdrachten van de klas</option></select></label>`;
+    // Hele klas: alles op datum, meetmomenten apart. Wat voorbij is staat lichter.
+    let klasBlok = '';
+    if (klasView) {
+      const alle = (this.alleDl || []).filter((x) => x.deadline && P.bevat(code, x.deadline)).sort((a, b) => a.deadline.localeCompare(b.deadline) || a.titel.localeCompare(b.titel));
+      const rij = (x) => `<div class="dl-rij${x.deadline < nu ? ' voorbij' : ''}"><span class="dl-dag"><b>${esc(this.dagTekst(x.deadline))}</b><small>${esc(wanneer(x.deadline))}</small></span>
+        <a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="Open het overzicht per student">${esc(x.titel)}</a>
+        <span class="som">${[[x.tel.klaar, 'klaar'], [x.tel.in, 'ingeleverd'], [x.tel.bezig, 'bezig'], [x.tel.laat, 'te laat'], [x.tel.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`;
+      const opdr = alle.filter((x) => !x.meet), meet = alle.filter((x) => x.meet);
+      const zonderK = (this.alleDl || []).filter((x) => !x.deadline).length;
+      klasBlok = this.alleDl == null ? '<p class="dl-leeg">Opdrachten van de klas ophalen…</p>'
+        : `<div class="dl-twee"><div><h3>Opdrachten <span>${opdr.length}</span></h3>${opdr.map(rij).join('') || '<p class="dl-leeg">Geen opdrachten met een deadline in deze periode.</p>'}</div>
+          <div><h3>Meetmomenten <span>${meet.length}</span></h3>${meet.map(rij).join('') || '<p class="dl-leeg">Geen meetmomenten met een deadline in deze periode.</p>'}</div></div>
+          <p class="dl-leeg">Alle opdrachten van deze klas, ook die van collega's, op volgorde van de deadline; wat voorbij is staat lichter.${zonderK ? ` ${zonderK} ${zonderK === 1 ? 'opdracht heeft' : 'opdrachten hebben'} geen deadline.` : ''}</p>`;
+    }
     return `<h2>Deadlines</h2>
-      <div class="lijst kaart deadlines"><div class="dl-kop">${P.lijst.length ? `<label>Periode <select data-periode>${[['', 'Alle periodes'], ...P.lijst.map((x) => [x.code, `${x.code}${x.naam ? ` · ${x.naam}` : ''}`])].map(([v, t]) => `<option value="${esc(v)}"${v === code ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <div class="lijst kaart deadlines"><div class="dl-kop">${kies}${P.lijst.length ? `<label>Periode <select data-periode>${[['', 'Alle periodes'], ...P.lijst.map((x) => [x.code, `${x.code}${x.naam ? ` · ${x.naam}` : ''}`])].map(([v, t]) => `<option value="${esc(v)}"${v === code ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
           ${p ? `<small>${esc(this.dagTekst(p.van, true))} tot en met ${esc(this.dagTekst(p.tot, true))}</small>` : ''}` : '<small>Stel periodes in via het zijpaneel van de extensie (Periodes en normen) om per periode te kijken.</small>'}</div>
-        <div class="dl-twee"><div><h3>Aankomend <span>${komt.length}</span></h3>${komt.map(regel).join('') || '<p class="dl-leeg">Geen deadlines meer in deze periode.</p>'}</div>
+        ${klasView ? klasBlok : `<div class="dl-twee"><div><h3>Aankomend <span>${komt.length}</span></h3>${komt.map(regel).join('') || '<p class="dl-leeg">Geen deadlines meer in deze periode.</p>'}</div>
           <div><h3>Afgelopen <span>${voorbij.length}</span></h3>${voorbij.map(regel).join('') || '<p class="dl-leeg">Nog geen deadline voorbij in deze periode.</p>'}</div></div>
-        ${zonder ? `<p class="dl-leeg">${zonder} ${zonder === 1 ? 'opdracht heeft' : 'opdrachten hebben'} geen deadline.</p>` : ''}</div>`;
+        ${zonder ? `<p class="dl-leeg">${zonder} ${zonder === 1 ? 'opdracht heeft' : 'opdrachten hebben'} geen deadline.</p>` : ''}`}</div>`;
   },
 
   /* Stippenkaart van een klas: per opdracht één stip per inlevering, zonder namen. */

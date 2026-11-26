@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.25.0)
+## Huidige staat (v0.25.1)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -404,6 +404,11 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   `renderedPreviewUrl` is een kleine pagina op api.simulise.com (mag wel in een kader, CORS toegestaan voor de pagina) met `<video><source src=".../upload.mp4">`
   en een poster. De adressen zijn ondertekend en verlopen. Het beoordeelscherm openen gebruikt `getAndClaimUserAssignmentForReview`: wie het opent, neemt de
   inlevering mogelijk in behandeling.
+- **Opdrachtenpagina van een klas, opbouw (gemeten november 2026)**: de pagina schuift zelf niet. `body` heeft overflow hidden, `#content-wrapper.wrapper` is
+  position absolute (top 54px, bottom 0) met overflow visible, en Simulise zet met script een max-height op de tabel zodat die precies past. Alles wat de extensie
+  erboven zet duwt de tabel dus onder de rand van het venster. theme.css zet daarom `html[data-sim-matrix] #content-wrapper { overflow-y: auto }`.
+  De pagina `/groups/school/<id>/assignments?filters=` (door de server gemaakt) bevat alle opdrachten van de klas, ook die van collega's; vandaag.js leest
+  daar de deadlines voor de weergave "alle opdrachten van de klas" (instelling vdDeadlines).
 - **Labels ("school topics")**: per onderdeel aan of uit (`getTopicsForFeature`, `schoolTopicUpdateEnabled`, beheerpagina
   `pages/manage/topics`), met `required` en `canCreateLabelsInline`. Bij opdrachten: Opleidingen, Deelaspecten, Tags, Cohorten,
   Modules (M01 t/m M12), Versies. Het label **Vakken** (`labels(only: [SUBJECTS])`) bestaat en staat op rubrics (Nederlands,

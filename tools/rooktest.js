@@ -980,6 +980,13 @@ function bouwZip() {
       `klaspagina: bij elke opdracht klein de deadline, en een blok Deadlines per periode met aankomend en afgelopen (${JSON.stringify(dl)}; alle periodes: ${alle})`);
     const dlAlle = await vd.locator('.deadlines').evaluate((el) => [...el.querySelectorAll('.dl-rij')].map((r) => `${r.querySelector('a').textContent}|${r.querySelector('.dl-dag small').textContent}`).join(' ; '));
     check(dlAlle === 'PS_1.8: Wie ben ik?|over 5 dagen ; LOB - werkveld verkennen|10 dagen geleden', `klaspagina deadlines: wat komt eerst, daarna wat voorbij is (${dlAlle})`); }
+    // Hele klas: alle opdrachten uit de opdrachtenpagina van de klas (ook van collega's), meetmomenten apart.
+    await vd.locator('select[data-dlweergave]').selectOption('klas'); await sim.waitForTimeout(600);
+    const kl = await vd.locator('.deadlines').evaluate((el) => ({ koppen: [...el.querySelectorAll('.dl-twee h3')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()).join(' | '), titels: [...el.querySelectorAll('.dl-twee > div:first-child .dl-rij > a')].map((a) => a.textContent).join(' ; '),
+      som: el.querySelector('.dl-twee > div:first-child .dl-rij .som')?.textContent, meet: el.querySelector('.dl-twee > div:last-child .dl-leeg')?.textContent || '', tekst: el.innerText }));
+    check(kl.koppen === 'Opdrachten 4 | Meetmomenten 0' && kl.titels === 'BUR - casus ; ENG_1.5: True crime ; LOB - werkveld verkennen ; PS_1.8: Wie ben ik?' && kl.som === '1 bezig · 1 te laat' && /Geen meetmomenten/.test(kl.meet) && !/Anna|Bram|Collega/.test(kl.tekst),
+      `klaspagina deadlines, hele klas: alle opdrachten van de klas op datum met de stand, meetmomenten apart, zonder namen (${kl.koppen}; ${kl.titels}; ${kl.som})`);
+    await vd.locator('select[data-dlweergave]').selectOption('mij'); await sim.waitForTimeout(300);
   { const sl = await vd.locator('.strook').first().evaluate((el) => ({ overzicht: el.querySelector('.titel > a')?.getAttribute('href') || '', nakijk: el.querySelector('a.nakijk')?.getAttribute('href') || '', tekst: el.querySelector('a.nakijk')?.textContent || '', tweede: !!el.parentElement.children[1].querySelector('a.nakijk') }));
     check(/^\/groups\/school\/[^/]+\/assignments#sd-opdracht=/.test(sl.overzicht) && /^\/@[^/]+\/assignment\/[^/]+\/review\?/.test(sl.nakijk) && sl.tekst === 'Nakijken (1)' && !sl.tweede,
       `klaspagina: de titel van een opdracht opent het overzicht per student, "Nakijken" de eerste inlevering die op jou wacht (${sl.overzicht.replace(/=.*/, '=…')}; ${sl.tekst})`); }
@@ -1171,8 +1178,9 @@ function bouwZip() {
     const inM2 = await sim.evaluate(() => document.querySelector('.sd-matrix-draai .sd-md-aantal').textContent);
     await kies('matrixPeriode', ''); await kies('matrixKolommen', 'simulise');
     const onder = await sim.evaluate(() => getComputedStyle(document.querySelector('.sd-matrix-draai')).marginBottom);
-    check(opties === 'matrixSorteer:voornaam/achternaam/wacht/laat/klaar matrixKolommen:simulise/deadline/code matrixPeriode:/M1/M2' && opCode === 'BUR,ENG_1.5,LOB,PS_1.8' && /^0 van 4 opdrachten \| Geen opdrachten/.test(inM1) && inM2 === '4 van 4 opdrachten' && (await koppen()) === 'ENG_1.5,PS_1.8,LOB,BUR' && onder === '32px',
-      `matrix gedraaid: sorteren van studenten en opdrachten en filteren op de periode van de deadline (${opties}; op code: ${opCode}; M1: ${inM1}; M2: ${inM2}; marge onder ${onder})`); }
+    const schuif = await sim.evaluate(() => getComputedStyle(document.querySelector('#content-wrapper')).overflowY);
+    check(opties === 'matrixSorteer:voornaam/achternaam/wacht/laat/klaar matrixKolommen:simulise/deadline/code matrixPeriode:/M1/M2' && opCode === 'BUR,ENG_1.5,LOB,PS_1.8' && /^0 van 4 opdrachten \| Geen opdrachten/.test(inM1) && inM2 === '4 van 4 opdrachten' && (await koppen()) === 'ENG_1.5,PS_1.8,LOB,BUR' && onder === '32px' && schuif === 'auto',
+      `matrix gedraaid: sorteren van studenten en opdrachten en filteren op de periode van de deadline (${opties}; op code: ${opCode}; M1: ${inM1}; M2: ${inM2}; marge onder ${onder}; de pagina schuift: ${schuif})`); }
   await sim.evaluate(() => { location.hash = '#sd-opdracht=' + encodeURIComponent('LOB - werkveld verkennen'); }); await sim.waitForTimeout(500);
   d1 = await dr();
   check(d1.hier === 'LOB' && (await sim.evaluate(() => location.hash)) === '', `matrix gedraaid: het adres van de klaspagina (#sd-opdracht) markeert de kolom van die opdracht (${d1.hier})`);
