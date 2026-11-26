@@ -10,6 +10,11 @@
    geef het een naam en voeg die toe aan THEMES in popup.js (en DARK in content.js). */
 
 html[data-sim-theme] {
+  /* Gedeeld door alle thema's: klaar/goed, info, tekst op de accentkleur, ronde knoppen en de maten van titels. */
+  --sim-success: #2f9e6e;   --sim-success-soft: color-mix(in srgb, var(--sim-success) 15%, var(--sim-surface, #fff));
+  --sim-info: #4a7fd6;      --sim-info-soft: color-mix(in srgb, var(--sim-info) 15%, var(--sim-surface, #fff));
+  --sim-on-accent: #ffffff; --sim-pill: 999px;
+  --sim-title: 26px;        --sim-title-2: 17px;
   --sim-radius: 10px;
   --sim-radius-sm: 6px;
   --sim-font: inherit;
@@ -53,7 +58,7 @@ html[data-sim-theme="discord"] {
   --sim-font: "gg sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-/* Tiimo: zacht lila, grote rondingen, vriendelijk, ronde letter */
+/* Helder: warm licht, indigo accent, grote rondingen (met de schil van modules/schil.js) */
 html[data-sim-theme="helder"] {
   --sim-bg: #f6f4ef;        --sim-surface: #ffffff;   --sim-surface-2: #f1eee7;
   --sim-text: #24222a;      --sim-text-2: #5f5b6b;    --sim-text-3: #948f9f;
@@ -66,6 +71,7 @@ html[data-sim-theme="helder"] {
   --sim-shadow: 0 2px 10px rgba(60, 50, 30, 0.06);
   --sim-font: "Inter", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
 }
+/* Tiimo: zacht lila, grote rondingen, vriendelijk, ronde letter */
 html[data-sim-theme="tiimo"] {
   --sim-bg: #f3effb;        --sim-surface: #ffffff;   --sim-surface-2: #f8f5fe;
   --sim-text: #2c2545;      --sim-text-2: #6b6388;    --sim-text-3: #9a93b3;
@@ -531,12 +537,15 @@ html[data-sim-schil][data-sim-nav-mini] aside#nav .nav-main > li.sd-schil-klas >
 .sd-klaschip { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 500;
   background: color-mix(in srgb, var(--sd-klas, #888) 14%, transparent); color: var(--sim-text, inherit); white-space: nowrap; vertical-align: middle; }
 .sd-klaschip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--sd-klas, #888); }
-/* Helder: zachtere, ruimere vormen */
-html[data-sim-theme="helder"] .panel, html[data-sim-theme="helder"] .s-card { border-radius: var(--sim-radius); }
-html[data-sim-theme="helder"] .btn { border-radius: 999px; }
-html[data-sim-theme="helder"] .badge, html[data-sim-theme="helder"] .label { border-radius: 999px; font-weight: 500; }
-html[data-sim-theme="helder"] aside#nav .nav-main > li > a { border-radius: var(--sim-radius-sm); margin: 1px 8px; }
-html[data-sim-theme="helder"] .badge.bg-warning { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
+/* Helder: zachtere, ruimere vormen. De selectors zijn even zwaar als de algemene regels en staan erna, zodat ze winnen. */
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .panel, html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .s-card { border-radius: var(--sim-radius) !important; }
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .btn { border-radius: var(--sim-pill) !important; }
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .btn-group > .btn:not(:first-child):not(:last-child) { border-radius: 0 !important; }
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .btn-group > .btn:first-child:not(:last-child) { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .btn-group > .btn:last-child:not(:first-child), html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .btn-group > .dropdown-toggle:not(:first-child) { border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important; }
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .badge, html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .label { border-radius: var(--sim-pill) !important; font-weight: 500 !important; }
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) aside#nav .nav-main > li > a { border-radius: var(--sim-radius-sm) !important; margin: 1px 8px !important; }
+html[data-sim-theme="helder"]:not([data-sim-theme="off"]) .badge.bg-warning:not(.badge-empty) { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
 
 /* ---------- Focusmodus bij het beoordelen (modules/focus.js): alleen het werk, de rubric en de feedback ---------- */
 html[data-sim-focus] #app > header.navbar,
@@ -702,7 +711,7 @@ html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper
 html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details h1, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .footer-details, html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .footer-details * { color: #24222a !important; }
 html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details::before { content: var(--sdf-kop, ""); flex: 0 0 100%; font-size: 13px; opacity: .8; }
 html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details::after { content: var(--sdf-tel, ""); flex: 0 0 100%; order: 9; font-size: 13px; opacity: .8; margin-top: 2px; }
-html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details h1 { font-size: 26px !important; font-weight: 700 !important; line-height: 1.2 !important; }
+html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .assignment-details h1 { font-size: 26px !important; font-weight: 600 !important; line-height: 1.2 !important; }
 html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .footer-details { opacity: .8; }
 html:root:root[data-sim-theme="helder"][data-sim-focus] #scrollable-page-wrapper .width-filling-header .badge-pill { background: rgba(255, 255, 255, .7) !important; color: #24222a !important; }
 
@@ -848,3 +857,366 @@ html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-w
 html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .ladda-button.disabled { opacity: .45 !important; }
 html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .ladda-button .ladda-label { white-space: nowrap !important; }
 html:root:root[data-sim-theme="helder"][data-sim-focus-kolom] #scrollable-page-wrapper .assignment-status-bar .assignment-review-submit > .mt-2 { margin: 6px 0 0 !important; width: 100% !important; font-size: 12px !important; text-align: center !important; }
+
+/* ---------- Opdrachten van een klas, weergave "Per student": de matrix als stippenkaart (modules/matrix.js) ----------
+   Eén samenhangend ontwerp, in zijn geheel op de echte pagina geproefd. Smalle kolommen met de naam verticaal, per rij
+   de titel met de deadline eronder, per inlevering één stip. De statuskleuren zijn los van de kleur van de klas, zodat
+   "klaar" en "te laat" nooit op elkaar lijken. `:root:root` in de selectors laat dit blok winnen van de algemene
+   tabelregels van het thema (die geven cellen anders ruimte en een achtergrond bij aanwijzen). */
+html:root:root[data-sim-matrix-student] { --sdm-klaar: var(--sim-success, #2f9e6e); --sdm-collega: #8d93b5; }
+html:root:root[data-sim-matrix-student] #content-wrapper .panel { border: 1px solid var(--sim-border, #e3e6ea) !important; border-radius: var(--sim-radius, 12px) !important; overflow: hidden !important; box-shadow: none !important; background: var(--sim-surface, #fff) !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview { display: block !important; overflow: auto !important; border: 0 !important; background: var(--sim-surface, #fff) !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview th, html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td { border: 0 !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview thead tr, html:root:root[data-sim-matrix-student] table.table-group-assignments-overview thead th { background: var(--sim-surface, #fff) !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview thead th { border-bottom: 1px solid var(--sim-border, #e3e6ea) !important; }
+/* Namen verticaal in een smalle kolom. */
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview th.rotated { width: 32px !important; min-width: 32px !important; max-width: 32px !important; height: 136px !important; vertical-align: bottom !important; padding: 0 !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview .rotated-header-container { width: 32px !important; height: 132px !important; display: flex !important; align-items: flex-end !important; justify-content: center !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview .rotated-header-container > a { display: block !important; font-size: 0 !important; color: var(--sim-text, #1e2328) !important; text-decoration: none !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview .rotated-header-content { transform: rotate(180deg) !important; transform-origin: center !important; writing-mode: vertical-rl !important; width: 32px !important; height: 126px !important; line-height: 32px !important;
+  padding: 0 !important; margin: 0 !important; font-size: 12.5px !important; font-weight: 500 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; text-align: left !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview th.rotated:hover .rotated-header-content { color: var(--sim-accent, #0e8a74) !important; }
+/* Cellen: geen gekleurd vak, wel een stip. */
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status] { width: 32px !important; min-width: 32px !important; max-width: 32px !important; height: 40px !important; padding: 0 !important; background: transparent !important; border-bottom: 1px solid var(--sim-border, #e3e6ea) !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status] > a { width: 32px !important; height: 40px !important; display: flex !important; align-items: center !important; justify-content: center !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status] > a > i { display: none !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status] > a::before { content: ""; width: 12px; height: 12px; border-radius: 50%; box-sizing: border-box; background: var(--sim-surface-2, #eef0f3); border: 1px solid var(--sim-border-2, #cfd4da); transition: transform .12s, opacity .12s; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status] > a:hover::before { transform: scale(1.35); }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="FINISHED"] > a::before { background: var(--sdm-klaar); border: 0; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="HANDED_IN"] > a::before, html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="FEEDBACK_ASKED"] > a::before { background: var(--sim-surface, #fff); border: 3px solid var(--sdm-collega); }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="BEING_PROCESSED"] > a::before, html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="PARTLY_REVIEWED"] > a::before { background: linear-gradient(90deg, var(--sdm-collega) 50%, var(--sim-surface, #fff) 50%); border: 2px solid var(--sdm-collega); }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="IN_PROGRESS"] > a::before, html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="DOOVER"] > a::before { background: color-mix(in srgb, var(--sdm-klaar) 30%, var(--sim-surface, #fff)); border: 0; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-status="DEADLINE_PAST"] > a::before { background: var(--sim-danger, #c0392b); border: 0; }
+/* Wat op jou wacht: een grote stip in de accentkleur. */
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview td[data-sd-mij] > a::before { width: 18px; height: 18px; background: var(--sim-accent, #0e8a74); border: 0; box-shadow: 0 0 0 4px var(--sim-accent-soft, #e6f4f1); }
+html:root:root[data-sim-matrix-student][data-sim-matrix-mij] table.table-group-assignments-overview td[data-status]:not([data-sd-mij]) > a::before { opacity: .22; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tbody tr:hover td[data-status], html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tbody tr:hover td.sticky.left { background: var(--sim-surface-2, #eef0f3) !important; }
+/* Rijkop: titel met de deadline eronder; het menu als klein pijltje rechts. De lijst met beoordelaars staat in dat menu. */
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tbody td.sticky.left { width: 300px !important; min-width: 300px !important; max-width: 300px !important; height: 40px !important; padding: 0 10px !important; background: var(--sim-surface, #fff) !important;
+  border-bottom: 1px solid var(--sim-border, #e3e6ea) !important; border-right: 1px solid var(--sim-border, #e3e6ea) !important; vertical-align: middle !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview thead th.sticky.left { width: 300px !important; min-width: 300px !important; max-width: 300px !important; border-right: 1px solid var(--sim-border, #e3e6ea) !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tbody td.sticky.left > .position-relative { display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: stretch !important; height: 40px !important; padding-right: 30px !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview a.divider-plan { display: block !important; flex: none !important; min-width: 0 !important; font-size: 13px !important; line-height: 18px !important; color: var(--sim-text, #1e2328) !important;
+  white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview small.reviewers { display: block !important; flex: none !important; font-size: 0 !important; line-height: 1 !important; margin: 0 !important; height: auto !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview small.reviewers > strong, html:root:root[data-sim-matrix-student] table.table-group-assignments-overview small.reviewers > .collapse { display: none !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview small.reviewers > a { display: block !important; line-height: 1 !important; text-decoration: none !important; border: 0 !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview small.reviewers > a > small { display: block !important; font-size: 11px !important; line-height: 14px !important; height: auto !important; color: var(--sim-text-3, #8a93a0) !important;
+  white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview small.reviewers .dropdown-btn { top: 7px !important; right: 0 !important; bottom: auto !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview small.reviewers .dropdown-btn .btn { width: 26px !important; height: 26px !important; padding: 0 !important; border-radius: 50% !important; background: transparent !important; border: 0 !important;
+  color: var(--sim-text-3, #8a93a0) !important; box-shadow: none !important; }
+/* Tussenkoppen (meetmomenten, lesplannen) en de lege rij ertussen. */
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tr.active > td { background: color-mix(in srgb, var(--sim-accent, #0e8a74) 7%, var(--sim-surface, #fff)) !important; height: auto !important; padding: 0 !important; border-bottom: 1px solid var(--sim-border, #e3e6ea) !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tr.active > td.divider-title { padding: 7px 10px !important; font-size: 13px !important; font-weight: 600 !important; color: var(--sim-text, #1e2328) !important; line-height: 1.3 !important;
+  white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tr.active > td.divider-title br, html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tr.active > td.divider-title small { display: none !important; }
+html:root:root[data-sim-matrix-student] table.table-group-assignments-overview tbody > tr > td:only-child { height: 10px !important; padding: 0 !important; background: var(--sim-surface, #fff) !important; }
+/* Balk boven de matrix: klas, tellers (tegelijk de legenda) en twee knoppen. */
+.sd-matrix-balk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px);
+  background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); font-size: 13px; line-height: 1.3; }
+.sd-matrix-balk .sd-m-klas { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; margin-right: 6px; }
+.sd-matrix-balk .sd-m-klas i { width: 12px; height: 12px; border-radius: 50%; background: var(--sd-klas, var(--sim-accent, #0e8a74)); }
+.sd-matrix-balk .sd-m-tel { display: inline-flex; align-items: center; gap: 6px; color: var(--sim-text-2, #5b6470); white-space: nowrap; }
+.sd-matrix-balk .sd-m-tel b { font-weight: 600; color: var(--sim-text, #1e2328); }
+.sd-matrix-balk .sd-m-tel.sd-m-nu { padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--sim-accent-soft, #e6f4f1); color: var(--sim-accent-text, #0b6f5e); }
+.sd-matrix-balk .sd-m-tel.sd-m-nu b { color: inherit; }
+.sd-matrix-balk .sd-m-stip { flex: none; width: 12px; height: 12px; border-radius: 50%; box-sizing: border-box; background: var(--sim-surface-2, #eef0f3); border: 1px solid var(--sim-border-2, #cfd4da); }
+.sd-matrix-balk .sd-m-stip.mij { background: var(--sim-accent, #0e8a74); border: 0; }
+.sd-matrix-balk .sd-m-stip.collega { background: var(--sim-surface, #fff); border: 3px solid #8d93b5; }
+.sd-matrix-balk .sd-m-stip.bezig { background: color-mix(in srgb, var(--sim-success, #2f9e6e) 30%, var(--sim-surface, #fff)); border: 0; }
+.sd-matrix-balk .sd-m-stip.laat { background: var(--sim-danger, #c0392b); border: 0; }
+.sd-matrix-balk .sd-m-stip.klaar { background: var(--sim-success, #2f9e6e); border: 0; }
+.sd-matrix-balk .sd-m-ruimte { flex: 1 1 auto; }
+.sd-matrix-balk .sd-m-knop { font: inherit; cursor: pointer; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--sim-border, #e3e6ea); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); text-decoration: none; white-space: nowrap; }
+html .sd-matrix-balk a.sd-m-knop, html .sd-matrix-balk a.sd-m-knop:hover { color: var(--sim-text, #1e2328) !important; text-decoration: none !important; }
+.sd-matrix-balk .sd-m-knop:hover { border-color: var(--sim-accent, #0e8a74); }
+.sd-matrix-balk .sd-m-knop.aan { background: var(--sim-accent-soft, #e6f4f1); border-color: var(--sim-accent, #0e8a74); color: var(--sim-accent-text, #0b6f5e); }
+
+/* ---------- Opdrachten van een klas, weergave "Overzicht": per vak, zonder studenten (modules/matrix.js) ---------- */
+html[data-sim-matrix-overzicht] [data-sd-matrix-tabel] { display: none !important; }
+html[data-sim-matrix-student] .sd-matrix-overzicht { display: none; }
+html[data-sim-matrix-student] tr.sd-m-hier > td { background: var(--sim-accent-soft, #e6f4f1) !important; }
+.sd-matrix-balk .sd-m-kort { color: var(--sim-text-2, #5b6470); }
+.sd-matrix-balk .sd-m-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--sim-surface-2, #eef0f3); }
+.sd-matrix-balk .sd-m-seg button { font: inherit; cursor: pointer; border: 0; background: none; color: var(--sim-text-2, #5b6470); padding: 5px 14px; border-radius: 999px; white-space: nowrap; }
+.sd-matrix-balk .sd-m-seg button.aan { background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.sd-matrix-overzicht { max-width: 980px; color: var(--sim-text, #1e2328); font-family: var(--sim-font, inherit); font-size: 14px; line-height: 1.35; }
+.sd-matrix-overzicht .sd-mo-blok { margin: 0 0 10px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); overflow: hidden; }
+.sd-matrix-overzicht .sd-mo-blok.sd-mo-mij { border-color: var(--sim-accent, #0e8a74); }
+.sd-matrix-overzicht .sd-mo-vak { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 16px; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.sd-matrix-overzicht button.sd-mo-vak { cursor: pointer; }
+.sd-matrix-overzicht button.sd-mo-vak:hover { background: var(--sim-surface-2, #eef0f3); }
+.sd-matrix-overzicht .sd-mo-vak b { font-weight: 600; }
+.sd-matrix-overzicht .sd-mo-pijl { flex: none; width: 7px; height: 7px; border-right: 2px solid var(--sim-text-3, #8a93a0); border-bottom: 2px solid var(--sim-text-3, #8a93a0); transform: rotate(-45deg); margin: 0 4px 0 2px; transition: transform .12s; }
+.sd-matrix-overzicht .sd-mo-vak[aria-expanded="true"] .sd-mo-pijl { transform: rotate(45deg); }
+.sd-matrix-overzicht .sd-mo-code { font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--sim-surface-2, #eef0f3); }
+.sd-matrix-overzicht .sd-mo-aantal { font-size: 13px; color: var(--sim-text-2, #5b6470); }
+.sd-matrix-overzicht .sd-m-ruimte { flex: 1 1 auto; }
+.sd-matrix-overzicht .sd-mo-rij { display: grid; grid-template-columns: minmax(0, 1fr) 170px 150px; gap: 16px; align-items: center; padding: 9px 16px; border-top: 1px solid var(--sim-border, #e3e6ea); color: inherit; text-decoration: none; }
+html .sd-matrix-overzicht a.sd-mo-rij, html .sd-matrix-overzicht a.sd-mo-rij:hover { color: var(--sim-text, #1e2328) !important; text-decoration: none !important; }
+.sd-matrix-overzicht a.sd-mo-rij:hover { background: var(--sim-surface-2, #eef0f3); }
+.sd-matrix-overzicht .sd-mo-wat { min-width: 0; }
+.sd-matrix-overzicht .sd-mo-titel { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sd-matrix-overzicht .sd-mo-wat small { display: block; font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+.sd-matrix-overzicht .sd-mo-balk { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--sim-surface-2, #eef0f3); }
+.sd-matrix-overzicht .sd-mo-balk i { display: block; height: 100%; }
+.sd-matrix-overzicht .sd-mo-balk .klaar, .sd-matrix-overzicht .sd-mo-voet .klaar { background: var(--sim-success, #2f9e6e); }
+.sd-matrix-overzicht .sd-mo-balk .in, .sd-matrix-overzicht .sd-mo-voet .in { background: var(--sim-info, #4a7fd6); } /* vast blauw: het accent van een thema kan groen zijn, net als klaar */
+.sd-matrix-overzicht .sd-mo-balk .bezig, .sd-matrix-overzicht .sd-mo-voet .bezig { background: color-mix(in srgb, var(--sim-success, #2f9e6e) 35%, var(--sim-surface, #fff)); }
+.sd-matrix-overzicht .sd-mo-balk .laat, .sd-matrix-overzicht .sd-mo-voet .laat { background: var(--sim-danger, #c0392b); }
+.sd-matrix-overzicht .sd-mo-pil { justify-self: end; font-size: 12px; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.sd-matrix-overzicht .sd-mo-pil.mij { background: var(--sim-accent-soft, #e6f4f1); color: var(--sim-accent-text, #0b6f5e); font-weight: 600; }
+.sd-matrix-overzicht .sd-mo-pil.laat { background: var(--sim-danger-soft, #fbe6e3); color: var(--sim-danger, #c0392b); }
+.sd-matrix-overzicht .sd-mo-stand { justify-self: end; font-size: 12px; color: var(--sim-text-2, #5b6470); white-space: nowrap; }
+.sd-matrix-overzicht .sd-mo-stand.laat { color: var(--sim-danger, #c0392b); }
+.sd-matrix-overzicht .sd-mo-leeg { margin: 0; padding: 4px 16px 14px; color: var(--sim-text-2, #5b6470); }
+.sd-matrix-overzicht .sd-mo-voet { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 12px 2px 0; font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+.sd-matrix-overzicht .sd-mo-voet span { display: inline-flex; align-items: center; gap: 6px; }
+.sd-matrix-overzicht .sd-mo-voet i { width: 10px; height: 10px; border-radius: 2px; }
+.sd-matrix-overzicht .sd-mo-voet .niet { background: var(--sim-surface-2, #eef0f3); border: 1px solid var(--sim-border-2, #cfd4da); }
+@media (max-width: 760px) { .sd-matrix-overzicht .sd-mo-rij { grid-template-columns: minmax(0, 1fr) 110px; } .sd-matrix-overzicht .sd-mo-balk { display: none; } }
+
+/* ---------- Bootstrap 3: onderdelen die nog geen regel hadden ----------
+   Labels, meldingen, tooltips, voortgangsbalken, knoppen en tekstkleuren met tokens, zodat ze in elk thema passen
+   (ook in het rapport van rapport/weergave.js, dat de klassen van Simulise gebruikt). */
+html[data-sim-theme]:not([data-sim-theme="off"]) .label { border-radius: var(--sim-pill); padding: 3px 9px; font-weight: 600; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .label-default { background: var(--sim-surface-2) !important; color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .label-danger { background: var(--sim-danger-soft) !important; color: var(--sim-danger) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .label-info { background: var(--sim-info-soft) !important; color: var(--sim-info) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .label-primary { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .alert-success { background: var(--sim-success-soft) !important; color: var(--sim-text) !important; border-color: transparent !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .table > tbody > tr.active > td, html[data-sim-theme]:not([data-sim-theme="off"]) .table > tbody > tr.active > th { background: var(--sim-surface-2) !important; color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-bordered, html[data-sim-theme]:not([data-sim-theme="off"]) .table-bordered > thead > tr > th, html[data-sim-theme]:not([data-sim-theme="off"]) .table-bordered > tbody > tr > td { border-color: var(--sim-border) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .table-striped > tbody > tr:nth-of-type(odd) > td { background: color-mix(in srgb, var(--sim-surface-2) 60%, transparent) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .tooltip-inner { background: var(--sim-text) !important; color: var(--sim-surface) !important; border-radius: var(--sim-radius-sm) !important; padding: 6px 10px !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .tooltip.top .tooltip-arrow { border-top-color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .tooltip.bottom .tooltip-arrow { border-bottom-color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .tooltip.left .tooltip-arrow { border-left-color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .tooltip.right .tooltip-arrow { border-right-color: var(--sim-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .progress { background: var(--sim-surface-2) !important; box-shadow: none !important; border-radius: var(--sim-pill) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .progress-bar { background-color: var(--sim-accent) !important; box-shadow: none !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .progress-bar-success { background-color: var(--sim-success) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .progress-bar-warning { background-color: var(--sim-warn) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .progress-bar-danger { background-color: var(--sim-danger) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-warning { background: var(--sim-warn-soft) !important; border-color: transparent !important; color: var(--sim-warn) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .btn-link { background: transparent !important; border-color: transparent !important; color: var(--sim-accent-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-pills > li > a { border-radius: var(--sim-radius-sm) !important; color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .nav-pills > li.active > a { background: var(--sim-accent-soft) !important; color: var(--sim-accent-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .breadcrumb { background: transparent !important; color: var(--sim-text-2) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .help-block { color: var(--sim-text-3) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .has-error .help-block, html[data-sim-theme]:not([data-sim-theme="off"]) .has-error .control-label { color: var(--sim-danger) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .has-error .form-control { border-color: var(--sim-danger) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-primary { color: var(--sim-accent-text) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-success { color: var(--sim-success) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-info { color: var(--sim-info) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-warning { color: var(--sim-warn) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .text-danger { color: var(--sim-danger) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .dropdown-header { color: var(--sim-text-3) !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .modal-backdrop.in { opacity: .4 !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) .close { color: var(--sim-text-2) !important; text-shadow: none !important; opacity: .7 !important; }
+
+/* ---------- Inzicht (modules/inzicht.js): overzicht op /analytics en de keuzes voor een rapportage ---------- */
+html[data-sim-inzicht="start"]:not([data-sim-inzicht-tegels]) [data-sd-inzicht-rij] { display: none !important; }
+html[data-sim-inzicht="start"][data-sim-inzicht-tegels] [data-sd-inzicht-rij] { margin-top: 18px; }
+.sd-inzicht { max-width: 880px; color: var(--sim-text, #1e2328); font-family: var(--sim-font, inherit); font-size: 14px; line-height: 1.4; padding-bottom: 8px; }
+.sd-inzicht .sd-iz-kop { margin: 4px 2px 18px; }
+.sd-inzicht .sd-iz-kop h1 { margin: 0; font-size: var(--sim-title, 26px); font-weight: 600; line-height: 1.2; color: var(--sim-text, #1e2328); }
+.sd-inzicht .sd-iz-kop p { margin: 2px 0 0; color: var(--sim-text-2, #5b6470); }
+.sd-inzicht .sd-iz-blok { margin: 0 0 14px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); overflow: hidden; }
+.sd-inzicht .sd-iz-blok h2 { margin: 0; padding: 14px 16px 8px; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--sim-text-2, #5b6470); }
+.sd-inzicht .sd-iz-klassen { border-color: var(--sim-accent, #0e8a74); }
+.sd-inzicht .sd-iz-klassen p { margin: 0; padding: 0 16px 10px; color: var(--sim-text-2, #5b6470); }
+.sd-inzicht .sd-iz-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 16px 14px; }
+html .sd-inzicht a.sd-iz-klas, html .sd-inzicht a.sd-iz-klas:hover { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--sim-border, #e3e6ea);
+  background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328) !important; text-decoration: none !important; font-weight: 500; }
+html .sd-inzicht a.sd-iz-klas:hover { border-color: var(--sd-klas, var(--sim-accent, #0e8a74)); background: var(--sim-surface-2, #eef0f3); }
+.sd-inzicht .sd-iz-klas i { width: 10px; height: 10px; border-radius: 50%; background: var(--sd-klas, var(--sim-accent, #0e8a74)); }
+.sd-inzicht .sd-iz-rij { display: flex; align-items: center; gap: 14px; padding: 11px 16px; border-top: 1px solid var(--sim-border, #e3e6ea); }
+.sd-inzicht .sd-iz-wat { flex: 1 1 auto; min-width: 0; }
+.sd-inzicht .sd-iz-wat b { display: block; font-size: 15px; font-weight: 500; }
+.sd-inzicht .sd-iz-wat small { display: block; font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+html .sd-inzicht a.sd-iz-knop, html .sd-inzicht a.sd-iz-knop:hover { flex: none; padding: 7px 16px; border-radius: 999px; border: 1px solid var(--sim-border, #e3e6ea); background: var(--sim-surface, #fff);
+  color: var(--sim-text, #1e2328) !important; text-decoration: none !important; white-space: nowrap; }
+html .sd-inzicht a.sd-iz-knop:hover { border-color: var(--sim-accent, #0e8a74); background: var(--sim-accent-soft, #e6f4f1); color: var(--sim-accent-text, #0b6f5e) !important; }
+html .sd-inzicht a.sd-iz-bewaard { flex: none; font-size: 13px; color: var(--sim-accent-text, #0b6f5e) !important; white-space: nowrap; }
+.sd-inzicht .sd-iz-voet { margin: 4px 2px 0; }
+.sd-inzicht .sd-iz-voet button { font: inherit; font-size: 13px; cursor: pointer; border: 0; background: none; padding: 4px 0; color: var(--sim-text-3, #8a93a0); text-decoration: underline; }
+@media (max-width: 640px) { .sd-inzicht .sd-iz-rij { flex-wrap: wrap; } }
+/* De keuzes voor een rapportage: de vraag groot, de stappen als één rustige kaart, één duidelijke knop. `:root:root` laat
+   deze regels winnen van de algemene themaregels. */
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm > .m-b-lg h2 { font-size: 13px !important; font-weight: 600 !important; margin: 0 0 4px !important; color: var(--sim-text-3, #8a93a0) !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm > .m-b-lg h4 { font-size: var(--sim-title, 26px) !important; font-weight: 600 !important; line-height: 1.25 !important; margin: 0 !important; color: var(--sim-text, #1e2328) !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm > .m-b-lg h4 i { display: none !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm > .panel { border: 1px solid var(--sim-border, #e3e6ea) !important; border-radius: var(--sim-radius, 12px) !important; overflow: hidden !important; box-shadow: none !important; background: var(--sim-surface, #fff) !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .list-group { margin: 0 !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .list-group-item { border: 0 !important; border-top: 1px solid var(--sim-border, #e3e6ea) !important; border-radius: 0 !important; padding: 14px 20px !important; background: var(--sim-surface, #fff) !important; color: var(--sim-text, #1e2328) !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .list-group-item:first-child { border-top: 0 !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .list-group-item:not(.list-group-item-current):hover { background: var(--sim-surface-2, #eef0f3) !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .list-group-item h4 { font-size: 15px !important; font-weight: 600 !important; color: var(--sim-text, #1e2328) !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .list-group-item em, html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .list-group-item em i { color: var(--sim-text-3, #8a93a0) !important; font-style: normal !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .alert-warning { background: var(--sim-warn-soft, #fdf3d7) !important; color: var(--sim-warn, #8a6100) !important; border: 0 !important; border-radius: var(--sim-radius-sm, 8px) !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .btn-primary { background: var(--sim-accent, #0e8a74) !important; border-color: var(--sim-accent, #0e8a74) !important; color: #fff !important; border-radius: 999px !important; padding-left: 16px !important; padding-right: 16px !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .btn-success.btn-lg { background: var(--sim-accent, #0e8a74) !important; border-color: var(--sim-accent, #0e8a74) !important; color: #fff !important; border-radius: 999px !important; padding-left: 28px !important; padding-right: 28px !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .btn-success.btn-lg.disabled { opacity: .45 !important; }
+html:root:root[data-sim-inzicht="keuzes"] #analyticsForm .btn-success.btn-lg + p { color: var(--sim-text-3, #8a93a0) !important; font-size: 13px !important; }
+
+/* Inzicht: bewaarde rapportages (/analytics/<soort>/reports) */
+html:root:root[data-sim-inzicht="bewaard"] [data-sd-inzicht-tegel] { display: none !important; }
+html:root:root[data-sim-inzicht="bewaard"] [data-sd-inzicht-lijst] { width: 100% !important; max-width: 880px !important; float: none !important; }
+.sd-inzicht .sd-iz-kop-actie { display: flex; align-items: flex-end; gap: 16px; }
+.sd-inzicht .sd-iz-kop-actie > div { flex: 1 1 auto; min-width: 0; }
+html .sd-inzicht a.sd-iz-terug, html .sd-inzicht a.sd-iz-terug:hover { display: inline-block; margin-bottom: 4px; font-size: 13px; color: var(--sim-text-3, #8a93a0) !important; text-decoration: none; }
+html .sd-inzicht a.sd-iz-terug::before { content: "\2039\00a0"; }
+html .sd-inzicht a.sd-iz-terug:hover { color: var(--sim-accent-text, #0b6f5e) !important; }
+html .sd-inzicht a.sd-iz-hoofd, html .sd-inzicht a.sd-iz-hoofd:hover { background: var(--sim-accent, #0e8a74); border-color: var(--sim-accent, #0e8a74); color: #fff !important; white-space: nowrap; }
+html .sd-inzicht a.sd-iz-hoofd:hover { filter: brightness(.93); }
+
+/* Inzicht: het resultaat van een rapportage (/analytics/<soort>/result) */
+html:root:root[data-sim-inzicht="resultaat"] #content header.header .btn:has(> i.fa-save)::after { content: " Bewaren"; }
+html:root:root[data-sim-inzicht="resultaat"] #content header.header .btn:has(> i.fa-download)::after { content: " Downloaden"; }
+html:root:root[data-sim-inzicht="resultaat"] #scrollable-page-wrapper ul.list-inline { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 8px !important; margin: 0 0 14px !important; padding: 0 !important; }
+html:root:root[data-sim-inzicht="resultaat"] #scrollable-page-wrapper ul.list-inline > li.list-group-item:not(.hidden) { margin: 0 !important; padding: 6px 14px !important; border: 1px solid var(--sim-border, #e3e6ea) !important; border-radius: 999px !important; background: var(--sim-surface, #fff) !important; font-size: 13px !important; line-height: 1.4 !important; box-shadow: none !important; }
+html:root:root[data-sim-inzicht="resultaat"] #scrollable-page-wrapper ul.list-inline > li.list-group-item:has(> .btn-group) { margin-left: auto !important; padding: 0 !important; border: 0 !important; background: none !important; }
+html:root:root[data-sim-inzicht="resultaat"] #scrollable-page-wrapper ul.list-inline > li > .btn-group { height: auto !important; margin: 0 !important; display: inline-flex !important; padding: 3px !important; border-radius: 999px !important; background: var(--sim-surface-2, #eef0f3) !important; }
+html:root:root[data-sim-inzicht="resultaat"] #scrollable-page-wrapper ul.list-inline > li > .btn-group > .btn { float: none !important; border: 0 !important; border-radius: 999px !important; padding: 5px 14px !important; font-size: 13px !important; background: transparent !important; color: var(--sim-text-2, #5b6470) !important; box-shadow: none !important; }
+html:root:root[data-sim-inzicht="resultaat"] #scrollable-page-wrapper ul.list-inline > li > .btn-group > .btn.active { background: var(--sim-surface, #fff) !important; color: var(--sim-text, #1e2328) !important; box-shadow: 0 1px 2px rgba(0, 0, 0, .12) !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] { max-height: calc(100vh - 140px) !important; overflow: auto !important; border: 1px solid var(--sim-border, #e3e6ea) !important; border-radius: var(--sim-radius, 12px) !important; background: var(--sim-surface, #fff) !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table { margin: 0 !important; border: 0 !important; border-collapse: separate !important; border-spacing: 0 !important; background: transparent !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > thead { position: sticky !important; top: 0 !important; z-index: 3 !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > thead > tr > th { background: var(--sim-surface-2, #eef0f3) !important; color: var(--sim-text-2, #5b6470) !important; font-size: 12px !important; font-weight: 600 !important; line-height: 1.3 !important; padding: 8px 6px !important; border: 0 !important; border-radius: 0 !important; vertical-align: bottom !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > thead > tr:first-child > th[colspan] { color: var(--sim-text, #1e2328) !important; border-left: 1px solid var(--sim-border, #e3e6ea) !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > thead > tr:first-child > th:first-child { padding-left: 16px !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr > td { padding: 4px 6px !important; border: 0 !important; border-top: 1px solid var(--sim-border, #e3e6ea) !important; background: var(--sim-surface, #fff) !important; color: var(--sim-text, #1e2328) !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr:hover > td { background: var(--sim-surface-2, #eef0f3) !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr > td.aspect-start { border-left: 1px solid var(--sim-border, #e3e6ea) !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr > td:first-child, html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > thead > tr:first-child > th:first-child { position: sticky !important; left: 0 !important; z-index: 2 !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr > td:first-child { padding-left: 16px !important; white-space: nowrap !important; box-shadow: 1px 0 0 var(--sim-border, #e3e6ea) !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr > td:first-child .avatar { width: 26px !important; height: 26px !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr > td:first-child .avatar img { width: 26px !important; height: 26px !important; border-radius: 50% !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] > table > tbody > tr > td:first-child strong { font-weight: 500 !important; }
+html:root:root[data-sim-inzicht="resultaat"] [data-sd-iz-tabel] ~ .table-footer { border: 0 !important; background: none !important; }
+.sd-inzicht.sd-iz-stand { max-width: none; }
+.sd-inzicht .sd-iz-uitleg { margin: 0; padding: 0 16px 12px; color: var(--sim-text-2, #5b6470); }
+.sd-inzicht .sd-iz-uitleg button { font: inherit; cursor: pointer; border: 0; background: none; padding: 0; color: var(--sim-accent-text, #0b6f5e); text-decoration: underline; }
+.sd-inzicht .sd-iz-lijnen { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; padding: 0 16px 14px; }
+.sd-inzicht .sd-iz-lijn { padding: 12px 14px; border-radius: var(--sim-radius-sm, 8px); background: var(--sim-surface-2, #eef0f3); border-top: 3px solid var(--sd-lijn, var(--sim-border, #e3e6ea)); }
+.sd-inzicht .sd-iz-lijn strong { display: block; min-height: 2.6em; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--sim-text, #1e2328); }
+.sd-inzicht .sd-iz-stappen { display: flex; gap: 8px; margin-top: 8px; }
+.sd-inzicht .sd-iz-stap { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: default; }
+.sd-inzicht .sd-iz-stap > i { position: relative; display: block; width: 100%; height: 44px; border-radius: 6px; background: var(--sim-surface, #fff); overflow: hidden; }
+.sd-inzicht .sd-iz-stap > i > u { position: absolute; left: 0; right: 0; bottom: 0; min-height: 0; background: var(--sd-lijn, var(--sim-accent, #0e8a74)); }
+.sd-inzicht .sd-iz-stap > i > u.bezig { background: var(--sim-border-2, #d4d9df); }
+.sd-inzicht .sd-iz-stap.leeg { opacity: .45; }
+.sd-inzicht .sd-iz-stap > b { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--sim-text, #1e2328); }
+.sd-inzicht .sd-iz-stap > small { font-size: 11px; color: var(--sim-text-3, #8a93a0); white-space: nowrap; }
+.sd-inzicht .sd-iz-legenda { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 10px 16px; border-top: 1px solid var(--sim-border, #e3e6ea); font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+.sd-inzicht .sd-iz-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.sd-inzicht .sd-iz-legenda i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--sim-border-2, #d4d9df); background: var(--sim-surface, #fff); }
+.sd-inzicht .sd-iz-legenda i.vol { background: var(--sim-accent, #0e8a74); border-color: transparent; }
+.sd-inzicht .sd-iz-legenda i.grijs { background: var(--sim-border-2, #d4d9df); }
+
+/* ---------- Snelle opdracht (modules/opdracht.js): een opdracht aanmaken op één scherm ----------
+   Indeling zoals Opdrachten in Teams: knoppen bovenin, inhoud links, een smalle kolom met kleine keuzes rechts. */
+.sd-opdracht { max-width: 1180px; color: var(--sim-text, #1e2328); font-family: var(--sim-font, inherit); font-size: 14px; line-height: 1.45; padding-bottom: 32px; }
+.sd-opdracht .sd-o-balk { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 16px; margin: 0 0 6px; padding: 8px 2px; background: var(--sim-bg, #f4f5f7); }
+.sd-opdracht .sd-o-titel { flex: 1 1 auto; min-width: 0; }
+.sd-opdracht .sd-o-titel h1 { margin: 0; font-size: var(--sim-title, 26px); font-weight: 600; line-height: 1.2; color: var(--sim-text, #1e2328); }
+html .sd-opdracht a.sd-o-terug, html .sd-opdracht a.sd-o-terug:hover { display: inline-block; font-size: 13px; color: var(--sim-text-3, #8a93a0) !important; text-decoration: none; }
+html .sd-opdracht a.sd-o-terug::before { content: "\2039\00a0"; }
+.sd-opdracht .sd-o-acties { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 8px; }
+.sd-opdracht .sd-o-nodig { max-width: 360px; text-align: right; }
+.sd-opdracht .sd-o-zin { margin: 0 2px 14px; font-size: 13px; color: var(--sim-text-2, #5b6470); }
+.sd-opdracht .sd-o-zin b { color: var(--sim-text, #1e2328); font-weight: 600; margin-right: 6px; }
+.sd-opdracht .sd-o-raster { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .sd-opdracht .sd-o-raster { grid-template-columns: 1fr; } }
+.sd-opdracht .sd-o-blok { margin: 0 0 12px; padding: 14px 16px 16px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); }
+.sd-opdracht .sd-o-blok h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; line-height: 1.3; color: var(--sim-text-2, #5b6470); }
+.sd-opdracht .sd-o-veld { margin-top: 12px; }
+.sd-opdracht .sd-o-blok > .sd-o-veld:first-child { margin-top: 0; }
+.sd-opdracht .sd-o-veld > label:not(.sd-o-vink):not(.sd-o-getal) { display: block; margin: 0 0 5px; font-size: 13px; font-weight: 600; color: var(--sim-text, #1e2328); }
+.sd-opdracht label b, .sd-opdracht h2 b { color: var(--sim-danger, #c93c3c); font-weight: 600; }
+.sd-opdracht input[type=text], .sd-opdracht input[type=url], .sd-opdracht input[type=search], .sd-opdracht input[type=date], .sd-opdracht input[type=number], .sd-opdracht textarea, .sd-opdracht select { width: 100%; box-sizing: border-box; font: inherit; color: var(--sim-text, #1e2328); background: var(--sim-surface, #fff);
+  border: 1px solid var(--sim-border-2, #d4d9df); border-radius: var(--sim-radius-sm, 8px); padding: 8px 11px; height: auto; }
+.sd-opdracht input:focus, .sd-opdracht textarea:focus, .sd-opdracht select:focus { outline: 2px solid var(--sim-accent, #0e8a74); outline-offset: 1px; border-color: transparent; }
+.sd-opdracht input:disabled, .sd-opdracht textarea:disabled, .sd-opdracht select:disabled, .sd-opdracht button:disabled { opacity: .55; cursor: default; }
+.sd-opdracht #sdo-titel { font-size: 18px; font-weight: 500; padding: 10px 12px; }
+.sd-opdracht textarea { resize: vertical; min-height: 130px; }
+.sd-opdracht input[type=search] { margin-top: 8px; }
+.sd-opdracht small { display: block; margin-top: 3px; font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+.sd-opdracht .sd-o-rij { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.sd-opdracht .sd-o-rij select { flex: 0 0 160px; width: auto; }
+.sd-opdracht .sd-o-rij input[type=text]:first-child { flex: 0 1 220px; }
+.sd-opdracht .sd-o-rij .sd-o-naam { flex: 1 1 auto; min-width: 0; font-weight: 500; }
+.sd-opdracht .sd-o-rubric { padding: 8px 12px; border-radius: var(--sim-radius-sm, 8px); background: var(--sim-surface-2, #eef0f3); }
+.sd-opdracht .sd-o-rubric .sd-o-vink { margin: 0; }
+.sd-opdracht .sd-o-kaart { margin-bottom: 8px; padding: 10px 12px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius-sm, 8px); }
+.sd-opdracht .sd-o-kaart .sd-o-rij { margin: 0; }
+.sd-opdracht .sd-o-inst { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 8px; }
+.sd-opdracht .sd-o-inst .sd-o-vink { margin: 0; }
+.sd-opdracht .sd-o-inst .sd-o-veld { flex: 1 1 100%; margin-top: 4px; }
+.sd-opdracht .sd-o-getal { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 400; color: var(--sim-text, #1e2328); }
+.sd-opdracht .sd-o-getal input { width: 70px; padding: 5px 8px; }
+.sd-opdracht .sd-o-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sd-opdracht .sd-o-chips:empty { display: none; }
+.sd-opdracht [data-lijst] { margin-top: 8px; }
+.sd-opdracht .sd-o-chip { font: inherit; font-size: 13px; cursor: pointer; padding: 5px 12px; border-radius: var(--sim-pill, 999px); border: 1px solid var(--sim-border-2, #d4d9df); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); }
+.sd-opdracht .sd-o-chip:hover:not(:disabled) { border-color: var(--sim-accent, #0e8a74); }
+.sd-opdracht .sd-o-chip.aan { background: var(--sim-accent-soft, #e6f4f1); border-color: var(--sim-accent, #0e8a74); color: var(--sim-accent-text, #0b6f5e); font-weight: 600; }
+.sd-opdracht .sd-o-stil { font-size: 13px; color: var(--sim-text-3, #8a93a0); }
+.sd-opdracht .sd-o-weg { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 0; background: transparent; color: var(--sim-text-3, #8a93a0); font-size: 18px; line-height: 1; cursor: pointer; }
+.sd-opdracht .sd-o-weg:hover:not(:disabled) { background: var(--sim-danger-soft, #fbe9e9); color: var(--sim-danger, #c93c3c); }
+html .sd-opdracht .sd-o-link, html .sd-opdracht a.sd-o-link { font: inherit; font-size: 13px; cursor: pointer; border: 0; background: none; padding: 4px 0; color: var(--sim-accent-text, #0b6f5e) !important; text-decoration: none; white-space: nowrap; }
+html .sd-opdracht .sd-o-link:hover { text-decoration: underline; }
+.sd-opdracht .sd-o-vink { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 13px; font-weight: 400; cursor: pointer; color: var(--sim-text, #1e2328); }
+.sd-opdracht .sd-o-vink input { accent-color: var(--sim-accent, #0e8a74); margin: 0; flex: none; }
+.sd-opdracht .sd-o-zij .sd-o-blok { padding: 12px 14px 14px; }
+.sd-opdracht .sd-o-zij .sd-o-chip { padding: 4px 10px; }
+.sd-opdracht .sd-o-zij input[type=date] { padding: 6px 9px; }
+.sd-opdracht .sd-o-uitleg { margin: 8px 2px 14px; font-size: 13px; color: var(--sim-text-2, #5b6470); }
+.sd-opdracht .sd-o-fout { margin: 0 0 8px; padding: 8px 12px; border-radius: var(--sim-radius-sm, 8px); background: var(--sim-danger-soft, #fbe9e9); color: var(--sim-danger, #c93c3c); font-size: 13px; }
+.sd-opdracht .sd-o-goed { margin: 0 0 14px; padding: 8px 12px; border-radius: var(--sim-radius-sm, 8px); background: var(--sim-success-soft, #e3f4ec); color: var(--sim-text, #1e2328); font-size: 13px; font-weight: 600; }
+.sd-opdracht .sd-o-knoppen { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.sd-opdracht .sd-o-knoppen .sd-o-stil { margin-right: auto; }
+html .sd-opdracht .sd-o-hoofd, html .sd-opdracht .sd-o-knop { font: inherit; font-size: 14px; cursor: pointer; padding: 8px 18px; border-radius: var(--sim-pill, 999px); border: 1px solid var(--sim-border-2, #d4d9df); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328) !important; text-decoration: none !important; }
+html .sd-opdracht .sd-o-hoofd { background: var(--sim-accent, #0e8a74); border-color: var(--sim-accent, #0e8a74); color: var(--sim-on-accent, #fff) !important; font-weight: 600; }
+html .sd-opdracht .sd-o-hoofd:hover:not(:disabled) { filter: brightness(.94); }
+html .sd-opdracht .sd-o-knop:hover:not(:disabled) { border-color: var(--sim-accent, #0e8a74); }
+html .sd-opdracht .sd-o-rubricknop { margin-top: 8px; font-size: 13px; padding: 6px 14px; }
+.sd-opdracht .sd-o-stappen { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 2px 10px; padding: 0; list-style: none; counter-reset: stap; }
+.sd-opdracht .sd-o-stappen li { counter-increment: stap; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--sim-text-3, #8a93a0); }
+.sd-opdracht .sd-o-stappen li::before { content: counter(stap); flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 600; background: var(--sim-surface-2, #eef0f3); color: var(--sim-text-2, #5b6470); }
+.sd-opdracht .sd-o-stappen li.klaar { color: var(--sim-text, #1e2328); }
+.sd-opdracht .sd-o-stappen li.klaar::before { content: "\2713"; background: var(--sim-success, #2f9e6e); color: #fff; }
+.sd-opdracht .sd-o-stappen li.bezig { color: var(--sim-text, #1e2328); font-weight: 600; }
+.sd-opdracht .sd-o-stappen li.bezig::before { background: var(--sim-accent, #0e8a74); color: var(--sim-on-accent, #fff); }
+.sd-opdracht .sd-o-stappen li.fout { color: var(--sim-danger, #c93c3c); font-weight: 600; }
+.sd-opdracht .sd-o-stappen li.fout::before { content: "!"; background: var(--sim-danger, #c93c3c); color: #fff; }
+.sd-opdracht .sd-o-stappen li.over { text-decoration: line-through; }
+.sd-opdracht .sd-o-laden { padding: 24px; color: var(--sim-text-2, #5b6470); }
+.sd-opdracht dialog.sd-o-popup { width: min(560px, calc(100vw - 32px)); max-height: min(640px, calc(100vh - 48px)); padding: 18px 20px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); box-shadow: 0 18px 50px rgba(0, 0, 0, .25); }
+.sd-opdracht dialog.sd-o-popup[open] { display: flex; flex-direction: column; }
+.sd-opdracht dialog.sd-o-popup::backdrop { background: rgba(15, 20, 25, .4); }
+.sd-opdracht dialog.sd-o-popup h2 { margin: 0 0 4px; font-size: var(--sim-title-2, 17px); font-weight: 600; color: var(--sim-text, #1e2328); }
+.sd-opdracht .sd-o-poplijst { flex: 1 1 auto; min-height: 160px; overflow: auto; margin-top: 10px; padding: 2px 4px 2px 2px; }
+.sd-opdracht .sd-o-poplijst .sd-o-vink { margin: 0; padding: 7px 8px; border-radius: var(--sim-radius-sm, 8px); }
+.sd-opdracht .sd-o-poplijst .sd-o-vink:hover { background: var(--sim-surface-2, #eef0f3); }
+html .sd-opdracht-knop { margin-left: 6px; }
+
+/* ---------- Media bij het nakijken (modules/media.js): bestanden van een ingeleverde portfoliopagina ---------- */
+.sd-media { margin: 16px 0 0; padding: 14px 16px 16px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); font-family: var(--sim-font, inherit); }
+html .sd-media > h3 { margin: 0 0 2px !important; padding: 0 !important; font-size: var(--sim-title-2, 17px) !important; font-weight: 600 !important; line-height: 1.3 !important; color: var(--sim-text, #1e2328) !important; }
+.sd-media > p { margin: 0 0 12px; font-size: 13px; color: var(--sim-text-2, #5b6470); }
+.sd-media .sd-media-kaart { margin-top: 10px; padding: 10px 12px 12px; border-radius: var(--sim-radius-sm, 8px); background: var(--sim-surface-2, #eef0f3); }
+.sd-media .sd-media-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 14px; }
+.sd-media .sd-media-kop b { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.sd-media .sd-media-kop small { font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+.sd-media .sd-media-soort { flex: none; padding: 2px 9px; border-radius: var(--sim-pill, 999px); background: var(--sim-accent-soft, #e6f4f1); color: var(--sim-accent-text, #0b6f5e); font-size: 12px; font-weight: 600; }
+html .sd-media .sd-media-kop a, html .sd-media .sd-media-kop button { font: inherit; font-size: 13px; cursor: pointer; padding: 4px 12px; border-radius: var(--sim-pill, 999px); border: 1px solid var(--sim-border-2, #d4d9df); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328) !important; text-decoration: none !important; }
+html .sd-media .sd-media-kop a:hover, html .sd-media .sd-media-kop button:hover { border-color: var(--sim-accent, #0e8a74); }
+.sd-media .sd-media-kop a:first-of-type, .sd-media .sd-media-kop button:first-of-type { margin-left: auto; }
+.sd-media video, .sd-media img { display: block; max-width: 100%; max-height: 70vh; margin: 10px auto 0; border-radius: var(--sim-radius-sm, 8px); background: #000; }
+.sd-media img { background: transparent; }
+.sd-media audio { display: block; width: 100%; margin-top: 10px; }
+.sd-media iframe { display: block; width: 100%; height: 70vh; margin-top: 10px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius-sm, 8px); background: #fff; }
+@media print { .sd-media { display: none; } }

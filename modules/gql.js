@@ -7,6 +7,8 @@
  * Daarnaast kijkt het mee met een paar vragen van de app zelf (leerlijndiagram op een profiel): de tekst
  * van de vraag, de variabelen en de lijst opleidingen. Op verzoek ({ type: 'sd-gql-app' }) geeft het die
  * terug, zodat het rapport precies dezelfde vraag kan stellen als Simulise.
+ * Daarnaast haalt het op verzoek ({ type: 'sd-voorvertoning', id, url }) de voorvertoning van een bestand op bij api.simulise.com
+ * (voor modules/media.js); vanuit de extensie zelf wordt dat verzoek geweigerd.
  * Gebruikt door modules/rapporten.js (voortgangsrapporten). Er wordt niets bewaard of elders heen gestuurd:
  * het verzoek gaat naar dezelfde server als de app, met je eigen sessie.
  */
@@ -63,6 +65,16 @@
   window.addEventListener('message', (e) => {
     if (e.source !== window) return;
     if (e.data?.type === 'sd-gql-app') { window.postMessage({ type: 'sd-gql-app-antwoord', id: e.data.id, app: JSON.parse(JSON.stringify(app)) }, location.origin); return; }
+    // Een voorvertoning van een bestand ophalen (modules/media.js): alleen de tekst van een pagina op api.simulise.com,
+    // zonder aanmelding (het adres is zelf ondertekend), en alleen terug naar deze pagina.
+    if (e.data?.type === 'sd-voorvertoning') {
+      const klaar = (x) => window.postMessage({ type: 'sd-voorvertoning-antwoord', id: e.data.id, ...x }, location.origin);
+      let adres = null;
+      try { const u = new URL(String(e.data.url)); if (u.protocol === 'https:' && u.hostname === 'api.simulise.com') adres = u.href; } catch { /* geen adres */ }
+      if (!adres) { klaar({ tekst: null }); return; }
+      origFetch(adres).then((r) => (r.ok ? r.text() : null)).then((tekst) => klaar({ tekst: tekst ? tekst.slice(0, 200000) : null }), () => klaar({ tekst: null }));
+      return;
+    }
     if (e.data?.type !== 'sd-gql') return;
     if (bron) voer(e.data); else wachtrij.push(e.data);
   });

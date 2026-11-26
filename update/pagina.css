@@ -1,0 +1,44 @@
+/* Gedeelde opmaak voor de eigen pagina's van de extensie (popup, updates, rapportprofielen).
+ * Zelfde kleuren als de thema's in theme.css; update/pagina.js zet het gekozen thema op <html data-thema>.
+ * Zonder keuze (of bij "automatisch") volgt de pagina licht of donker van het systeem. */
+:root {
+  --bg: #f4f5f7; --card: #ffffff; --card-2: #f8f9fb; --fg: #1e2328; --muted: #5b6470; --border: #e3e6ea; --border-2: #d4d9df;
+  --accent: #0e8a74; --accent-soft: #e6f4f1; --accent-text: #0b6f5e; --op-accent: #ffffff;
+  --warn: #d97a06; --warn-soft: #fdf1e2; --fout: #c93c3c;
+  --radius: 10px; --radius-sm: 6px; --pil: 999px;
+  --font: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+:root[data-thema="helder"] {
+  --bg: #f6f4ef; --card: #ffffff; --card-2: #f1eee7; --fg: #24222a; --muted: #5f5b6b; --border: #e7e2d8; --border-2: #d8d1c3;
+  --accent: #4f5bd5; --accent-soft: #e8eafc; --accent-text: #3a45b8;
+  --warn: #9a5b00; --warn-soft: #fdf0d5; --fout: #c8364b;
+  --radius: 16px; --radius-sm: 10px;
+  --font: "Inter", ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+}
+:root[data-donker] {
+  --bg: #15181c; --card: #1c2025; --card-2: #232830; --fg: #e6e8eb; --muted: #a4acb6; --border: #2a3038; --border-2: #3a424d;
+  --accent: #3fc1a7; --accent-soft: #17332d; --accent-text: #6fd9c3; --op-accent: #0c1512;
+  --warn: #f0a04b; --warn-soft: #3a2b17; --fout: #ef6b6b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-thema]) {
+    --bg: #15181c; --card: #1c2025; --card-2: #232830; --fg: #e6e8eb; --muted: #a4acb6; --border: #2a3038; --border-2: #3a424d;
+    --accent: #3fc1a7; --accent-soft: #17332d; --accent-text: #6fd9c3; --op-accent: #0c1512;
+    --warn: #f0a04b; --warn-soft: #3a2b17; --fout: #ef6b6b;
+  }
+}
+* { box-sizing: border-box; }
+body { font: 14px/1.5 var(--font); margin: 0; background: var(--bg); color: var(--fg); }
+h1 { font-size: 20px; font-weight: 600; line-height: 1.25; margin: 0; }
+h2 { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+a { color: var(--accent-text); }
+small, .muted { color: var(--muted); }
+select, input, button, textarea { font: inherit; color: var(--fg); }
+select, input[type=text], input[type=date], input[type=number], textarea { background: var(--card); border: 1px solid var(--border-2); border-radius: var(--radius-sm); padding: 5px 9px; }
+button { padding: 6px 14px; border-radius: var(--pil); border: 1px solid var(--border-2); background: var(--card); cursor: pointer; }
+button:hover:not([disabled]) { border-color: var(--accent); color: var(--accent-text); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--op-accent); font-weight: 600; }
+button.primary:hover:not([disabled]) { color: var(--op-accent); filter: brightness(.94); }
+button[disabled] { opacity: .5; cursor: default; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type=checkbox], input[type=radio], input[type=range] { accent-color: var(--accent); }

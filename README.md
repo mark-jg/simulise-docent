@@ -101,6 +101,36 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.23.0: media bij het nakijken. Simulise toont een ingeleverde portfoliopagina op het beoordeelscherm als pdf, waarin
+  video en audio niet afspelen. Onder die pdf staat nu "Media op deze pagina": een speler voor elke video en elk
+  audiobestand, afbeeldingen, en voor andere bestanden een knop die de voorvertoning van Simulise in de pagina opent,
+  met de links van de student erbij. Alleen lezen; er wordt niets bewaard.
+- 0.22.0: snelle opdracht. Een opdracht aanmaken op één scherm in plaats van vier pagina's: knop "Snelle opdracht" bij
+  Opdrachten (ook via Cmd+K). De indeling volgt Opdrachten in Teams: bovenin Annuleren en Aanmaken met in één zin wat er
+  wordt aangemaakt, links de inhoud (titel, instructies, links, rubrics, inleverstukken) en rechts een smalle kolom met
+  alle kleine keuzes: toewijzen aan, start en deadline, beoordelaars, reflectie, labels, feedbackvragen, doorlooptijd
+  en auteurs. Rubrics kies je in een popup met een zoekveld; inleverstukken hebben hun eigen instellingen. Opslaan gaat
+  in de vijf stappen van Simulise; weigert Simulise een stap, dan zie je de melding en kun je opnieuw proberen of
+  verder gaan in Simulise. Je vaste keuzes worden onthouden. Niet in dit formulier: afbeelding, bestanden en video's,
+  een paginasjabloon als inleverstuk, virtuele groepen, losse studenten en meer dan één groep beoordelaars.
+- 0.21.0: rapporten voor het hele team. Een vergaderlijst per klas: één rij per student met het signaal (onder de norm,
+  bespreken, op koers), de stand per opleiding en waarom iemand op de lijst staat; ook als afdruk (met een kolom voor het
+  besluit) en als Excel-export. Het toetsplan (normen, periodes) kan uit een gedeelde OneDrive- of SharePoint-link komen,
+  zodat iedereen dezelfde regels gebruikt. Een Excel-bestand met aanwezigheid achter zo'n link komt naast de resultaten
+  te staan en telt mee als bespreekpunt onder een grens die je instelt. Instellen op de pagina Rapportprofielen; de
+  extensie leest alleen en vraagt eerst om toestemming voor OneDrive. Verder een verfijning van het ontwerp: dezelfde
+  kleuren en titels in alle eigen schermen, ronde knoppen in Helder ook op de knoppen van Simulise, labels, tooltips en
+  voortgangsbalken in elk thema, en de popup, updatepagina en Rapportprofielen volgen het gekozen thema.
+- 0.20.0: de opdrachten van een klas rustig en geordend. Standaard een overzicht: bovenaan "Wacht op jou" met de
+  opdrachten waar jij iets moet nakijken, daaronder de opdrachten per vak (de code uit de titel), inklapbaar, met per
+  opdracht één balk en in woorden wat ertoe doet. Zonder studenten in beeld. De knop "Per student" toont de matrix van
+  Simulise als stippenkaart: smalle kolommen, één stip per inlevering, een grote stip voor wat op jou wacht.
+  Inzicht (Analytics) is vriendelijker: in plaats van zeven tegels een overzicht met de rapportages als vragen ("Wie
+  heeft deze opdracht af?"), geordend naar klas, studenten en opdracht, met je klassen bovenaan voor het voortgangsrapport
+  in één klik. De keuzes voor een rapportage staan in gewone taal. Het resultaat is rustiger: knoppen met woorden
+  (Keuzes wijzigen, Bewaren, Downloaden), een tabel die kop en namen in beeld houdt en bij "Opleiding per groep" de
+  stand van de klas erboven: per leerlijn en stap hoeveel studenten die hebben behaald. De pagina met bewaarde
+  rapportages heeft de vraag als kop en een knop "Nieuwe rapportage".
 - 0.19.0: nieuw thema Helder met een nieuwe schil (proef). De zijbalk is ingedeeld rond taken: Vandaag, Nakijken, Mijn
   klassen, Maken, Inzicht en Meer. Elke klas heeft een eigen kleur, in de zijbalk en bij elke rij in Beoordelen. Vaste
   woorden van Simulise staan in gewone taal ("Wacht op jou" in plaats van "Te beoordelen"). Klik op een klas voor de

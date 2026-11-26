@@ -10,7 +10,7 @@ SD.register({
   MAX_GROUPS: 200,
   CSS: `
     :host { all: initial; }
-    .bg { position: fixed; inset: 0; z-index: 2147483000; background: rgba(15, 20, 25, .35); display: flex; justify-content: center; align-items: flex-start; padding-top: 12vh; font: 14px/1.4 Inter, system-ui, sans-serif; }
+    .bg { position: fixed; inset: 0; z-index: 2147483000; background: rgba(15, 20, 25, .35); display: flex; justify-content: center; align-items: flex-start; padding-top: 12vh; font: 14px/1.4 var(--sim-font, Inter, system-ui, sans-serif); }
     .box { width: min(560px, calc(100vw - 32px)); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); border: 1px solid var(--sim-border, #e3e6ea); border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, .25); overflow: hidden; }
     input { all: unset; box-sizing: border-box; width: 100%; padding: 14px 16px; font-size: 16px; border-bottom: 1px solid var(--sim-border, #e3e6ea); color: inherit; }
     input::placeholder { color: var(--sim-text-3, #8a93a0); }

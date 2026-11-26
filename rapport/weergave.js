@@ -4,7 +4,8 @@
  * anders #content): de eigen inhoud van Simulise wordt verborgen en komt terug met de knop Terug.
  * Opmaak met de klassen van Simulise (panel, table-index, label, btn, form-control), zodat het rapport
  * eruitziet als een gewone Simulise-pagina en meekleurt met het thema van de extensie.
- * Weergaven: perioden (meetmomenten naast elkaar), groep (groepsoverzicht), student (per student).
+ * Weergaven: vergader (vergaderlijst met signalen), perioden (meetmomenten naast elkaar), groep (groepsoverzicht),
+ * student (per student, met de aanwezigheid uit het bestand van het team als die er is).
  * Excel alleen als export (CSV). Afdrukken via onAfdruk: de A4-versie van rapport/render.js.
  * De gegevens blijven in het geheugen; er wordt niets bewaard behalve de keuzes (rpOpties, zonder namen).
  */
@@ -20,7 +21,7 @@
   const CSS = `
     .sdw { padding-bottom: 24px; }
     .sdw .sdw-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .sdw .sdw-kop .h4 { margin: 0; font-weight: 600; } .sdw .sdw-kop .sdw-ruimte { flex: 1; }
+    .sdw .sdw-kop .h4 { margin: 0; font-size: 18px; font-weight: 600; } .sdw .sdw-kop .sdw-ruimte { flex: 1; }
     .sdw .sdw-balk { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
     .sdw .sdw-balk label { font-weight: 400; margin: 0; display: inline-flex; gap: 6px; align-items: center; }
     .sdw .sdw-balk .form-control { display: inline-block; width: auto; height: 30px; padding: 4px 8px; }
@@ -38,21 +39,39 @@
     .sdw td.sdw-cel { font-weight: 600; min-width: 30px; }
     .sdw td.sdw-cel small { color: var(--sim-text-3, #8a93a0); font-weight: 400; margin-right: 2px; }
     .sdw td.sdw-cel.op { background: color-mix(in srgb, var(--k) 24%, var(--sim-surface, #fff)); }
-    .sdw td.sdw-cel.niet { background: color-mix(in srgb, #e6007e 9%, var(--sim-surface, #fff)); }
+    .sdw td.sdw-cel.niet { background: color-mix(in srgb, var(--sim-danger, #c93c3c) 10%, var(--sim-surface, #fff)); }
     .sdw td.sdw-cel.leeg { color: var(--sim-text-3, #b0b6bd); font-weight: 400; }
     .sdw .sdw-legenda { font-size: 12px; color: var(--sim-text-3, #8a93a0); margin: 0; }
     .sdw .sdw-student { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
     .sdw .sdw-student h3 { margin: 0 8px 0 0; }
     .sdw .sdw-diagram svg { width: 100%; max-width: 460px; display: block; margin: 0 auto; }
-    .sdw .sdw-diagram .ringnr { font-size: 9px; fill: #8a93a0; } .sdw .sdw-diagram .doellabel { font-size: 11px; font-weight: 700; }
+    .sdw .sdw-diagram .ringnr { font-size: 9px; fill: var(--sim-text-3, #8a93a0); } .sdw .sdw-diagram .doellabel { font-size: 11px; font-weight: 700; }
     .sdw .sdw-diagram .lllabel { font-size: 12.5px; fill: currentColor; } .sdw .sdw-diagram .catlabel { font-size: 12px; fill: #fff; font-weight: 600; }
     .sdw .sdw-bol { display: inline-block; width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--sim-border, #c4cad1); margin-right: 2px; vertical-align: middle; }
     .sdw .sdw-bol.vol { border-color: transparent; } .sdw .sdw-bol.stip { border: 1.5px dashed #8e44e8; }
     .sdw .sdw-kleur { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; }
     .sdw table.sdw-lijnen td { vertical-align: middle; } .sdw table.sdw-lijnen small { display: block; color: var(--sim-text-3, #8a93a0); }
     .sdw .sdw-normen li { margin-bottom: 4px; } .sdw .sdw-normen .fa { width: 16px; }
-    .sdw .sdw-ok { color: #1f9d55; } .sdw .sdw-nee { color: #e6007e; }
+    .sdw .sdw-ok { color: var(--sim-success, #1f9d55); } .sdw .sdw-nee { color: var(--sim-danger, #c93c3c); }
     .sdw a.sdw-link { cursor: pointer; }
+    .sdw .sdw-tellers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .sdw .sdw-teller { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--sim-surface-2, #eef0f3); font-size: 13px; }
+    .sdw .sdw-teller b { font-size: 15px; font-variant-numeric: tabular-nums; }
+    .sdw .sdw-teller.onder { background: color-mix(in srgb, var(--sim-danger, #c93c3c) 14%, var(--sim-surface, #fff)); }
+    .sdw .sdw-teller.bespreek { background: color-mix(in srgb, var(--sim-warn, #b06a00) 16%, var(--sim-surface, #fff)); }
+    .sdw .sdw-teller.ok { background: color-mix(in srgb, var(--sim-success, #2f9e6e) 14%, var(--sim-surface, #fff)); }
+    .sdw table.sdw-vergader { margin: 0; }
+    .sdw table.sdw-vergader th, .sdw table.sdw-vergader td { vertical-align: middle; padding: 7px 10px; }
+    .sdw table.sdw-vergader th { font-size: 12px; font-weight: 600; color: var(--sim-text-2, #5b6470); white-space: nowrap; }
+    .sdw table.sdw-vergader td.sdw-getal, .sdw table.sdw-vergader th.sdw-getal { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .sdw table.sdw-vergader td.sdw-naam { font-weight: 600; white-space: nowrap; box-shadow: inset 4px 0 0 transparent; }
+    .sdw table.sdw-vergader tr.sig-onder td.sdw-naam { box-shadow: inset 4px 0 0 var(--sim-danger, #c93c3c); }
+    .sdw table.sdw-vergader tr.sig-bespreek td.sdw-naam { box-shadow: inset 4px 0 0 var(--sim-warn, #e0a100); }
+    .sdw table.sdw-vergader tr.sdw-groepkop th { background: var(--sim-surface-2, #eef0f3); color: var(--sim-text, #1e2328); font-size: 13px; padding: 6px 10px; }
+    .sdw table.sdw-vergader td.sdw-waarom { color: var(--sim-text-2, #5b6470); font-size: 13px; min-width: 220px; }
+    .sdw table.sdw-vergader td.sdw-laag { color: var(--sim-danger, #c93c3c); font-weight: 600; }
+    .sdw .sdw-aanwezig { display: flex; flex-wrap: wrap; gap: 6px 22px; align-items: baseline; }
+    .sdw .sdw-aanwezig b { font-size: 20px; font-variant-numeric: tabular-nums; } .sdw .sdw-aanwezig b.sdw-laag { color: var(--sim-danger, #c93c3c); }
   `;
 
   function stijl() {
@@ -145,6 +164,31 @@
     }).join('') + '<p class="sdw-legenda">Cijfer: behaalde stap. Gekleurd: doelstap gehaald. ★ boven verwachting · ◌ beoordeeld, volgende stap nog niet behaald. Klik op een naam voor de student.</p>';
   }
 
+  /* Vergaderlijst: één rij per student, gegroepeerd op signaal (onder de norm, bespreken, op koers), met de stand
+   * per opleiding, de aanwezigheid (als die er is) en waarom iemand op de lijst staat. */
+  const signaalLabel = (m) => `<span class="label ${{ onder: 'label-danger', bespreek: 'label-warning', ok: 'label-success' }[m.signaal.niveau] || 'label-default'}">${esc(m.signaal.tekst)}</span>`;
+  function vergader(ms, profiel, alle) {
+    const rollen = rollenVan(ms.length ? ms : alle, profiel);
+    const metAanw = alle.some((m) => m.aanwezig);
+    const grens = profiel.aanwezigheid?.grens === null ? null : Number(profiel.aanwezigheid?.grens ?? 80);
+    const e = alle[0];
+    const tel = (n) => alle.filter((m) => m.signaal.niveau === n).length;
+    const kolommen = 2 + rollen.length + (metAanw ? 3 : 0) + 1;
+    const rij = (m) => `<tr class="sig-${m.signaal.niveau}">${naamCel(m)}<td>${signaalLabel(m)}</td>
+      ${rollen.map((r) => { const o = m.opleidingen.find((x) => x.rol === r.rol); if (!o) return '<td class="sdw-getal">–</td>'; const st = SDRapport.stand(o); return `<td class="sdw-getal" title="${st.n} van de ${st.van} ${esc(st.wat)}">${st.n}/${st.van}</td>`; }).join('')}
+      ${metAanw ? `<td class="sdw-getal${m.aanwezig?.pct != null && grens != null && m.aanwezig.pct < grens ? ' sdw-laag' : ''}">${m.aanwezig?.pct != null ? SDRapport.procent(m.aanwezig.pct) : '–'}</td><td class="sdw-getal">${m.aanwezig?.ongeoorloofd ?? '–'}</td><td class="sdw-getal">${m.aanwezig?.teLaat ?? '–'}</td>` : ''}
+      <td class="sdw-waarom">${esc(m.signaal.redenen.join('; '))}${m.aanwezig?.opmerking ? `${m.signaal.redenen.length ? '; ' : ''}<em>${esc(m.aanwezig.opmerking)}</em>` : ''}</td></tr>`;
+    const groepen = ['onder', 'bespreek', 'ok', 'geen'].map((n) => [n, ms.filter((m) => m.signaal.niveau === n)]).filter(([, l]) => l.length);
+    const norm = e.toets ? `<p class="m-b-none"><strong>${esc(e.toets.normNaam || `Norm ${e.toets.code}`)}</strong> · ${esc(e.toets.code)} ${esc(e.toets.moment || '')}: ${esc(e.toets.norm || '')}</p>` : '<p class="m-b-none text-muted">Voor deze periode staat geen norm in het toetsplan.</p>';
+    return `<section class="panel panel-default"><div class="panel-body">${norm}
+        <p class="sdw-sub">Stand op ${langeDatum(e.datum)}${metAanw && grens != null ? ` · aanwezigheid onder ${grens}% is een bespreekpunt` : ''}${metAanw ? ` · aanwezigheid bekend van ${alle.filter((m) => m.aanwezig).length} van de ${alle.length} studenten` : ''}</p>
+        <div class="sdw-tellers"><span class="sdw-teller onder"><b>${tel('onder')}</b> onder de norm</span><span class="sdw-teller bespreek"><b>${tel('bespreek')}</b> bespreken</span><span class="sdw-teller ok"><b>${tel('ok')}</b> op koers</span>${tel('geen') ? `<span class="sdw-teller"><b>${tel('geen')}</b> zonder norm</span>` : ''}</div></div>
+      <div class="table-responsive"><table class="table table-index sdw-vergader"><thead><tr><th>Student</th><th>Signaal</th>${rollen.map((r) => `<th class="sdw-getal" title="${esc(r.naam)}">${esc(r.conf.titel || r.naam)}</th>`).join('')}
+        ${metAanw ? '<th class="sdw-getal">Aanwezig</th><th class="sdw-getal">Ongeoorloofd</th><th class="sdw-getal">Te laat</th>' : ''}<th>Waarom</th></tr></thead>
+        <tbody>${groepen.map(([n, l]) => `<tr class="sdw-groepkop"><th colspan="${kolommen}">${esc(SDRapport.NIVEAUS[n])} (${l.length})</th></tr>${l.map(rij).join('')}`).join('')}</tbody></table></div></section>
+      <p class="sdw-legenda">Bespreken: precies op de norm, een leerlijn die meetelt is nog niet beoordeeld, of de aanwezigheid ligt onder de grens. In te stellen in het toetsplan (Rapportprofielen). Klik op een naam voor de student.</p>`;
+  }
+
   /* Per student: diagram en leerlijnen per opleiding, normen en gespreksadvies. */
   function student(m, profiel, opties, lijst) {
     const w = { ...(profiel.weergave || {}), ...(opties.nadruk != null ? { nadrukDoelstap: !!opties.nadruk } : {}) };
@@ -180,7 +224,13 @@
     const normen = m.toets ? `<section class="panel panel-default"><header class="panel-heading"><strong>${esc(m.toets.normNaam || `Norm ${m.toets.code}`)}</strong> <span class="text-muted">· ${esc(m.toets.code)} ${esc(m.toets.moment || '')}</span></header>
         <div class="panel-body"><p>${esc(m.toets.norm || '')}</p><ul class="list-unstyled sdw-normen m-b-none">${m.uitslagen.map((u) => `<li><i class="fa ${u.ok ? 'fa-check sdw-ok' : 'fa-times sdw-nee'}"></i> ${esc(u.tekst)}</li>`).join('')}</ul></div></section>` : '';
     const advies = m.advies ? `<section class="panel panel-default"><header class="panel-heading"><strong>Om te bespreken</strong></header><div class="panel-body">${esc(m.advies)}</div></section>` : '';
-    return kop + opl + `<div class="row"><div class="col-md-6">${normen}</div><div class="col-md-6">${advies}</div></div>`;
+    const a = m.aanwezig, grens = profiel.aanwezigheid?.grens === null ? null : Number(profiel.aanwezigheid?.grens ?? 80);
+    const aanw = a ? `<section class="panel panel-default sdw-aanwezigheid"><header class="panel-heading"><strong>Aanwezigheid</strong> <span class="text-muted">· uit het bestand van het team</span></header>
+        <div class="panel-body sdw-aanwezig">${a.pct != null ? `<span><b class="${grens != null && a.pct < grens ? 'sdw-laag' : ''}">${SDRapport.procent(a.pct)}</b> aanwezig${grens != null ? ` <span class="text-muted">(grens ${grens}%)</span>` : ''}</span>` : ''}
+          ${a.ongeoorloofd != null ? `<span><b>${esc(a.ongeoorloofd)}</b> ongeoorloofd</span>` : ''}${a.geoorloofd != null ? `<span><b>${esc(a.geoorloofd)}</b> geoorloofd</span>` : ''}${a.teLaat != null ? `<span><b>${esc(a.teLaat)}</b> te laat</span>` : ''}
+          ${a.opmerking ? `<span class="text-muted">${esc(a.opmerking)}</span>` : ''}</div></section>` : '';
+    const signaal = m.signaal.redenen.length && m.signaal.niveau === 'bespreek' ? `<section class="panel panel-default"><header class="panel-heading"><strong>Bespreken in de vergadering</strong></header><div class="panel-body">${esc(m.signaal.redenen.join('; '))}</div></section>` : '';
+    return kop + opl + `<div class="row"><div class="col-md-6">${normen}${aanw}</div><div class="col-md-6">${signaal}${advies}</div></div>`;
   }
 
   function open({ titel, onAfdruk }) {
@@ -245,7 +295,7 @@
     const rollen = [];
     for (const g of studenten) for (const o of g.opleidingen) { const c = SDRapport.rolVan(o.naam, profiel); const rol = c?.rol || o.naam.toLowerCase(); if (!rollen.some((x) => x.rol === rol)) rollen.push({ rol, titel: c?.titel || o.naam }); }
     const gekozen = new Set(rollen.map((x) => x.rol));
-    const soorten = [['perioden', 'Meetmomenten naast elkaar'], ...(isGroep ? [['groep', 'Groepsoverzicht']] : []), ['student', isGroep ? 'Per student' : 'Voortgang']];
+    const soorten = [...(isGroep ? [['vergader', 'Vergaderlijst']] : []), ['perioden', 'Meetmomenten naast elkaar'], ...(isGroep ? [['groep', 'Groepsoverzicht']] : []), ['student', isGroep ? 'Per student' : 'Voortgang']];
     if (!soorten.some(([v]) => v === opties.soort)) opties.soort = isGroep ? 'perioden' : 'student';
     const soortKeuze = keuze(soorten, opties.soort, (v) => { opties.soort = v; });
     const datum = el('input', { type: 'date', className: 'form-control input-sm', value: opties.peildatum, max: vandaag });
@@ -254,19 +304,22 @@
       el('span', { textContent: 'Sorteer' }), keuze([['naam', 'op naam'], ['aandacht', 'aandacht eerst']], opties.sorteer, (v) => { opties.sorteer = v; }),
       vink('alleen niet op koers', false, (v) => { opties.filter = v ? 'nietOpKoers' : 'alle'; }),
     ]);
+    let alleenSignaal = false;
+    const signaalVink = vink('alleen bespreekgevallen', false, (v) => { alleenSignaal = v; });
+    signaalVink.classList.add('sdw-alleen-signaal');
     const nadrukVink = vink('doelstap groot', opties.nadruk ?? (profiel.weergave?.nadrukDoelstap !== false), (v) => { opties.nadruk = v; });
     balk.append(
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Weergave' }), soortKeuze]),
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Peildatum' }), datum]),
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Vergelijk met' }), keuze([['vorige', 'vorige periode'], ['geen', 'niets'], ...(profiel.perioden || []).map((p) => [p.code, p.code])], opties.vergelijkMet, (v) => { opties.vergelijkMet = v; })]),
       el('span', { className: 'sdw-groepje' }, rollen.length > 1 ? rollen.map((x) => vink(x.titel, true, (v) => { v ? gekozen.add(x.rol) : gekozen.delete(x.rol); opties.opleidingen = [...gekozen]; })) : []),
-      nadrukVink, groepKeuzes,
+      nadrukVink, groepKeuzes, signaalVink,
     );
 
     // Acties rechtsboven: Excel (alleen export) en afdrukken (A4-versie).
     const knop = (tekst, icoon, bij, titel) => { const b = el('button', { type: 'button', className: 'btn btn-default btn-sm', title: titel || '' }, [el('i', { className: `fa fa-fw ${icoon}` }), ` ${tekst}`]); b.onclick = bij; return b; };
     const excel = knop('Excel', 'fa-file-excel', () => {
-      const soort = opties.soort === 'perioden' ? 'perioden' : 'groep';
+      const soort = opties.soort === 'perioden' || opties.soort === 'vergader' ? opties.soort : 'groep';
       const blob = new Blob(['﻿' + SDRapport.csv(studenten, profiel, { ...opties, soort })], { type: 'text/csv;charset=utf-8' });
       const a = el('a', { href: URL.createObjectURL(blob), download: `${($('.sdw-kop .h4').textContent || 'rapport').replace(/[^\w-]+/g, '-').replace(/-+$/, '')}-${opties.peildatum}.csv` });
       document.body.append(a); a.click(); a.remove();
@@ -289,7 +342,7 @@
         afdrukLijst.append(item('Voortgangsrapport van deze student', afdruk('student', true)), item('Gespreksformulier van deze student', afdruk('gesprek', true)));
         if (isGroep) afdrukLijst.append(el('li', { className: 'divider' }), item('Voortgangsrapporten van alle studenten', afdruk('student')), item('Gespreksformulieren van alle studenten', afdruk('gesprek')));
       } else {
-        afdrukLijst.append(item(opties.soort === 'perioden' ? 'Meetmomenten naast elkaar' : 'Groepsoverzicht', afdruk(opties.soort)),
+        afdrukLijst.append(item({ perioden: 'Meetmomenten naast elkaar', vergader: 'Vergaderlijst' }[opties.soort] || 'Groepsoverzicht', afdruk(opties.soort)),
           el('li', { className: 'divider' }), item('Voortgangsrapporten van alle studenten', afdruk('student')), item('Gespreksformulieren van alle studenten', afdruk('gesprek')));
       }
     };
@@ -306,21 +359,24 @@
     let zichtbaarCache = [];
     const zichtbaar = () => zichtbaarCache;
     const teken = () => {
-      const ms = SDRapport.modellen(studenten, profiel, opties);
+      const vergaderNu = opties.soort === 'vergader';
+      const ms = SDRapport.modellen(studenten, profiel, vergaderNu ? { ...opties, filter: alleenSignaal ? 'signaal' : 'alle' } : opties);
       zichtbaarCache = ms;
-      groepKeuzes.hidden = !isGroep;
+      groepKeuzes.hidden = !isGroep || vergaderNu;
+      signaalVink.hidden = !vergaderNu;
       nadrukVink.hidden = opties.soort !== 'student';
       excel.hidden = !isGroep && opties.soort === 'student';
       vulAfdruk();
       const info = $('[data-info]');
-      info.textContent = `${isGroep ? `· ${ms.length} van ${studenten.length} studenten` : ''}${fouten.length ? ` · ${fouten.length} zonder diagram` : ''}`;
+      info.textContent = `${isGroep ? `· ${ms.length} van ${studenten.length} studenten` : ''}${fouten.length ? ` · ${fouten.length} zonder diagram` : ''}${(V.noten || []).map((n) => ` · ${n}`).join('')}`;
       info.title = fouten.length ? [...fouten.reduce((m, f) => m.set(f, (m.get(f) || 0) + 1), new Map())].map(([f, n]) => `${n}× ${f}`).join('\n') : '';
       if (!ms.length) { inhoud.innerHTML = '<section class="panel panel-default"><div class="panel-body sdw-melding">Geen studenten die aan het filter voldoen.</div></section>'; return; }
       if (opties.soort === 'student') {
         const m = ms.find((x) => x.g.__idx === huidig) || ms[0];
         huidig = m.g.__idx;
         inhoud.innerHTML = student(m, profiel, opties, ms);
-      } else inhoud.innerHTML = opties.soort === 'groep' ? groep(ms, profiel) : perioden(ms, profiel);
+      } else if (vergaderNu) inhoud.innerHTML = vergader(ms, profiel, SDRapport.modellen(studenten, profiel, { ...opties, filter: 'alle' }));
+      else inhoud.innerHTML = opties.soort === 'groep' ? groep(ms, profiel) : perioden(ms, profiel);
     };
     teken();
   }

@@ -13,6 +13,8 @@
  *                   met telt: false telt een regel niet mee in het oordeel "op koers"
  *   categorieen     naam, woord (zo in een zin: "rekenen", "Engels"), kleur, leerlijnen[], beoordeeldVanaf (periodecode)
  *   jaardoel        { rol: stap } voor de ondertitel ("jaar 1 werkt toe naar stap 2")
+ *   aanwezigheid    grens (procent aanwezig; null = telt niet mee), kolommen { veld: kop in het Excel-bestand } (rapport/bron.js)
+ *   vergadering     netAan, onbeoordeeld: wat iemand tot bespreekgeval maakt op de vergaderlijst
  *   weergave        nadrukDoelstap (doelstap groter in beeld), nadrukFactor, accent, vergelijk (vorige periode tonen)
  */
 globalThis.SD_RAPPORT_STANDAARD = {
@@ -63,6 +65,10 @@ globalThis.SD_RAPPORT_STANDAARD = {
     },
   ],
   weergave: { nadrukDoelstap: true, nadrukFactor: 1.9, accent: '#e6007e', vergelijk: true },
+  // Aanwezigheid uit het bestand van het team: onder deze grens (procent aanwezig) is een student een bespreekgeval.
+  aanwezigheid: { grens: 80 },
+  // Vergaderlijst: wie de norm precies haalt of nog een onbeoordeelde leerlijn heeft, is een bespreekgeval.
+  vergadering: { netAan: true, onbeoordeeld: true },
 };
 
 /* Voorbeeldstudent voor de voorvertoning (verzonnen). Zelfde vorm als wat later uit Simulise komt. */

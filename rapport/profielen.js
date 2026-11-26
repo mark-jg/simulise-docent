@@ -19,7 +19,7 @@ async function bewaar() { await chrome.storage.local.set({ rpProfielen: profiele
 function melding(tekst, fout = false) { $('melding').textContent = tekst; $('melding').className = fout ? 'fout' : ''; }
 
 function toon() {
-  $('kies').replaceChildren(...profielen.map((p) => Object.assign(document.createElement('option'), { value: p.id, textContent: p.naam, selected: p.id === gekozen })));
+  $('kies').replaceChildren(...profielen.map((p) => Object.assign(document.createElement('option'), { value: p.id, textContent: p.gedeeld ? `${p.naam} (gedeeld)` : p.naam, selected: p.id === gekozen })));
   const p = huidig();
   $('json').value = JSON.stringify(p, null, 2);
   const w = p.weergave || {};
@@ -27,6 +27,9 @@ function toon() {
   $('factor').value = w.nadrukFactor || 1.9; $('factorWaarde').textContent = `${$('factor').value}×`;
   $('accent').value = w.accent || '#e6007e';
   $('vergelijk').checked = w.vergelijk !== false;
+  $('grens').value = p.aanwezigheid?.grens === null ? '' : (p.aanwezigheid?.grens ?? 80);
+  $('netAan').checked = p.vergadering?.netAan !== false;
+  $('onbeoordeeld').checked = p.vergadering?.onbeoordeeld !== false;
   $('weg').disabled = profielen.length < 2;
   voorbeeld();
 }
@@ -62,12 +65,13 @@ function voorbeeld(p = huidig()) {
   }
   const soort = $('soort').value;
   let studenten = [vb];
-  if (soort === 'groep') {
+  if (soort === 'groep' || soort === 'vergader') {
     // Een paar verzonnen studenten met een andere stand, voor het groepsoverzicht.
     studenten = ['A', 'B', 'C'].map((letter, n) => {
       const s = kloon(vb);
       s.student.naam = `Voorbeeldstudent ${letter}`;
       s.opleidingen.forEach((o) => o.leerlijnen.forEach((l, i) => { l.stap = Math.max(0, Math.min(o.maxStap, l.stap + ((i + n) % 3) - 1)); l.bovenVerwachting = l.bovenVerwachting && n === 0; }));
+      if (soort === 'vergader') s.aanwezig = { pct: [91, 74.5, 88][n], ongeoorloofd: [0, 6, 1][n], geoorloofd: null, teLaat: [1, 4, 0][n], opmerking: '' };
       return s;
     });
   }
@@ -86,6 +90,63 @@ function zetWeergave(patch) {
   voorbeeld(p);
   melding('Niet opgeslagen. Klik op Opslaan om te bewaren.');
 }
+/* Vergaderlijst: grens voor de aanwezigheid en wie een bespreekgeval is. */
+function zetDeel(deel, patch) {
+  let p;
+  try { p = JSON.parse($('json').value); } catch { melding('Herstel eerst de fout in de tekst.', true); return; }
+  p[deel] = { ...(p[deel] || {}), ...patch };
+  $('json').value = JSON.stringify(p, null, 2);
+  voorbeeld(p);
+  melding('Niet opgeslagen. Klik op Opslaan om te bewaren.');
+}
+$('grens').onchange = () => zetDeel('aanwezigheid', { grens: $('grens').value === '' ? null : Math.max(0, Math.min(100, Number($('grens').value))) });
+$('netAan').onchange = () => zetDeel('vergadering', { netAan: $('netAan').checked });
+$('onbeoordeeld').onchange = () => zetDeel('vergadering', { onbeoordeeld: $('onbeoordeeld').checked });
+
+/* ---------- Gedeeld met het team (rapport/bron.js) ---------- */
+function bronMelding(tekst, fout = false) { $('bronMelding').textContent = tekst; $('bronMelding').style.color = fout ? 'var(--fout)' : ''; }
+async function bronStatus() {
+  const mag = await chrome.permissions.contains({ origins: SDBron.ORIGINS }).catch(() => false);
+  $('bronToestemming').hidden = mag;
+  return mag;
+}
+async function bronLaad() {
+  const s = await SDBron.instellingen();
+  $('bronProfiel').value = s.profielUrl || ''; $('bronAanwezig').value = s.aanwezigUrl || '';
+  const mag = await bronStatus();
+  if ((s.profielUrl || s.aanwezigUrl) && !mag) bronMelding('De extensie mag nog niet bij OneDrive lezen. Klik op Toestemming geven.', true);
+  else if (s.profielFout) bronMelding(`Toetsplan niet ververst: ${s.profielFout}`, true);
+  else if (s.profielUrl && s.profielTijd) bronMelding(`Toetsplan laatst opgehaald op ${new Date(s.profielTijd).toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' })}.`);
+}
+/* Toestemming vragen moet direct op de klik gebeuren (vóór elk wachten). */
+const vraagToestemming = () => chrome.permissions.request({ origins: SDBron.ORIGINS }).catch(() => false);
+$('bronToestemming').onclick = async () => { const ok = await vraagToestemming(); await bronStatus(); bronMelding(ok ? 'Toestemming gegeven.' : 'Zonder toestemming kan de extensie de bestanden niet ophalen.', !ok); };
+$('bronProfielHaal').onclick = async () => {
+  const toestemming = vraagToestemming();
+  const url = $('bronProfiel').value.trim();
+  await SDBron.bewaar({ profielUrl: url, profielTijd: 0, profielFout: null });
+  if (!url) { // link weggehaald: het gedeelde profiel wordt een gewoon profiel
+    profielen.forEach((p) => { delete p.gedeeld; }); await bewaar(); toon(); bronMelding('Link verwijderd. Het profiel blijft staan als eigen profiel.'); return;
+  }
+  if (!(await toestemming)) { await bronStatus(); bronMelding('Zonder toestemming kan de extensie het toetsplan niet ophalen.', true); return; }
+  await bronStatus(); bronMelding('Toetsplan ophalen…');
+  try { const p = await SDBron.profiel(true); await laad(); bronMelding(`Toetsplan "${p.naam}" opgehaald en gekozen.`); }
+  catch (e) { bronMelding(`Het toetsplan kon niet worden opgehaald: ${e.message || e}`, true); }
+};
+$('bronAanwezigTest').onclick = async () => {
+  const toestemming = vraagToestemming();
+  const url = $('bronAanwezig').value.trim();
+  await SDBron.bewaar({ aanwezigUrl: url });
+  if (!url) { bronMelding('Link verwijderd. Rapporten tonen geen aanwezigheid meer.'); return; }
+  if (!(await toestemming)) { await bronStatus(); bronMelding('Zonder toestemming kan de extensie de aanwezigheid niet ophalen.', true); return; }
+  await bronStatus(); bronMelding('Aanwezigheid ophalen…');
+  try {
+    const a = await SDBron.aanwezigheid(huidig());
+    const metPct = a.lijst.filter((x) => x.pct != null).length;
+    bronMelding(`${a.lijst.length} studenten gelezen, ${metPct} met een percentage. Herkende kolommen: ${a.kolommen.join(', ')}.`, !a.lijst.length);
+  } catch (e) { bronMelding(`De aanwezigheid kon niet worden gelezen: ${e.message || e}`, true); }
+};
+
 $('nadruk').onchange = () => zetWeergave({ nadrukDoelstap: $('nadruk').checked });
 $('factor').oninput = () => { $('factorWaarde').textContent = `${$('factor').value}×`; zetWeergave({ nadrukFactor: Number($('factor').value) }); };
 $('accent').oninput = () => zetWeergave({ accent: $('accent').value });
@@ -114,14 +175,14 @@ $('opslaan').onclick = async () => {
   const i = profielen.findIndex((x) => x.id === gekozen);
   if (p.id !== gekozen && profielen.some((x) => x.id === p.id)) { melding(`Er is al een profiel met id "${p.id}".`, true); return; }
   profielen[i] = p; gekozen = p.id;
-  await bewaar(); toon(); melding('Opgeslagen.');
+  await bewaar(); toon(); melding(p.gedeeld ? 'Opgeslagen. Let op: dit profiel komt van de gedeelde link en wordt bij het verversen overschreven. Maak een kopie voor eigen wijzigingen, of zet het aangepaste bestand terug op OneDrive.' : 'Opgeslagen.');
 };
 
 $('kies').onchange = async () => { gekozen = $('kies').value; await bewaar(); toon(); melding(''); };
 $('kopie').onclick = async () => {
   const p = kloon(huidig());
   let n = 2; while (profielen.some((x) => x.id === `${p.id}-${n}`)) n++;
-  p.id = `${p.id}-${n}`; p.naam = `${p.naam} (kopie)`;
+  p.id = `${p.id}-${n}`; p.naam = `${p.naam} (kopie)`; delete p.gedeeld;
   profielen.push(p); gekozen = p.id; await bewaar(); toon(); melding('Kopie gemaakt.');
 };
 $('weg').onclick = async () => {
@@ -137,7 +198,8 @@ $('herstel').onclick = async () => {
 };
 $('export').onclick = () => {
   const p = huidig();
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' })), download: `rapportprofiel-${p.id}.json` });
+  const { gedeeld, ...zonder } = p; // het merk "gedeeld" hoort niet in het bestand
+  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(zonder, null, 2)], { type: 'application/json' })), download: `rapportprofiel-${p.id}.json` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 };
 $('importKnop').onclick = () => $('import').click();
@@ -156,3 +218,4 @@ $('import').onchange = async () => {
 
 $('peildatum').value = SD_RAPPORT_VOORBEELD.peildatum;
 laad();
+bronLaad();

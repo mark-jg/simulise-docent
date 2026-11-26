@@ -10,6 +10,10 @@ globalThis.SD_MODULES = [
   { id: 'vandaag', naam: 'Vandaag', uitleg: 'Eigen startscherm met je beoordeelwachtrij over alle groepen; bovenaan de zijbalk en via Cmd+K', key: 'today' },
   { id: 'schil', naam: 'Nieuwe schil (thema Helder)', uitleg: 'Zijbalk rond taken, gewone taal en een kleur per klas; werkt alleen met het thema Helder', key: 'shell' },
   { id: 'focus', naam: 'Focusmodus bij beoordelen', uitleg: 'Het werk met rubric, feedback en beoordeling toekennen ernaast, en een compacte lijst van de klas; Alt+F', key: 'focus' },
+  { id: 'media', naam: 'Media bij het nakijken', uitleg: 'Video, audio en bestanden van een ingeleverde portfoliopagina afspelen op het beoordeelscherm', key: 'reviewMedia' },
+  { id: 'matrix', naam: 'Opdrachten van een klas', uitleg: 'Rustig overzicht per vak met wat op jou wacht bovenaan; de matrix per student als stippenkaart', key: 'matrixView' },
+  { id: 'inzicht', naam: 'Inzicht in gewone taal', uitleg: 'Analytics als vragen, geordend, met je klassen bovenaan; de keuzes voor een rapportage in gewone taal', key: 'insight' },
+  { id: 'opdracht', naam: 'Snelle opdracht', uitleg: 'Een opdracht aanmaken op één scherm: knop bij Opdrachten en via Cmd+K', key: 'quickAssign' },
   { id: 'beoordelen', naam: 'Filter in Beoordelen', uitleg: 'Meetmomenten van andere opleidingen verbergen; instellingen in de filterbalk', key: 'grading' },
   { id: 'meldingen', naam: 'Filter in Meldingen', uitleg: 'Meldingen over meetmomenten van andere opleidingen verbergen (menu en pagina)', key: 'notifFilter' },
   { id: 'rapporten', naam: 'Voortgangsrapporten', uitleg: 'Knop op het profiel van een student en in het menu bij Groepen', key: 'reports' },
@@ -30,6 +34,13 @@ globalThis.SD_DEFAULTS = {
   search: true,       // module zoeken
   grading: true,      // module beoordelen
   today: true,        // module vandaag
+  insight: true,      // module inzicht
+  quickAssign: true,  // module opdracht (snelle opdracht)
+  reviewMedia: true,  // module media (media bij het nakijken)
+  qaStandaard: {},    // snelle opdracht: je vaste keuzes (deadline, inleverstukken, labels, actief)
+  matrixView: true,   // module matrix
+  matrixMij: false,   // matrix: alles behalve wat op jou wacht lichter
+  matrixWeergave: 'overzicht', // opdrachten van een klas: 'overzicht' (per vak) of 'student' (stippenkaart)
   focus: true,        // module focus
   focusAan: true,     // focusmodus staat aan op het beoordeelscherm
   focusKolom: true,   // focusmodus: rubric, feedback en onderbalk in een zijkolom

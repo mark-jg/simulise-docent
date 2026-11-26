@@ -3,32 +3,26 @@
 <head>
 <meta charset="utf-8">
 <title>Simulise Docent: rapportprofielen</title>
+<link rel="stylesheet" href="../update/pagina.css">
 <style>
-  :root { --bg: #f4f5f7; --card: #fff; --fg: #1f2328; --muted: #6b7280; --border: #e4e7eb; --accent: #0e8a74; --fout: #c93c3c; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #15181c; --card: #1c2025; --fg: #e6e8eb; --muted: #a4acb6; --border: #2a3038; --accent: #3fc1a7; } }
-  * { box-sizing: border-box; }
-  body { font: 14px/1.5 system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--fg); }
   header { padding: 16px 20px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
-  header h1 { font-size: 18px; margin: 0; } header p { margin: 0; color: var(--muted); }
-  main { display: grid; grid-template-columns: minmax(340px, 480px) 1fr; gap: 16px; padding: 16px; }
+  header p { margin: 0; color: var(--muted); }
+  main { display: grid; grid-template-columns: minmax(340px, 500px) 1fr; gap: 16px; padding: 16px; }
   @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-  section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-  h2 { font-size: 15px; margin: 0 0 8px; }
+  section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
   label.lbl { min-width: 150px; color: var(--muted); }
-  select, input, button, textarea { font: inherit; color: var(--fg); }
-  select, input[type=text], input[type=date], textarea { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; }
-  button { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   textarea { width: 100%; min-height: 420px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; }
   #melding { min-height: 1.4em; color: var(--muted); } #melding.fout { color: var(--fout); }
   .voorbeeld { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
-  .voorbeeld .row { padding: 10px 14px; margin: 0; border-bottom: 1px solid var(--border); }
+  .voorbeeld .row { padding: 10px 16px; margin: 0; border-bottom: 1px solid var(--border); }
   iframe { border: 0; width: 100%; flex: 1; min-height: 80vh; background: #e9ecef; }
-  small.hint { color: var(--muted); display: block; }
+  small.hint, span.hint { color: var(--muted); } small.hint { display: block; }
   details summary { cursor: pointer; color: var(--muted); }
   code { font-size: 12px; }
+  input.breed { flex: 1 1 180px; min-width: 0; }
 </style>
+<script src="../update/pagina.js"></script>
 </head>
 <body>
 <header><h1>Voortgangsrapporten: profielen</h1><p>Normen, perioden, categorieën en weergave per opleiding. Rechts zie je het resultaat met een verzonnen voorbeeldstudent.</p></header>
@@ -46,6 +40,21 @@
       <button id="herstel">Standaard terugzetten</button>
     </div>
 
+    <h2 style="margin-top:14px">Gedeeld met het team</h2>
+    <small class="hint">Zet een geëxporteerd profiel (.json) en een Excel-bestand met de aanwezigheid op OneDrive of SharePoint, deel ze en plak hier de links. Iedereen in het team die dezelfde links invult, werkt met dezelfde normen en cijfers. Er wordt alleen gelezen; er gaat niets uit Simulise naar Microsoft.</small>
+    <div class="row"><label class="lbl" for="bronProfiel">Toetsplan (link)</label><input type="text" id="bronProfiel" class="breed" placeholder="https://…sharepoint.com/…" spellcheck="false"> <button id="bronProfielHaal">Ophalen</button></div>
+    <div class="row"><label class="lbl" for="bronAanwezig">Aanwezigheid (link)</label><input type="text" id="bronAanwezig" class="breed" placeholder="https://…sharepoint.com/…" spellcheck="false"> <button id="bronAanwezigTest">Testen</button></div>
+    <div class="row"><button id="bronToestemming">Toestemming geven</button> <span id="bronMelding" class="hint"></span></div>
+    <details><summary>Hoe ziet het Excel-bestand met aanwezigheid eruit?</summary>
+      <p>Eén rij per student, met bovenaan een rij met koppen. Herkend worden: <code>Naam</code> (of <code>Voornaam</code>, <code>Tussenvoegsel</code>, <code>Achternaam</code>), <code>Klas</code>, <code>Aanwezig</code> (percentage) of <code>Afwezig</code> (percentage), <code>Ongeoorloofd</code>, <code>Geoorloofd</code>, <code>Te laat</code> (aantallen) en <code>Opmerking</code>. Volgorde en hoofdletters maken niet uit; andere kolommen worden overgeslagen. Heet een kolom anders (bijvoorbeeld in een export uit Osiris), zet dan in het profiel <code>"aanwezigheid": { "kolommen": { "aanwezig": "Presentie %" } }</code>.</p>
+      <p>De aanwezigheid wordt bij elk rapport opnieuw gelezen en nergens bewaard. Studenten worden gekoppeld op naam (en op klas bij gelijke namen).</p>
+    </details>
+
+    <h2 style="margin-top:14px">Vergaderlijst</h2>
+    <div class="row"><label class="lbl" for="grens">Aanwezigheid: grens</label><input type="number" id="grens" min="0" max="100" step="1" style="width:70px"> % <small class="hint">Onder deze grens is een student een bespreekgeval. Leeg = niet meetellen.</small></div>
+    <div class="row"><label class="lbl" for="netAan">Precies op de norm</label><input type="checkbox" id="netAan"> <small class="hint">Wie de norm maar net haalt, komt op de lijst als bespreekgeval.</small></div>
+    <div class="row"><label class="lbl" for="onbeoordeeld">Nog niet beoordeeld</label><input type="checkbox" id="onbeoordeeld"> <small class="hint">Op koers, maar een leerlijn die meetelt heeft nog geen beoordeling.</small></div>
+
     <h2 style="margin-top:14px">Weergave</h2>
     <div class="row"><label class="lbl" for="nadruk">Doelstap uitvergroten</label><input type="checkbox" id="nadruk"> <small class="hint">De ring van de stap waar de student deze periode naartoe werkt, wordt breder en gekleurd.</small></div>
     <div class="row"><label class="lbl" for="factor">Hoeveel groter</label><input type="range" id="factor" min="1" max="3" step="0.1"> <span id="factorWaarde"></span></div>
@@ -56,6 +65,7 @@
     <details><summary>Hoe is een profiel opgebouwd?</summary>
       <p><code>opleidingen</code>: welke diagrammen in het rapport komen. <code>herken</code> zoekt op de naam van de opleiding in Simulise; <code>rol</code> koppelt het diagram aan perioden en normen (bijv. <code>beroeps</code>, <code>bava</code>). <code>categorieen</code> groepeert leerlijnen, zoals Nederlands, Rekenen, Engels en Burgerschap; <code>kernvakken</code> telt mee in de samenvatting.</p>
       <p><code>perioden</code>: per periode <code>van</code> en <code>tot</code> (JJJJ-MM-DD), het <code>moment</code>, of er een besluit valt (<code>beslis</code>), de <code>norm</code> als tekst, de <code>doel</code>stap per rol en <code>regels</code> om te bepalen of iemand op koers is.</p>
+      <p><code>aanwezigheid</code>: <code>{ "grens": 80 }</code> (procent aanwezig) en zo nodig <code>kolommen</code>. <code>vergadering</code>: <code>{ "netAan": true, "onbeoordeeld": true }</code> bepaalt wie een bespreekgeval is.</p>
       <p>Regels: <code>{ "rol": "beroeps", "stap": 1, "minAantal": 4, "verplicht": [1, 2, 3] }</code> of <code>{ "rol": "bava", "soort": "categorieen", "minAantal": 3, "perCategorie": { "minLeerlijnen": 1, "stap": 1 } }</code>.</p>
     </details>
     <textarea id="json" spellcheck="false" aria-label="Profiel als JSON"></textarea>
@@ -64,13 +74,15 @@
 
   <section class="voorbeeld">
     <div class="row"><b>Voorbeeld</b>
-      <label for="soort">soort</label> <select id="soort"><option value="student">Voortgangsrapport</option><option value="gesprek">Gespreksformulier</option><option value="groep">Groepsoverzicht</option></select>
+      <label for="soort">soort</label> <select id="soort"><option value="student">Voortgangsrapport</option><option value="gesprek">Gespreksformulier</option><option value="groep">Groepsoverzicht</option><option value="vergader">Vergaderlijst</option></select>
       <label for="peildatum">peildatum</label> <input type="date" id="peildatum">
       <small class="hint">Kies een datum in een latere periode om de vergelijking te zien. In het echte rapport kies je dit in de werkbalk bovenin.</small></div>
     <iframe id="vb" title="Voorbeeld van het rapport"></iframe>
   </section>
 </main>
 <script src="standaard.js"></script>
+<script src="xlsx.js"></script>
+<script src="bron.js"></script>
 <script src="render.js"></script>
 <script src="profielen.js"></script>
 </body>

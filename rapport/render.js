@@ -54,6 +54,36 @@
     return ll.historie.filter((h) => h.datum && h.datum <= datum).reduce((m, h) => Math.max(m, h.stap), 0);
   }
 
+  /* ---------- Signaal voor de vergaderlijst ----------
+   * niveau 'onder' (voldoet niet aan de norm), 'bespreek' (bespreekgeval), 'ok' of 'geen' (geen norm), met de redenen.
+   * Bespreekgeval: precies op de norm, een leerlijn die meetelt is nog niet beoordeeld, of de aanwezigheid ligt onder de
+   * grens. In te stellen in het profiel: vergadering { netAan, onbeoordeeld } en aanwezigheid { grens } (procent aanwezig). */
+  const NIVEAUS = { onder: 'Onder de norm', bespreek: 'Bespreken', ok: 'Op koers', geen: 'Geen norm' };
+  function signaal(profiel, toets, opleidingen, uitslagen, opKoers, aanwezig) {
+    const inst = { netAan: true, onbeoordeeld: true, ...(profiel.vergadering || {}) };
+    const grens = profiel.aanwezigheid?.grens === null ? null : Number(profiel.aanwezigheid?.grens ?? 80);
+    const redenen = [];
+    let niveau = opKoers == null ? 'geen' : opKoers ? 'ok' : 'onder';
+    if (opKoers === false) redenen.push(...uitslagen.filter((u) => !u.ok).map((u) => u.tekst));
+    else if (opKoers) {
+      if (inst.netAan && uitslagen.some((u) => u.marge === 0 && u.krap)) redenen.push('precies op de norm');
+      if (inst.onbeoordeeld) {
+        const rollen = new Set((toets?.regels || []).filter((r) => r.telt !== false).map((r) => r.rol));
+        const leeg = opleidingen.filter((o) => rollen.has(o.rol) && !o.cats).flatMap((o) => o.lijnen.filter((l) => l.soort === 'leeg').map((l) => kaal(l.naam)));
+        if (leeg.length) redenen.push(`nog niet beoordeeld: ${lijst(leeg)}`);
+      }
+    }
+    if (aanwezig?.pct != null && grens != null && aanwezig.pct < grens) redenen.push(`aanwezigheid ${String(aanwezig.pct).replace('.', ',')}% (grens ${grens}%)`);
+    if (niveau !== 'onder' && redenen.length) niveau = 'bespreek';
+    return { niveau, tekst: NIVEAUS[niveau], redenen };
+  }
+  /* Per opleiding kort hoe het staat: "4/5" (leerlijnen op de doelstap, of vakken met een behaalde stap). */
+  function stand(o) {
+    if (o.cats) { const a = o.cats.filter((c) => c.aantal && c.actief); return { n: a.filter((c) => c.behaald > 0).length, van: a.length, wat: 'vakken met een behaalde stap' }; }
+    return { n: o.lijnen.filter((l) => l.stap >= o.doel).length, van: o.lijnen.length, wat: `leerlijnen op stap ${o.doel}` };
+  }
+  const procent = (x) => (x == null ? '' : `${String(x).replace('.', ',')}%`);
+
   /* ---------- Berekenen ---------- */
   function bereken(g, profiel, opties = {}) {
     const datum = opties.peildatum || g.peildatum;
@@ -111,12 +141,12 @@
       if (r.soort === 'categorieen') {
         const pc = r.perCategorie || { minLeerlijnen: 1, stap: 1 };
         const goed = (o.cats || []).filter((c) => o.lijnen.filter((l) => l.cat === c.naam && l.stap >= (pc.stap || 1)).length >= (pc.minLeerlijnen || 1));
-        return { ok: goed.length >= r.minAantal, rol: r.rol, tekst: `${goed.length} van de ${(o.cats || []).length} basisvaardigheden voldoende` };
+        return { ok: goed.length >= r.minAantal, rol: r.rol, marge: goed.length - r.minAantal, krap: r.minAantal < (o.cats || []).length, tekst: `${goed.length} van de ${(o.cats || []).length} basisvaardigheden voldoende` };
       }
       const op = o.lijnen.filter((l) => l.stap >= r.stap);
       const mist = (r.verplicht || []).filter((n) => !op.some((l) => l.nr === n));
       return {
-        ok: op.length >= r.minAantal && !mist.length, rol: r.rol,
+        ok: op.length >= r.minAantal && !mist.length, rol: r.rol, marge: op.length - r.minAantal, krap: r.minAantal < o.lijnen.length,
         tekst: `${op.length} van de ${o.lijnen.length} ${o.conf.titel?.toLowerCase() || 'leerlijnen'} op stap ${r.stap}`
           + ((r.verplicht || []).length ? (mist.length ? `, maar leerlijn ${lijst(mist)} nog niet` : `, waaronder leerlijn ${lijst(r.verplicht)}`) : ''),
       };
@@ -140,7 +170,8 @@
       if (leeg.length) zinnen.push(`Bij ${lijst(leeg)} is nog geen beoordeling gedaan.`);
     }
     const aandacht = opleidingen.reduce((n, o) => n + o.lijnen.filter((l) => l.soort === 'niet' || (!o.cats && l.soort === 'leeg')).length, 0);
-    return { g, profiel, opties, datum, historisch, periode, vorige, toets, opleidingen, uitslagen, opKoers, aandacht, advies: zinnen.join(' ') };
+    return { g, profiel, opties, datum, historisch, periode, vorige, toets, opleidingen, uitslagen, opKoers, aandacht, advies: zinnen.join(' '),
+      aanwezig: g.aanwezig || null, signaal: signaal(profiel, toets, opleidingen, uitslagen, opKoers, g.aanwezig) };
   }
   const lijst = (a) => (a.length <= 1 ? a.join('') : `${a.slice(0, -1).join(', ')} en ${a[a.length - 1]}`);
   const woord = (c) => c.woord || c.naam.replace(/^./, (x) => x.toLowerCase());
@@ -328,8 +359,11 @@
     studenten.forEach((g, i) => { if (g.__idx == null) g.__idx = i; });
     let ms = studenten.map((g) => bereken(g, profiel, opties));
     if (opties.filter === 'nietOpKoers') ms = ms.filter((m) => m.opKoers === false);
+    if (opties.filter === 'signaal') ms = ms.filter((m) => m.signaal.niveau === 'onder' || m.signaal.niveau === 'bespreek');
     const naam = (m) => m.g.student.naam || '';
-    if (opties.sorteer === 'aandacht') ms.sort((a, b) => (Number(a.opKoers !== false) - Number(b.opKoers !== false)) || (b.aandacht - a.aandacht) || naam(a).localeCompare(naam(b), 'nl'));
+    const rang = (m) => ['onder', 'bespreek', 'ok', 'geen'].indexOf(m.signaal.niveau);
+    if (opties.soort === 'vergader') ms.sort((a, b) => (rang(a) - rang(b)) || naam(a).localeCompare(naam(b), 'nl'));
+    else if (opties.sorteer === 'aandacht') ms.sort((a, b) => (Number(a.opKoers !== false) - Number(b.opKoers !== false)) || (b.aandacht - a.aandacht) || naam(a).localeCompare(naam(b), 'nl'));
     else ms.sort((a, b) => naam(a).localeCompare(naam(b), 'nl'));
     return ms;
   }
@@ -426,8 +460,34 @@
     }).join('');
   }
 
+  /* ---------- Vergaderlijst (liggend): een rij per student, bespreekgevallen bovenaan ---------- */
+  function vergaderRollen(ms, profiel) {
+    const rollen = [];
+    for (const m of ms) for (const o of getoond(m)) if (!rollen.some((r) => r.rol === o.rol)) rollen.push({ rol: o.rol, titel: o.conf.titel || o.naam });
+    const volg = (r) => { const i = (profiel.opleidingen || []).findIndex((x) => x.rol === r.rol); return i < 0 ? 99 : i; };
+    return rollen.sort((a, b) => volg(a) - volg(b));
+  }
+  function vergaderTabel(ms, profiel) {
+    if (!ms.length) return '<section class="pagina liggend"><p>Geen studenten die aan het filter voldoen.</p></section>';
+    const rollen = vergaderRollen(ms, profiel), e = ms[0];
+    const metAanw = ms.some((m) => m.aanwezig);
+    const groep = [...new Set(ms.map((m) => m.g.student.groep).filter(Boolean))].join(', ');
+    const tel = (n) => ms.filter((m) => m.signaal.niveau === n).length;
+    const rij = (m) => `<tr class="sig-${m.signaal.niveau}"><td class="studnaam">${esc(m.g.student.naam)}</td><td class="sig">${esc(m.signaal.tekst)}</td>
+      ${rollen.map((r) => { const o = m.opleidingen.find((x) => x.rol === r.rol); if (!o) return '<td>–</td>'; const st = stand(o); return `<td>${st.n}/${st.van}</td>`; }).join('')}
+      ${metAanw ? `<td>${m.aanwezig?.pct != null ? procent(m.aanwezig.pct) : '–'}</td><td>${m.aanwezig?.ongeoorloofd ?? '–'}</td><td>${m.aanwezig?.teLaat ?? '–'}</td>` : ''}
+      <td class="waarom">${esc(m.signaal.redenen.join('; '))}${m.aanwezig?.opmerking ? `${m.signaal.redenen.length ? '; ' : ''}${esc(m.aanwezig.opmerking)}` : ''}</td><td class="besluit"></td></tr>`;
+    return `<section class="pagina liggend">${kop(e, 'Vergaderlijst')}
+      <div class="naamblok"><h1>${esc(groep || 'Vergaderlijst')}</h1><p>${e.toets ? `${esc(e.toets.normNaam || `Norm ${e.toets.code}`)}: ${esc(e.toets.norm || '')}` : 'Geen norm voor deze periode.'}</p>
+        <p>Stand op ${langeDatum(e.datum)} · ${tel('onder')} onder de norm · ${tel('bespreek')} bespreken · ${tel('ok')} op koers${tel('geen') ? ` · ${tel('geen')} zonder norm` : ''}</p></div>
+      <table class="overzicht vergader"><thead><tr><th class="studnaam">Student</th><th>Signaal</th>${rollen.map((r) => `<th>${esc(r.titel)}</th>`).join('')}
+        ${metAanw ? '<th>Aanwezig</th><th>Ongeoorl.</th><th>Te laat</th>' : ''}<th class="waarom">Waarom</th><th class="besluit">Besluit of afspraak</th></tr></thead>
+        <tbody>${ms.map(rij).join('')}</tbody></table>${voet(e, 1, 1)}</section>`;
+  }
+
   function paginas(studenten, profiel, opties = {}) {
     const ms = modellen(studenten, profiel, opties);
+    if (opties.soort === 'vergader') return vergaderTabel(ms, profiel);
     if (opties.soort === 'groep') return overzicht(ms, profiel, opties);
     if (opties.soort === 'perioden') return periodenTabel(ms, profiel);
     if (!ms.length) return '<section class="pagina"><p>Geen studenten die aan het filter voldoen.</p></section>';
@@ -453,6 +513,14 @@
       return k.p && k.p.tot < m.datum && Array.isArray(l.historie) ? stapOp(l, k.p.tot) : l.stap;
     };
     const cel = (v) => { const s = String(v ?? ''); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    if (opties.soort === 'vergader') { // de vergaderlijst: signaal, stand per opleiding, aanwezigheid en de redenen
+      const rollen = vergaderRollen(ms, profiel);
+      const kopV = ['Student', 'Groep', 'Peildatum', 'Signaal', ...rollen.map((r) => r.titel), 'Aanwezig %', 'Ongeoorloofd', 'Te laat', 'Waarom', 'Opmerking'];
+      const rijenV = ms.map((m) => [m.g.student.naam, m.g.student.groep, m.datum, m.signaal.tekst,
+        ...rollen.map((r) => { const o = m.opleidingen.find((x) => x.rol === r.rol); if (!o) return ''; const st = stand(o); return `${st.n} van ${st.van}`; }),
+        m.aanwezig?.pct != null ? String(m.aanwezig.pct).replace('.', ',') : '', m.aanwezig?.ongeoorloofd ?? '', m.aanwezig?.teLaat ?? '', m.signaal.redenen.join('; '), m.aanwezig?.opmerking || '']);
+      return [kopV, ...rijenV].map((r) => r.map(cel).join(';')).join('\r\n');
+    }
     const kop = ['Student', 'Groep', 'Peildatum', 'Op koers', ...kolommen.map((k) => (k.p ? `${k.naam} ${k.p.code}` : k.naam))];
     const rijen = ms.map((m) => [m.g.student.naam, m.g.student.groep, m.datum, m.opKoers == null ? '' : m.opKoers ? 'ja' : 'nee',
       ...kolommen.map((k) => waarde(m, k))]);
@@ -517,6 +585,10 @@
     .gesprekvakken { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; } .gesprekvakken > div:nth-child(3), .ondertekening { grid-column: 1 / -1; }
     .vak { border: 1px solid #c4cad1; border-radius: 4px; min-height: 24mm; padding: 6px 8px; white-space: pre-wrap; } .gesprek .kpis { margin: 6px 0; } .gesprek .lijnen td { padding: 3px 4px; }
     .ondertekening { font-size: 10px; color: #3b434d; margin: 6px 0 0; }
+    table.overzicht.vergader { width: 100%; font-size: 11px; } table.overzicht.vergader td, table.overzicht.vergader th { padding: 5px 6px; }
+    table.overzicht.vergader .waarom { text-align: left; width: 34%; } table.overzicht.vergader .besluit { width: 20%; } table.overzicht.vergader .sig { font-weight: 700; white-space: nowrap; }
+    table.overzicht.vergader tr.sig-onder .sig { color: var(--accent-waarde); } table.overzicht.vergader tr.sig-bespreek .sig { color: #b06a00; } table.overzicht.vergader tr.sig-ok .sig { color: #1f9d55; }
+    table.overzicht.vergader tr.sig-onder td.studnaam { box-shadow: inset 3px 0 0 var(--accent-waarde); } table.overzicht.vergader tr.sig-bespreek td.studnaam { box-shadow: inset 3px 0 0 #e0a100; }
     @page liggend { size: A4 landscape; margin: 10mm 12mm; }
     .pagina.liggend { page: liggend; width: 297mm; min-height: 210mm; }
     table.overzicht { border-collapse: collapse; font-size: 10px; margin-top: 6px; width: auto; }
@@ -531,5 +603,5 @@
       .pagina.liggend { height: auto; overflow: visible; } [contenteditable="true"]:hover, [contenteditable="true"]:focus { box-shadow: none; } }
   `;
 
-  globalThis.SDRapport = { bereken, html, shell, paginas, csv, modellen, diagram, periodeIndex, toetsIndex, rolVan, stapOp, esc };
+  globalThis.SDRapport = { bereken, html, shell, paginas, csv, modellen, diagram, periodeIndex, toetsIndex, rolVan, stapOp, esc, stand, procent, NIVEAUS };
 })();

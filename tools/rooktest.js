@@ -115,7 +115,7 @@ ${['success', 'warning', 'danger', 'warning', 'blank'].map((st, i) => (i + 1 ===
     ? `<div class="selected item"><div class="usercard"><img class="avatar" alt="Piet Jansen"></div><div class="bg-backport-${st} user-status"></div></div>`
     : `<a class="item" href="/@student${i + 1}/assignment/00000000-0000-4000-8000-00000000000${i + 1}/review?nr=${i + 1}&group=vg-mr1a"><div class="usercard"><img class="avatar" alt="Sanne de Vries"></div><div class="bg-backport-${st} user-status"></div></a>`)).join('')}
 </div><div class="circle-button" onclick="this.parentElement.classList.toggle('expanded')">uitklappen</div></div><div class="flex-wrapper flex-column flex-grow"><div class="full-width-wrapper"><div class="width-filling-header"><div class="assignment-details"><h1>PS_1.8: Wie ben ik?</h1><div class="footer-details">ingeleverd</div></div></div></div>
-<div class="fluid-container-max-width"><div class="spacing-bottom-30"><h2>Omschrijving</h2><p id="oms">Lange tekst van de opdracht</p></div><div class="spacing-bottom-30"><h2>Ingevulde pagina</h2><p>werk</p></div>
+<div class="fluid-container-max-width"><div class="spacing-bottom-30"><h2>Omschrijving</h2><p id="oms">Lange tekst van de opdracht</p></div><div class="spacing-bottom-30"><h2>Ingevulde pagina</h2><p>werk</p><div class="rounded-content-wrapper">pdf van de pagina</div></div>
 <div><h2>Reflecties</h2><div class="wrapper-reflection">rubric<div class="badges-title-wrapper"><div class="item"><img alt=""><div class="badge-small-screen">Voldaan</div></div></div>
 <div class="reflection-wrapper"><h4>Algemeen</h4><div class="reflection-items"><div class="item"><div><div class="content"><strong class="d-md-none" style="display:none">Voldaan</strong><div>${'Een lange omschrijving van het niveau. '.repeat(12)}</div></div><div class="authors d-none d-md-flex"><a class="avatar"><img alt=""></a></div></div></div></div></div></div></div><div class="spacing-bottom-30"><h2>Feedback</h2><textarea></textarea></div></div>
 <div class="fixed-bottom-bar assignment-status-bar"><button class="ladda-button">Afronden &amp; volgende</button></div></div></div></section></div></div></section></section></section></section>
@@ -130,7 +130,18 @@ const GROEPEN = `<html><head></head><body><aside id="nav"><ul class="nav-main"><
 // Studentenpagina zonder profiel-links (zoals bij Simulise bleek); de studenten staan als kolommen op de opdrachtenpagina.
 const ANALYTICS = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section id="scrollable-page-wrapper"><div><div class="row">
 <div class="col-lg-4 col-sm-12 col-xs-12 m-b-xs col-md-6"><section class="panel panel-link hbox"><div class="panel-link-icon bg-primary"><a class="h3 font-thin" href="#">Leerlijnen</a></div>
-<button class="btn btn-success btn-sm">Nieuwe rapportage</button><div class="panel-footer"><em>Geen opgeslagen rapportages</em></div></section></div></div></div></section></div>${APP_GQL}</body></html>`;
+<button class="btn btn-success btn-sm">Nieuwe rapportage</button><div class="panel-link-body"><p>Overzicht van voortgang over geselecteerde vaardigheden.</p></div><div class="panel-footer"><em>Geen opgeslagen rapportages</em></div></section></div>
+<div class="col-lg-4 col-sm-12 col-xs-12 m-b-xs col-md-6"><section class="panel panel-link hbox"><div class="panel-link-icon bg-primary"><a class="h3 font-thin" href="#">Status opdracht over groepen</a></div>
+<button class="btn btn-success btn-sm">Nieuwe rapportage</button><div class="panel-link-body"><p>Status van één opdracht over alle ontvangers</p></div><div class="panel-footer"><em>2 opgeslagen rapportages</em></div></section></div>
+<div class="col-lg-4 col-sm-12 col-xs-12 m-b-xs col-md-6"><section class="panel panel-link hbox"><div class="panel-link-icon bg-primary"><a class="h3 font-thin" href="#">Nieuwe soort</a></div>
+<button class="btn btn-success btn-sm" onclick="document.documentElement.dataset.testTegel = 'geklikt'">Nieuwe rapportage</button><div class="panel-link-body"><p>Een rapportage die de extensie niet kent</p></div><div class="panel-footer"><em>Geen opgeslagen rapportages</em></div></section></div>
+</div></div></section></div>${APP_GQL}</body></html>`;
+// De keuzes voor een rapportage (de wizard van Simulise).
+const WIZARD = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><header class="header header-md"><p class="header-text"><span><a href="/analytics">Learning Analytics</a></span><span>/<a>Status opdracht over groepen</a></span></p></header>
+<section id="scrollable-page-wrapper"><div class="row"><div class="col-lg-8"><form id="analyticsForm"><div class="m-b-lg"><h2 class="text-center">Learning Analytics</h2><h4 class="text-center"><i class="fa"></i> Status opdracht over groepen</h4></div>
+<div class="panel panel-default"><ul class="list-group"><a class="list-group-item list-group-item-current"><h4><i class="fa"></i> Selecteer opdracht</h4><div class="alert alert-warning"><i class="fa"></i> Deze keuze is verplicht!</div><button class="btn btn-primary btn-sm" type="button">Volgende</button></a>
+<a class="list-group-item"><h4><i class="fa"></i> Selecteer studenten</h4><div><em class="text-muted"><i>Geen keuze gemaakt</i></em></div></a><a class="list-group-item"><h4> Selecteer tijdsbereik</h4></a><a class="list-group-item"><h4> Extra opties</h4><em><i>Geen filters aangezet</i></em></a></ul></div>
+<div class="text-center m-t-lg"><div><button class="btn btn-success btn-rounded btn-lg disabled" type="button">Uitvoeren</button><p class="m-t-sm">Nog niet alle vereisten velden hebben een waarde!</p></div></div></form></div></div></section></div>${APP_GQL}</body></html>`;
 const STUDENTEN = `<html><head></head><body><div id="content"><div class="student-lijst" data-vue="1"></div></div></body></html>`;
 // Leerlijndiagram zoals Simulise het geeft (verzonnen student).
 const FASE = (phase, behaald, score, datum) => ({ id: `f${phase}`, phase, weights: [{ level: -1, title: 'Niet beoordeeld' }, { level: 0, title: 'Nog niet aangetoond' }, { level: 1, title: 'Op koers' }, { level: 2, title: 'Boven verwachting' }],
@@ -146,15 +157,40 @@ const DIAGRAM = { 'e-beroeps': { id: 'd', phaseCount: 4, aspects: [
 const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
 <div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/groups"><span>Groepen</span></a></span><span class="text-muted">/</span><span>MR1A</span></p></div>
 <ul class="nav nav-tabs"><li><a href="/groups/school/${UUID}/community"><span>Community</span></a></li></ul></header>
-<table class="table table-bordered rotated-header"><thead><tr><th></th><th class="text-center rotated"><div class="rotated-header-container"><a href="/@studenta/assignments"><div class="rotated-header-content">Anna Test</div></a></div></th>
-<th class="text-center rotated"><div class="rotated-header-container"><a href="/@studentb/assignments"><div class="rotated-header-content">Bram Test</div></a></div></th></tr></thead></table></section></div></body></html>`;
+<ul class="nav-user"><li><a class="dropdown-toggle">Docent Test</a></li></ul>
+<section id="content-wrapper"><div class="row m-b"><select id="group-assignments-filter"></select></div><div class="row"><div class="panel"><section class="panel-body">
+<table class="table table-group-assignments-overview table-bordered rotated-header"><thead><tr><th class="sticky left"></th><th class="text-center rotated"><div class="rotated-header-container"><a href="/@studenta/assignments"><div class="rotated-header-content">Anna Test</div></a></div></th>
+<th class="text-center rotated"><div class="rotated-header-container"><a href="/@studentb/assignments"><div class="rotated-header-content">Bram Test</div></a></div></th>
+</tr></thead>
+<tbody><tr class="active"><td class="divider-title sticky left"><i class="fa"></i>Opdrachten<br><small>toelichting</small></td><td></td><td></td></tr>
+${[['ENG_1.5: True crime', [['HANDED_IN', 'Te beoordelen'], ['HANDED_IN', 'Nog niet beoordeeld']]], ['PS_1.8: Wie ben ik?', [['BEING_PROCESSED', 'Wordt beoordeeld door Docent Test'], ['BEING_PROCESSED', 'Wordt beoordeeld door Collega Ander']]],
+    ['LOB - werkveld verkennen', [['FINISHED', 'Afgerond en beoordeeld'], ['NOT_STARTED', 'Nog niet begonnen']]], ['BUR - casus', [['DEADLINE_PAST', 'Deadline verlopen'], ['IN_PROGRESS', 'Bezig']]]]
+    .map(([titel, cellen], r) => `<tr><td class="sticky left bg-white"><div class="position-relative"><a class="divider-plan" href="#">${titel}</a><small class="reviewers" style="margin-top: 9px">Beoordelaars: <strong>Collega Ander</strong>
+<a href="/school/assignment/x/connection/y/edit"><small class="text-muted">Deadline: 25-11-2026 23:59</small></a><div class="btn-group dropdown-btn"><button class="btn">v</button></div></small></div></td>
+${cellen.map(([st, tip], k) => `<td class="text-center full-column-size" data-status="${st}"><a href="/@student${'ab'[k]}/assignment/00000000-0000-4000-8000-0000000000${r}${k}/view" data-title="${tip}" data-toggle="tooltip"><i class="fa fa-fw"></i></a></td>`).join('')}</tr>`).join('')}
+</tbody></table></section></div></div></section></section></div></body></html>`;
 
 
 // Analytics, Opleiding per groep (resultaat): de app vraagt getResults voor één opleiding, 25 rijen per keer.
+// Stippen op de resultaatpagina zoals Simulise ze kleurt: wit = nog niet beoordeeld, grijs = nog niet aangetoond, kleur = behaald (verzonnen studenten).
+const R_BLAUW = 'rgb(0, 59, 195)', R_ORANJE = 'rgb(249, 115, 22)', R_GRIJS = 'rgb(212, 212, 212)', R_WIT = 'rgb(255, 255, 255)';
+const RES_RIJ = (naam, stippen) => `<tr><td><a class="thumb-sm avatar m-r-sm" href="#"><img alt="" width="38" height="38"></a><a href="#"><strong>${naam}</strong></a></td>${stippen.map((k, i) => `<td class="text-center${i % 2 ? '' : ' aspect-start'}"><a class="score-dot" href="#" style="background-color: ${k};"></a></td>`).join('')}</tr>`;
+// De bewaarde rapportages van één soort (leeg, zoals gezien).
+const BEWAARD = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><header class="header header-md"><p class="header-text"><span><a href="/analytics">Learning Analytics</a></span><span>/<span>Status opdracht over groepen</span></span></p></header>
+<section id="scrollable-page-wrapper"><div class="row"><div class="col-lg-4 col-sm-12 col-xs-12 m-b-xs col-md-12"><section class="panel panel-link hbox"><div class="panel-link-icon bg-primary"><a href="#" class="h3 font-thin">Status opdracht over groepen</a></div>
+<button type="button" class="btn btn-success btn-sm">Nieuwe rapportage</button><div class="panel-link-body"><p>Status van één opdracht</p></div></section></div>
+<div class="col-lg-8 col-md-12 col-sm-12 col-xs-12"><div class="panel panel-default"><div class="panel-body text-center"><h4 class="m-b-none">Geen opgeslagen rapportages</h4></div></div></div></div></section></div>${APP_GQL}</body></html>`;
 const RESULTAAT = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><div class="vbox"><div class="vbox">
 <header class="header header-md"><div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/analytics">Analytics</a></span><span>/</span><span><a href="/analytics/educationbygroups/reports">Opleiding per groep</a></span></p>
 <span class="header-title-divider">·</span><div class="btn-group"><a class="btn btn-info" href="#"><i class="fas fa-filter"></i><span>Filters</span></a></div><a class="btn btn-info" href="#" data-original-title="Download"><i class="fa fa-fw fa-download"></i></a></div></header>
-<section id="scrollable-page-wrapper"><div class="row"><div class="col-lg-12"><ul class="list-inline m-l-none"><li class="list-group-item"><div><i class="fa fa-fw fa-school"></i><span><span>BAVA 4</span></span></div></li><li class="list-group-item"><div><i class="fa fa-users"></i><span>MEP1A</span></div></li></ul></div></div></section></div></div></div>
+<section id="scrollable-page-wrapper"><div class="row"><div class="col-lg-12"><ul class="list-inline m-l-none"><li class="list-group-item"><div><i class="fa fa-fw fa-school"></i><span><span>BAVA 4</span></span></div></li><li class="list-group-item"><div><i class="fa fa-fw fa-user-friends"></i><span><span>MEP1A</span></span></div></li>
+<li class="list-group-item"><div class="btn-group" style="height: 16px; margin-top: -8px;"><button type="button" class="btn btn-xs btn-white active">Tabel weergave</button><button type="button" class="btn btn-xs btn-white">Diagram weergave</button></div></li><li class="list-group-item hidden"></li></ul></div></div>
+<div><div style="overflow: auto;"><table class="table table-v-a-m table-index"><thead><tr><th rowspan="2">Naam</th><th colspan="2" class="text-center">1. Adviseren</th><th colspan="2" class="text-center">2. Voorbereiden</th></tr>
+<tr><th width="40">1</th><th width="40">2</th><th width="40">1</th><th width="40">2</th></tr></thead><tbody>${RES_RIJ('Student Een', [R_BLAUW, R_WIT, R_ORANJE, R_WIT])}${RES_RIJ('Student Twee', [R_BLAUW, R_WIT, R_GRIJS, R_WIT])}${RES_RIJ('Student Drie', [R_GRIJS, R_WIT, R_WIT, R_WIT])}</tbody></table></div>
+<div class="panel-footer table-footer"><p class="text-xs">1-3 van de 5 record(s)</p></div>
+<div class="text-center p-t p-b"><button class="btn btn-default" onclick="document.querySelector('table.table-index tbody').insertAdjacentHTML('beforeend', window.MEER); document.querySelector('.table-footer p').textContent = '1-5 van de 5 record(s)'; this.parentElement.remove();">Laad meer...</button></div></div>
+</section></div></div></div>
+<script>window.MEER = ${JSON.stringify(RES_RIJ('Student Vier', [R_BLAUW, R_BLAUW, R_ORANJE, R_WIT]) + RES_RIJ('Student Vijf', [R_WIT, R_WIT, R_ORANJE, R_WIT]))};</script>
 <script>fetch('https://api.simulise.com/graphql', { method: 'POST', headers: { 'content-type': 'text/plain', 'x-test': 'app' }, body: JSON.stringify({ operationName: 'getResults',
   query: 'query getResults($reportId: ID, $query: AnalyticsQueryInput) { analyticsQuery(input: {reportId: $reportId, query: $query}) { table { rows { header { value { ... on User { id name } } } columns { ... on EducationByGroupsTableRowCell { aspect { id name skill { id color } } phases { phase score reviewsAchieved reviewsRequired weights { level title } reviews { id score title } } } } } total hasMore } } }',
   variables: { reportId: null, query: { type: 'educationbygroups', pickers: [{ key: 'EDUCATION', values: ['ed-bava'] }, { key: 'ASPECTS', values: ['x'] }, { key: 'USERS', values: ['group:g'] }, { key: 'TIMERANGE', values: ['2026-08-01', '2027-08-01'] }], options: [], page: 1, orderBy: { field: 'LASTNAME', direction: 'ASC' } } } }) });</script></body></html>`;
@@ -164,16 +200,37 @@ const RES_STUDENTEN = Array.from({ length: 30 }, (_, i) => ({ id: `u-res${i}`, n
 const ext = path.resolve(process.argv[2] || path.join(__dirname, '..'));
 const fouten = [];
 // Met SD_BEELD=<map> bewaart de test schermafbeeldingen van de eigen schermen (nagebootste gegevens).
-const beeld = async (pagina, naam) => {
+const beeld = async (pagina, naam, wat = '#sim-docent-vandaag .binnen') => {
   if (!process.env.SD_BEELD) return;
   const maat = pagina.viewportSize();
   await pagina.setViewportSize({ width: 1280, height: 2400 }); // de nagebootste pagina heeft geen opmaak: alleen het eigen scherm vastleggen
-  await pagina.locator('#sim-docent-vandaag .binnen').screenshot({ path: path.join(process.env.SD_BEELD, `${naam}.png`) });
+  await pagina.locator(wat).screenshot({ path: path.join(process.env.SD_BEELD, `${naam}.png`) });
   await pagina.setViewportSize(maat);
 };
 const check = (ok, tekst) => { console.log(`${ok ? 'ok  ' : 'FOUT'} ${tekst}`); if (!ok) fouten.push(tekst); };
 
 // Zip bouwen zoals .github/workflows/release.yml dat doet (map simulise-docent/ bovenin).
+/* Een klein Excel-bestand (.xlsx, gecomprimeerd) met aanwezigheid van de verzonnen studenten: gedeelde teksten,
+ * een tekst in de cel zelf, percentages als breuk (zoals Excel ze bewaart) en een titelregel boven de koppen. */
+function bouwXlsx() {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sd-xlsx-'));
+  const schrijf = (naam, inhoud) => { fs.mkdirSync(path.dirname(path.join(tmp, naam)), { recursive: true }); fs.writeFileSync(path.join(tmp, naam), inhoud); };
+  const teksten = ['Aanwezigheid periode 2', 'Naam', 'Klas', 'Aanwezig (%)', 'Ongeoorloofd', 'Te laat', 'Opmerking', 'Test, Anna', 'MEP1A', 'Bram Test', 'ziek geweest'];
+  const s = (kol, rij, i) => `<c r="${kol}${rij}" t="s"><v>${i}</v></c>`, n = (kol, rij, v) => `<c r="${kol}${rij}"><v>${v}</v></c>`;
+  schrijf('[Content_Types].xml', '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>');
+  schrijf('xl/workbook.xml', '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Blad1" sheetId="1" r:id="rId7"/></sheets></workbook>');
+  schrijf('xl/_rels/workbook.xml.rels', '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId7" Target="worksheets/blad.xml"/></Relationships>');
+  schrijf('xl/sharedStrings.xml', `<?xml version="1.0"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${teksten.map((t) => `<si><t>${t}</t></si>`).join('')}</sst>`);
+  schrijf('xl/worksheets/blad.xml', `<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>
+    <row r="1">${s('A', 1, 0)}</row>
+    <row r="3">${s('A', 3, 1)}${s('B', 3, 2)}${s('C', 3, 3)}${s('D', 3, 4)}${s('E', 3, 5)}${s('G', 3, 6)}</row>
+    <row r="4">${s('A', 4, 7)}${s('B', 4, 8)}${n('C', 4, 0.72)}${n('D', 4, 6)}${n('E', 4, 4)}${s('G', 4, 10)}</row>
+    <row r="5">${s('A', 5, 9)}${s('B', 5, 8)}${n('C', 5, 0.95)}${n('D', 5, 0)}${n('E', 5, 1)}</row>
+    <row r="6"><c r="A6" t="inlineStr"><is><t>Iemand Anders</t></is></c>${n('C', 6, 0.5)}</row></sheetData></worksheet>`);
+  execFileSync('zip', ['-qr', 'aanwezig.xlsx', '.'], { cwd: tmp });
+  return fs.readFileSync(path.join(tmp, 'aanwezig.xlsx'));
+}
+
 function bouwZip() {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sd-zip-'));
   const doel = path.join(tmp, 'simulise-docent');
@@ -198,11 +255,17 @@ function bouwZip() {
     if (/^\/@[^/]+\/assignment\/[^/]+\/review/.test(p)) return r.fulfill({ contentType: 'text/html', body: REVIEW(Number(u.searchParams.get('nr')) || 2) });
     if (p.startsWith('/@')) return r.fulfill({ contentType: 'text/html', body: PROFIEL });
     if (p === '/analytics') return r.fulfill({ contentType: 'text/html', body: ANALYTICS });
+    if (/^\/analytics\/[a-z]+$/.test(p)) return r.fulfill({ contentType: 'text/html', body: WIZARD });
+    if (/^\/analytics\/[a-z]+\/reports$/.test(p)) return r.fulfill({ contentType: 'text/html', body: BEWAARD });
     if (p === '/analytics/educationbygroups/result') return r.fulfill({ contentType: 'text/html', body: RESULTAAT });
     if (p === '/api/autocomplete/analytics/educations') return r.fulfill({ contentType: 'application/json', body: JSON.stringify([
       { id: 'ed-bava', text: 'BAVA 4', value: 'ed-bava', prefix: '' }, { id: 'ed-beroeps', text: 'Mediaproducer / Music Industry Professional', value: 'ed-beroeps', prefix: '' },
       { id: 'ed-oud', text: 'Mediaproducer (Cohort 2024)', value: 'ed-oud', prefix: '' }, { id: 'ed-sd', text: 'Software Developer', value: 'ed-sd', prefix: '' }]) });
     if (p === '/groups') return r.fulfill({ contentType: 'text/html', body: GROEPEN });
+    if (p === '/school/assignments') return r.fulfill({ contentType: 'text/html', body: `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><header class="header header-md"><p class="header-text">Opdrachten</p><a href="/school/assignment/create" class="btn btn-xs btn-success">Nieuwe opdracht</a></header><section id="scrollable-page-wrapper"><div class="lijst-van-simulise"><table class="table"><tbody><tr><td>Bestaande opdracht</td></tr></tbody></table></div></section></div>${APP_GQL}</body></html>` });
+    if (p === '/api/autocomplete/teachers' || p === '/api/autocomplete/assignmentauthors') return r.fulfill({ contentType: 'application/json', body: JSON.stringify([{ id: 'user:77', text: 'Collega Test', value: '77', search: 'Collega Test' }, { id: 'user:4242', text: 'Docent Test', value: '4242' }]) });
+    if (p === '/api/autocomplete/assignment/plan/connects') return r.fulfill({ contentType: 'application/json', body: JSON.stringify([['MEP1A', 'gr-mep1a'], ['MEP2A', 'gr-mep2a'], ['MIP1B', 'gr-mip1b'], ['MR1A', 'gr-mr1a']]
+      .filter(([n]) => n.toLowerCase().includes((u.searchParams.get('query') || '').toLowerCase())).map(([n, id]) => ({ text: `Groep: ${n}`, search: n, value: `group:${id}`, caption: 'Mediacollege Amsterdam / 2026-2027' })).concat([{ text: 'Iets anders', search: 'x', value: 'user:1' }])) });
     if (/^\/groups\/school\/[^/]+\/students$/.test(p)) return r.fulfill({ contentType: 'text/html', body: STUDENTEN });
     if (p === '/notifications') return r.fulfill({ contentType: 'text/html', body: MELDINGENPAGINA(parseInt(u.searchParams.get('page'), 10) || 1) });
     if (p === '/api/vroeg') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ rows: [{ name: 'Piet Jansen' }], per_page: 25, total: 34 }) });
@@ -230,10 +293,44 @@ function bouwZip() {
   const vandaagVerzoeken = [];
   const klasVerzoeken = [];
   const vandaagAfgerond = { n: 40 };
+  const opdrachtVerzoeken = [], mediaVerzoeken = [];
+  await ctx.route('https://api.simulise.com/preview/**', (r) => { const id = new URL(r.request().url()).pathname.split('/').pop(); return r.fulfill({ contentType: 'text/html', headers: { 'access-control-allow-origin': '*' },
+    body: id === 'f-video' ? '<div class="post-content"><video controls poster="https://usercontent.on.simulise.cloud/portfolio/f-video/preview.jpg"><source src="https://usercontent.on.simulise.cloud/portfolio/f-video/upload.mp4" type="video/mp4"></video></div>' : id === 'f-audio' ? '<audio controls src="https://usercontent.on.simulise.cloud/portfolio/f-audio/upload.mp3"></audio>' : '<p>voorvertoning</p>' }); });
   await ctx.route('https://api.simulise.com/graphql', (r) => {
     const verzoek = JSON.parse(r.request().postData() || '{}');
     const antw = (body) => r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
     if (verzoek.operationName === 'appStart') return antw({ data: { viewer: { id: 'v' } } });
+    // Media bij het nakijken (modules/media.js): de blokken van de ingeleverde pagina. Zoals bij Simulise: zonder @ of met een kale vraag een serverfout.
+    if (verzoek.operationName === 'sdNakijkMedia') {
+      mediaVerzoeken.push(verzoek.variables.user);
+      if (!/^@/.test(verzoek.variables.user) || !/canView preview/.test(verzoek.query)) return antw({ errors: [{ message: 'Internal server error' }], data: { assignmentAssigned: null } });
+      const bestand = (id, type, extension, title) => ({ id, type, icon: 'fa-file', size: '2 MB', title, thumbnail: null, extension, downloadUrl: `https://usercontent.on.simulise.cloud/portfolio/${id}/origineel.${extension}?dl=1`, renderedPreviewUrl: `https://api.simulise.com/preview/${id}?signature=x` });
+      return antw({ data: { assignmentAssigned: { id: 'a', delivered: [{ id: 'd', canView: true, preview: 'x', deliverable: { id: 'dv' }, item: { id: 'p', title: 'Pagina', blocks: [
+        { id: 'b1', type: 'SIMULISE__TEXT', title: 'Tekst', data: { __typename: 'ContentBlockSimuliseTextData' } },
+        { id: 'b2', type: 'SIMULISE__PICKER', title: 'Mijn pitch', data: { __typename: 'ContentBlockSimulisePickerData', choice: 'SIMULISE__FILE', nestedData: { __typename: 'ContentBlockSimuliseFileData', id: 'f1', file: bestand('f-video', 'VIDEO', 'mp4', 'opname <1>') } } },
+        { id: 'b3', type: 'SIMULISE__FILE', title: '', data: { __typename: 'ContentBlockSimuliseFileData', id: 'f2', file: bestand('f-audio', 'AUDIO', 'mp3', 'podcast') } },
+        { id: 'b4', type: 'SIMULISE__FILE', title: 'Verslag', data: { __typename: 'ContentBlockSimuliseFileData', id: 'f3', file: bestand('f-doc', 'DOCUMENT', 'docx', 'verslag') } },
+        { id: 'b5', type: 'SIMULISE__LINK', title: 'Bron', data: { __typename: 'ContentBlockSimuliseLinkData', url: 'https://voorbeeld.nl/bron', title: 'Bron' } },
+        { id: 'b6', type: 'SIMULISE__LINK', title: 'Fout', data: { __typename: 'ContentBlockSimuliseLinkData', url: 'javascript:alert(1)', title: 'x' } }] } }] } } });
+    }
+    // Snelle opdracht (modules/opdracht.js): wat het formulier opvraagt en de vijf opslagstappen. De stap Klassen weigert de eerste keer.
+    if (verzoek.operationName === 'getContextForAssignmentEditor') return antw({ data: { viewer: { id: 'v', autocompletion: { id: 'user:4242', text: 'Docent Test', value: '4242' } }, topics: [
+      { id: 't-opl', name: 'Opleidingen', type: 'SECTIONS', required: true, topics: [], canCreateLabelsInline: false, defaultValueForForms: [{ id: 'l-mep', autocompletion: { text: 'Mediaproducer', value: 'l-mep' } }, { id: 'l-mip', autocompletion: { text: 'Music Industry Professional', value: 'l-mip' } }] },
+      { id: 't-mod', name: 'Modules', type: 'CUSTOM', required: false, topics: [], canCreateLabelsInline: false, defaultValueForForms: [] }] } });
+    if (verzoek.operationName === 'assignmentSelectableDeliverableTypes') return antw({ data: { deliverableTypes: [
+      { id: '0', type: 'simulise.portfolio_item', name: 'Portfolio item', isTemplate: false, defaults: { minimum: 1, maximum: 10, multiple: false, plagiarism: false, isOptional: false, unfreezePageAfterReview: false }, fileTypes: [{ key: 'TEXT', type: 'BLOG' }, { key: 'FILE', type: 'FILE' }] },
+      { id: '1', type: 'simulise.portfolio_page', name: 'Pagina', isTemplate: false, defaults: { minimum: 1, maximum: 1, multiple: false, plagiarism: false, isOptional: false, unfreezePageAfterReview: false }, fileTypes: [] },
+      { id: '2', type: 'simulise.portfolio_page', name: 'Pagina sjabloon', isTemplate: true, defaults: {}, fileTypes: [] }] } });
+    if (verzoek.operationName === 'sdOpdrachtRubrics') return antw({ data: { badges: { data: [{ id: 'b-1', name: '1. Adviseren' }, { id: 'b-5', name: '5. Vakvaardigheden (MEP/MIP)' }], paginatorInfo: { hasMorePages: false } } } });
+    if (verzoek.operationName === 'sdOpdrachtLabels') return antw({ data: { items: { data: [{ autocompletion: { id: 'school_label:l-m02', text: 'M02', value: 'l-m02' } }, { autocompletion: { id: 'school_label:l-m03', text: 'M03', value: 'l-m03' } }] } } });
+    if (/^assignment(Create|BadgesUpdate|DeliverablesUpdate|ConnectionCreate|WizardFinish)$/.test(verzoek.operationName)) {
+      opdrachtVerzoeken.push({ op: verzoek.operationName, vars: verzoek.variables, query: verzoek.query });
+      const goed = { status: { success: true, errors: [] } };
+      if (verzoek.operationName === 'assignmentCreate') return antw({ data: { response: { assignment: { id: 'op-1' }, ...goed } } });
+      if (verzoek.operationName === 'assignmentConnectionCreate' && opdrachtVerzoeken.filter((v) => v.op === 'assignmentConnectionCreate').length === 1)
+        return antw({ data: { response: { assignmentConnections: [], createdConnectionsCount: 0, skippedConnectionsCount: 0, status: { success: false, errors: [{ name: 'startDate', messages: ['De startdatum is ongeldig.'] }] } } } });
+      return antw({ data: { response: { assignment: { id: 'op-1', isActive: false }, assignmentConnections: [{ id: 'c' }], createdConnectionsCount: 1, skippedConnectionsCount: 0, ...goed } } });
+    }
     const OPLEIDINGEN = [{ id: 'e-bava', name: 'BAVA 4', groups: [{ id: 'g', name: 'MEP1A' }], isDefault: true }, { id: 'e-beroeps', name: 'Mediaproducer / Music Industry Professional', groups: [{ id: 'g', name: 'MEP1A' }], isDefault: false }];
     // Zoals bij het echte Simulise: de eigen studentvraag van de extensie wordt geweigerd.
     if (verzoek.operationName === 'sdRapportStudent') return antw({ errors: [{ message: 'This action is unauthorized.' }], data: { user: null } });
@@ -332,7 +429,7 @@ function bouwZip() {
         paginatorInfo: { total: 33, perPage: v.perPage, currentPage: v.page } } } };
     return r.fulfill({ contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(body) });
   });
-  await ctx.route((url) => !/^(chrome-extension:|https:\/\/ma\.simulise\.com|https:\/\/api\.simulise\.com\/graphql|https:\/\/api\.github\.com|https:\/\/github\.com)/.test(url.href),
+  await ctx.route((url) => !/^(chrome-extension:|https:\/\/ma\.simulise\.com|https:\/\/api\.simulise\.com\/graphql|https:\/\/api\.simulise\.com\/preview\/|https:\/\/api\.github\.com|https:\/\/github\.com)/.test(url.href),
     (r) => r.abort()); // al het andere: geen netwerk
 
   let [sw] = ctx.serviceWorkers();
@@ -356,7 +453,7 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
-  check(await popup.locator('#modules input').count() === 10, 'popup toont aan/uit per module');
+  check(await popup.locator('#modules input').count() === 14, 'popup toont aan/uit per module');
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -613,7 +710,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 19, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 23, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   // Voortgangsrapport vanaf het profiel van een student: in de pagina zelf, in de opmaak van Simulise
@@ -663,6 +760,15 @@ function bouwZip() {
   await sim.waitForSelector('.sdw table.sdw-matrix', { timeout: 20000 }).catch(() => {});
   check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await sim.locator('.sdw table.sdw-matrix').first().locator('tbody tr').count()) === 2 && (await wt()).includes('Anna Test') && (await wt()).includes('2 van 2 studenten'),
     'groep: meetmomenten naast elkaar, een tabel per opleiding met een rij per student');
+  // Vergaderlijst: een rij per student, gegroepeerd op signaal; zonder aanwezigheidsbestand geen kolommen daarvoor.
+  await sim.selectOption('.sdw [data-balk] select >> nth=0', 'vergader');
+  const vg = () => sim.evaluate(() => ({ rijen: [...document.querySelectorAll('.sdw table.sdw-vergader tbody tr:not(.sdw-groepkop)')].map((tr) => [...tr.children].map((td) => td.innerText.trim()).join(' | ')),
+    koppen: [...document.querySelectorAll('.sdw table.sdw-vergader thead th')].map((th) => th.innerText.trim()).join(' | '), groepen: [...document.querySelectorAll('.sdw table.sdw-vergader tr.sdw-groepkop')].map((tr) => tr.innerText.trim()).join(' | '),
+    tellers: [...document.querySelectorAll('.sdw .sdw-teller')].map((t) => t.innerText.replace(/\s+/g, ' ').trim()).join(' | '), laag: [...document.querySelectorAll('.sdw td.sdw-laag')].map((td) => td.innerText.trim()).join(','),
+    info: document.querySelector('.sdw [data-info]').textContent, filter: !document.querySelector('.sdw .sdw-alleen-signaal').hidden }));
+  let v1 = await vg();
+  check(v1.rijen.length === 2 && v1.koppen === 'Student | Signaal | Beroepsleerlijnen | Basisvaardigheden | Waarom' && /onder de norm \| \d+ bespreken \| \d+ op koers/.test(v1.tellers) && v1.filter && v1.groepen.length > 0,
+    `vergaderlijst: een rij per student met signaal en stand per opleiding, gegroepeerd (${v1.groepen}; ${v1.tellers}; ${v1.rijen.join(' // ')})`);
   await sim.selectOption('.sdw [data-balk] select >> nth=0', 'groep');
   check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await wt()).includes('Stand op'), 'werkbalk: groepsoverzicht');
   const [dl] = await Promise.all([sim.waitForEvent('download'), sim.click('.sdw .sdw-excel')]);
@@ -672,12 +778,72 @@ function bouwZip() {
   check((await sim.locator('.sdw .sdw-diagram svg').count()) === 2 && (await wt()).includes('2 van 2'), 'klik op een naam: de student, met bladeren tussen studenten');
   await sim.click('.sdw [data-stap="-1"]');
   check((await sim.locator('.sdw h3').first().textContent()).includes('Anna Test'), 'vorige student');
+
+  // Gedeelde bronnen: aanwezigheid (Excel) en toetsplan (profielbestand) achter een SharePoint-link, via background.js.
+  const bp = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);
+  const LINK_A = 'https://school.sharepoint.com/:x:/g/personal/team/aanwezig?e=abc', LINK_P = 'https://school.sharepoint.com/:u:/g/personal/team/toetsplan?e=def';
+  const opnieuw = async () => { await sim.goto('https://ma.simulise.com/groups'); await sim.waitForTimeout(600); await sim.click('.dropdown-menu .sim-docent-rapport'); await sim.waitForSelector('.sdw table.sdw-matrix', { timeout: 20000 }).catch(() => {}); await sim.selectOption('.sdw [data-balk] select >> nth=0', 'vergader'); };
+  await bp.evaluate((u) => chrome.storage.local.set({ rpBron: { aanwezigUrl: u } }), LINK_A);
+  await opnieuw();
+  v1 = await vg();
+  check(v1.rijen.length === 2 && /aanwezigheid niet opgehaald: de extensie mag nog niet bij OneDrive lezen/.test(v1.info) && !/Aanwezig/.test(v1.koppen), `zonder toestemming voor OneDrive: het rapport werkt gewoon en meldt waarom de aanwezigheid ontbreekt (${v1.info})`);
+  // Toestemming en het antwoord van Microsoft nabootsen in de service worker (een echte toestemmingsvraag kan hier niet).
+  const swNu = ctx.serviceWorkers().find((w) => w.url().includes(id)) || sw;
+  const standaard = JSON.parse(await bp.evaluate(() => JSON.stringify(SD_RAPPORT_STANDAARD)));
+  await swNu.evaluate(({ xlsx, plan }) => {
+    chrome.permissions.contains = async () => true;
+    const echt = self.fetch.bind(self);
+    self.__bron = [];
+    self.fetch = async (u, o) => {
+      const url = String(u);
+      if (!/sharepoint\.com/.test(url)) return echt(u, o);
+      self.__bron.push(`${url} ${o?.credentials}`);
+      if (/aanwezig/.test(url)) return new Response(Uint8Array.from(atob(xlsx), (c) => c.charCodeAt(0)), { status: 200, headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } });
+      if (/toetsplan/.test(url)) return new Response(plan, { status: 200, headers: { 'content-type': 'application/json' } });
+      return new Response('<!DOCTYPE html><html><body>Aanmelden</body></html>', { status: 200, headers: { 'content-type': 'text/html' } });
+    };
+  }, { xlsx: bouwXlsx().toString('base64'), plan: JSON.stringify({ ...standaard, id: 'teamplan', naam: 'Teamplan MEP', aanwezigheid: { grens: 96 } }) });
+  await opnieuw();
+  v1 = await vg();
+  await beeld(sim, 'vergaderlijst', '.sdw');
+  const gevraagd = await swNu.evaluate(() => self.__bron.join(' , '));
+  check(/Aanwezig \| Ongeoorloofd \| Te laat \| Waarom$/.test(v1.koppen) && v1.rijen.some((r) => /^Anna Test \|.*\| 72% \| 6 \| 4 \|.*aanwezigheid 72% \(grens 80%\).*ziek geweest/.test(r)) && v1.rijen.some((r) => /^Bram Test \|.*\| 95% \| 0 \| 1 \|/.test(r)) && v1.laag === '72%',
+    `aanwezigheid uit het Excel-bestand van het team naast de resultaten, onder de grens is een bespreekpunt (${v1.rijen.join(' // ')})`);
+  check(/aanwezig\?e=abc&download=1 include/.test(gevraagd), `de deellink wordt als download opgevraagd met je eigen aanmelding bij Microsoft (${gevraagd})`);
+  await sim.click('.sdw a[data-student]:has-text("Anna Test")');
+  check(/Aanwezigheid/.test(await wt()) && /72%\s*aanwezig/.test(await wt()) && /6\s*ongeoorloofd/.test(await wt()), 'per student: de aanwezigheid staat naast de normen');
+  await sim.selectOption('.sdw [data-balk] select >> nth=0', 'vergader');
+  await sim.check('.sdw .sdw-alleen-signaal input'); await sim.waitForTimeout(150);
+  const alleen = await vg();
+  check(alleen.rijen.length >= 1 && alleen.rijen.length <= 2 && alleen.rijen.every((r) => / \| (Onder de norm|Bespreken) \| /.test(r)) && /2 van 2|1 van 2/.test(alleen.info), `vergaderlijst: alleen bespreekgevallen (${alleen.rijen.length} van 2)`);
+  const [dlV] = await Promise.all([sim.waitForEvent('download'), sim.click('.sdw .sdw-excel')]);
+  const csvV = fs.readFileSync(await dlV.path(), 'utf8');
+  check(/Student;Groep;Peildatum;Signaal;Beroepsleerlijnen;Basisvaardigheden;Aanwezig %;Ongeoorloofd;Te laat;Waarom;Opmerking/.test(csvV) && /Anna Test;MEP1A;[\d-]+;(Onder de norm|Bespreken);.*;72;6;4;/.test(csvV), 'vergaderlijst als Excel-export (CSV) met signaal, aanwezigheid en reden');
+  // Het toetsplan van het team: wordt opgehaald, gekozen en gebruikt (grens 96% maakt ook 95% een bespreekpunt).
+  await bp.evaluate((u) => chrome.storage.local.set({ rpBron: { aanwezigUrl: u[0], profielUrl: u[1], profielTijd: 0 } }), [LINK_A, LINK_P]);
+  await opnieuw();
+  v1 = await vg();
+  const plan = await bp.evaluate(() => chrome.storage.local.get(['rpProfielen', 'rpGekozen', 'rpBron']).then((x) => ({ gekozen: x.rpGekozen, gedeeld: x.rpProfielen.filter((p) => p.gedeeld).map((p) => p.naam).join(','), aantal: x.rpProfielen.length, tijd: x.rpBron.profielTijd > 0, fout: x.rpBron.profielFout })));
+  check(plan.gekozen === 'teamplan' && plan.gedeeld === 'Teamplan MEP' && plan.aantal === 2 && plan.tijd && !plan.fout && v1.laag === '72%,95%' && v1.rijen.some((r) => /^Bram Test \|.*aanwezigheid 95% \(grens 96%\)/.test(r)),
+    `toetsplan van het team: opgehaald via de link, bewaard als gedeeld profiel en gebruikt voor de normen (${JSON.stringify(plan)}; onder de grens: ${v1.laag})`);
+  // Een aanmeldpagina in plaats van het bestand: nette melding, het vorige toetsplan blijft gelden.
+  const foutBron = await bp.evaluate(() => SDBron.haal('https://school.sharepoint.com/:u:/g/iets-anders').then(() => 'geen fout', (e) => e.message));
+  const foutHost = await bp.evaluate(() => SDBron.haal('https://voorbeeld.nl/toetsplan.json').then(() => 'geen fout', (e) => e.message));
+  check(/Microsoft gaf een webpagina in plaats van het bestand/.test(foutBron) && /alleen een gedeelde link van OneDrive of SharePoint/.test(foutHost), `gedeelde bron: een aanmeldpagina of een ander adres geeft een uitleg, geen gegevens (${foutHost})`);
+  // Het bestand lezen: koppen onder een titelregel, breuken als percentage, "Achternaam, Voornaam", onbekende studenten blijven buiten het rapport.
+  const gelezen = await bp.evaluate(async () => { const a = await SDBron.aanwezigheid(); return { n: a.lijst.length, kolommen: a.kolommen.join(','), pct: a.lijst.map((x) => x.pct).join(','), sleutel: a.lijst[0].sleutel, opm: a.lijst[0].opmerking }; });
+  check(gelezen.n === 3 && gelezen.kolommen === 'naam,klas,aanwezig,ongeoorloofd,teLaat,opmerking' && gelezen.pct === '72,95,50' && gelezen.sleutel === 'anna test' && gelezen.opm === 'ziek geweest', `Excel-bestand gelezen zonder bibliotheek (${JSON.stringify(gelezen)})`);
+  await bp.evaluate(() => chrome.storage.local.remove(['rpBron', 'rpProfielen', 'rpGekozen']));
+  await bp.close();
   await sim.selectOption('.sdw [data-balk] select >> nth=0', 'groep');
   await sim.locator('.sdw [data-balk] label:has-text("alleen niet op koers") input').check();
   check((await wt()).includes('Geen studenten die aan het filter voldoen.'), 'filter: alleen studenten die niet op koers zijn');
   await sim.locator('.sdw [data-balk] label:has-text("alleen niet op koers") input').uncheck();
 
   // Kaart Voortgangsrapporten op de analytics-pagina
+  // De kaart van de rapporten staat tussen de tegels van Simulise; de module inzicht verbergt die tegels, dus hier even uit.
+  const pk = await nieuw(`chrome-extension://${id}/popup.html`);
+  await pk.evaluate(() => chrome.storage.sync.set({ insight: false }));
   await sim.goto('https://ma.simulise.com/analytics'); await sim.waitForTimeout(700);
   const kaartOpties = await sim.locator('.sim-docent-kaart select option').allTextContents();
   // Zelfde adres als de groep op /groups (MEP1A); groepen zonder adres (101, 102) en menu-namen niet.
@@ -685,6 +851,8 @@ function bouwZip() {
   await sim.click('.sim-docent-kaart button');
   await sim.waitForSelector('.sdw table.sdw-matrix', { timeout: 20000 }).catch(() => {});
   check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await wt()).includes('Stand op') && (await wt()).includes('Voortgangsrapporten MEP1A'), 'analytics: groepsrapport vanaf de kaart, met de onthouden weergave groepsoverzicht');
+
+  await pk.evaluate(() => chrome.storage.sync.set({ insight: true })); await pk.close();
 
   // Analytics, Opleiding per groep: alle studenten en beide opleidingen naast elkaar
   await sim.goto('https://ma.simulise.com/analytics/educationbygroups/result?type=educationbygroups&view=table'); await sim.waitForTimeout(800);
@@ -912,6 +1080,217 @@ function bouwZip() {
   check((await fb.count()) === 0 && (await sim.getAttribute('html', 'data-sim-focus')) === null && (await toont('aside#nav')), 'buiten het beoordeelscherm is er geen focusmodus');
   await pf.close();
 
+  // Opdrachtenmatrix van een klas als stippenkaart (module matrix)
+  const pm = await nieuw(`chrome-extension://${id}/popup.html`);
+  await sim.goto(`https://ma.simulise.com/groups/school/${UUID}/assignments`); await sim.waitForTimeout(700);
+  const balkM = sim.locator('.sd-matrix-balk'), ov = sim.locator('.sd-matrix-overzicht');
+  check((await sim.getAttribute('html', 'data-sim-matrix-overzicht')) === '' && (await sim.evaluate(() => getComputedStyle(document.querySelector('[data-sd-matrix-tabel]')).display)) === 'none'
+    && (await balkM.locator('.sd-m-kort').innerText()).trim() === '2 wachten op jou · 1 te laat' && (await balkM.locator('.sd-m-seg .aan').innerText()).trim() === 'Overzicht',
+    'opdrachten van een klas: standaard het overzicht, de matrix van Simulise is uit beeld, de balk zegt kort wat ertoe doet');
+  const mijRijen = ov.locator('.sd-mo-mij a.sd-mo-rij');
+  check((await mijRijen.count()) === 2 && (await mijRijen.first().locator('.sd-mo-titel').innerText()) === 'ENG_1.5: True crime' && (await mijRijen.first().locator('.sd-mo-pil').innerText()) === '1 wacht op jou'
+    && (await mijRijen.first().getAttribute('href')) === '/@studenta/assignment/00000000-0000-4000-8000-000000000000/view' && (await mijRijen.first().locator('small').innerText()) === 'Deadline 25 november',
+    'overzicht: bovenaan "Wacht op jou" met de opdrachten waar jij aan de beurt bent, met een link naar de inlevering');
+  const vakken = await ov.locator('button.sd-mo-vak').evaluateAll((els) => els.map((el) => `${el.dataset.vak}:${el.getAttribute('aria-expanded')}:${el.querySelector('.sd-mo-pil, .sd-mo-stand').textContent.trim()}`).join(' | '));
+  check(vakken === 'BUR:false:1 te laat | ENG:false:1 wacht op jou | LOB:false:niets van jou | PS:false:1 wacht op jou' && (await ov.locator('button.sd-mo-vak + a.sd-mo-rij').count()) === 0 && !/Anna|Bram|Docent|Collega/.test(await ov.innerText()),
+    `overzicht: de opdrachten per vak (code uit de titel), dichtgeklapt, zonder studenten (${vakken})`);
+  await ov.locator('button.sd-mo-vak[data-vak="BUR"]').click(); await sim.waitForTimeout(200);
+  const burRij = ov.locator('button.sd-mo-vak[data-vak="BUR"] + a.sd-mo-rij');
+  check((await burRij.count()) === 1 && (await burRij.locator('.sd-mo-stand').innerText()) === '1 te laat' && (await burRij.locator('.sd-mo-balk i.laat').getAttribute('style')) === 'width:50%' && (await burRij.locator('.sd-mo-balk i.bezig').count()) === 1,
+    'overzicht: een vak klapt open; per opdracht één balk en in woorden wat ertoe doet');
+  await beeld(sim, 'overzicht', '#content-wrapper');
+  await burRij.click(); await sim.waitForTimeout(500);
+  check((await sim.getAttribute('html', 'data-sim-matrix-student')) === '' && (await sim.locator('tr.sd-m-hier a.divider-plan').innerText()) === 'BUR - casus' && (await ov.locator('.sd-mo-blok').count()) === 0
+    && (await pm.evaluate(() => chrome.storage.sync.get('matrixWeergave').then((x) => x.matrixWeergave))) === 'student', 'klik op een opdracht in het overzicht: de weergave per student, met die opdracht gemarkeerd');
+  const mx = await sim.evaluate(() => { const q = (s) => document.querySelector(s), g = (el, ps) => getComputedStyle(el, ps);
+    return { aan: document.documentElement.hasAttribute('data-sim-matrix'), mij: [...document.querySelectorAll('td[data-sd-mij] > a')].map((a) => a.dataset.title.replace(/ door .*/, '')).join('|'),
+      kolom: Math.round(q('th.rotated').getBoundingClientRect().width), icoon: g(q('td[data-status] > a > i')).display, stip: g(q('td[data-status="FINISHED"] > a'), '::before').backgroundColor, groot: g(q('td[data-sd-mij] > a'), '::before').width,
+      vak: g(q('td[data-status="FINISHED"]')).backgroundColor, naam: g(q('.rotated-header-content')).writingMode, deadline: g(q('small.reviewers > a > small')).fontSize, beoordelaars: g(q('small.reviewers > strong')).display }; });
+  check(mx.aan && mx.kolom === 32 && mx.icoon === 'none' && mx.stip === 'rgb(47, 158, 110)' && mx.vak === 'rgba(0, 0, 0, 0)' && mx.naam === 'vertical-rl' && mx.deadline === '11px' && mx.beoordelaars === 'none',
+    `matrix als stippenkaart: smalle kolommen (${mx.kolom}px) met de naam verticaal, per inlevering een stip in plaats van een gekleurd vak, de deadline onder de titel`);
+  check(mx.mij === 'Te beoordelen|Wordt beoordeeld' && mx.groot === '18px', `matrix: wat op jou wacht krijgt een grote stip ("Te beoordelen" en wat je zelf al beoordeelt; niet wat bij een collega ligt): ${mx.mij}`);
+  const tellers = await balkM.locator('.sd-m-tel').evaluateAll((els) => els.map((el) => `${el.dataset.soort}:${el.querySelector('b').textContent}`).join(' '));
+  check(tellers === 'mij:2 collega:2 bezig:1 laat:1 niet:1 klaar:1' && (await balkM.locator('.sd-m-klas').innerText()).trim() === 'MR1A' && /2\s*wachten op jou/.test(await balkM.locator('.sd-m-nu').innerText())
+    && !/Anna|Bram|Docent|Collega/.test(await balkM.innerText()), `matrix: balk met de klas en de tellers uit de cellen (${tellers}); geen namen ("${(await balkM.locator('.sd-m-klas').innerText()).trim()}")`);
+  await balkM.locator('[data-sd-matrix="mij"]').click(); await sim.waitForTimeout(400);
+  check((await sim.getAttribute('html', 'data-sim-matrix-mij')) === '' && (await sim.evaluate(() => getComputedStyle(document.querySelector('td[data-status="FINISHED"] > a'), '::before').opacity)) === '0.22'
+    && (await sim.evaluate(() => getComputedStyle(document.querySelector('td[data-sd-mij] > a'), '::before').opacity)) === '1' && (await pm.evaluate(() => chrome.storage.sync.get('matrixMij').then((x) => x.matrixMij))) === true,
+    'matrix: "Alleen van mij" maakt de rest lichter en wordt onthouden');
+  await pm.evaluate(() => chrome.storage.sync.set({ matrixMij: false }));
+  await balkM.locator('.sim-docent-klas').click();
+  await vd.locator('h1').waitFor({ timeout: 20000 }).catch(() => {});
+  check((await vd.count()) === 1 && !(await sim.evaluate(() => document.querySelector('.sd-matrix-balk').classList.contains('active'))), 'matrix: de knop "Thuispagina van de klas" opent de klaspagina');
+  await sim.keyboard.press('Escape'); await sim.waitForTimeout(200);
+  await pm.evaluate(() => chrome.storage.sync.set({ matrixView: false })); await sim.waitForTimeout(500);
+  check((await sim.getAttribute('html', 'data-sim-matrix')) === null && (await sim.getAttribute('html', 'data-sim-matrix-student')) === null && (await balkM.count()) === 0 && (await ov.count()) === 0
+    && (await sim.locator('td[data-sd-mij], [data-sd-matrix-tabel]').count()) === 0, 'module matrix uit: de matrix van Simulise staat er weer zoals hij was');
+  await pm.evaluate(() => chrome.storage.sync.set({ matrixView: true, matrixWeergave: 'overzicht' })); await pm.close();
+
+  // Inzicht: Analytics als vragen, en de keuzes voor een rapportage in gewone taal (module inzicht)
+  const pz = await nieuw(`chrome-extension://${id}/popup.html`);
+  await sim.goto('https://ma.simulise.com/analytics'); await sim.waitForTimeout(800);
+  const iz = sim.locator('.sd-inzicht');
+  await beeld(sim, 'inzicht', '.sd-inzicht');
+  const izDelen = await iz.locator('.sd-iz-blok[data-deel]').evaluateAll((els) => els.map((el) => `${el.querySelector('h2').textContent}: ${[...el.querySelectorAll('.sd-iz-wat b')].map((b) => b.textContent).join(' + ')}`).join(' | '));
+  check((await sim.getAttribute('html', 'data-sim-inzicht')) === 'start' && (await sim.evaluate(() => getComputedStyle(document.querySelector('[data-sd-inzicht-rij]')).display)) === 'none'
+    && izDelen === 'Over studenten: Hoe ver zijn studenten met de leerlijnen? | Over één opdracht of sjabloon: Wie heeft deze opdracht af? | Overig: Nieuwe soort',
+    `inzicht: in plaats van de tegels een overzicht met de rapportages als vragen, geordend (${izDelen})`);
+  const izRij = iz.locator('.sd-iz-blok[data-deel="opdracht"] .sd-iz-rij');
+  check((await izRij.locator('.sd-iz-knop').getAttribute('href')) === '/analytics/assignmentbygroups' && (await izRij.locator('.sd-iz-bewaard').getAttribute('href')) === '/analytics/assignmentbygroups/reports'
+    && (await izRij.locator('.sd-iz-bewaard').innerText()) === '2 bewaard' && (await izRij.locator('small').innerText()) === 'In Simulise: Status opdracht over groepen' && (await iz.locator('.sd-iz-blok[data-deel="student"] .sd-iz-bewaard').count()) === 0,
+    'inzicht: elke regel gaat rechtstreeks naar de keuzes van die rapportage; bewaarde rapportages hebben een eigen link');
+  const izKlassen = await iz.locator('a.sd-iz-klas.sim-docent-rapport').evaluateAll((els) => els.map((el) => `${el.dataset.naam}=${el.dataset.groep}`).join(' '));
+  check(izKlassen === 'MEP1A=vg-mep1a MIP1B=x MR1A=vg-mr1a', `inzicht: je klassen bovenaan, elk opent het voortgangsrapport van die klas (${izKlassen})`);
+  await iz.locator('[data-sd-inzicht="tegel"]').click(); await sim.waitForTimeout(150);
+  check((await sim.evaluate(() => document.documentElement.dataset.testTegel)) === 'geklikt', 'inzicht: een rapportage die de extensie niet kent werkt via de tegel van Simulise zelf');
+  await iz.locator('[data-sd-inzicht="tegels"]').click(); await sim.waitForTimeout(200);
+  check((await sim.evaluate(() => getComputedStyle(document.querySelector('[data-sd-inzicht-rij]')).display)) !== 'none' && (await iz.locator('[data-sd-inzicht="tegels"]').innerText()) === 'Verberg de tegels van Simulise', 'inzicht: de tegels van Simulise blijven bereikbaar met de knop onderaan');
+  await sim.goto('https://ma.simulise.com/analytics/assignmentbygroups'); await sim.waitForTimeout(800);
+  const wz = () => sim.evaluate(() => ({ soort: document.documentElement.getAttribute('data-sim-inzicht'), titel: document.querySelector('#analyticsForm > .m-b-lg h4').textContent.trim(), kop: document.querySelector('#analyticsForm > .m-b-lg h2').textContent.trim(),
+    stappen: [...document.querySelectorAll('#analyticsForm .list-group-item h4')].map((h) => h.textContent.trim()).join(' | '), knop: document.querySelector('#analyticsForm .btn-success').textContent.trim(),
+    melding: document.querySelector('#analyticsForm .alert').textContent.trim(), onder: document.querySelector('#analyticsForm .btn-success + p').textContent.trim(), kruimel: document.querySelector('#content header .header-text').textContent.replace(/\s+/g, ' ').trim() }));
+  let w1 = await wz();
+  check(w1.soort === 'keuzes' && w1.titel === 'Wie heeft deze opdracht af?' && w1.kop === 'Inzicht' && w1.stappen === 'Welke opdracht? | Welke studenten? | Welke periode? | Meer keuzes' && w1.knop === 'Toon rapportage'
+    && w1.melding === 'Kies eerst iets; dit is verplicht.' && w1.onder === 'Maak eerst de verplichte keuze hierboven.' && /^Inzicht\s*\/\s*Wie heeft deze opdracht af\?$/.test(w1.kruimel),
+    `keuzes voor een rapportage: de vraag als titel, stappen en meldingen in gewone taal (${w1.stappen}; knop "${w1.knop}"; melding "${w1.melding}"; onder "${w1.onder}"; kruimel "${w1.kruimel}")`);
+  await pz.evaluate(() => chrome.storage.sync.set({ insight: false })); await sim.waitForTimeout(500);
+  w1 = await wz();
+  check(w1.soort === null && w1.titel === 'Status opdracht over groepen' && w1.stappen.startsWith('Selecteer opdracht') && w1.knop === 'Uitvoeren' && w1.kop === 'Learning Analytics', 'module inzicht uit: de teksten van Simulise staan er weer');
+  await pz.evaluate(() => chrome.storage.sync.set({ insight: true })); await sim.waitForTimeout(300);
+
+  // Inzicht: de bewaarde rapportages en het resultaat van een rapportage
+  await sim.goto('https://ma.simulise.com/analytics/assignmentbygroups/reports'); await sim.waitForTimeout(800);
+  const bw = await sim.evaluate(() => ({ soort: document.documentElement.getAttribute('data-sim-inzicht'), tegel: getComputedStyle(document.querySelector('#scrollable-page-wrapper section.panel-link').closest('[class*="col-"]')).display,
+    titel: document.querySelector('.sd-inzicht h1')?.textContent, knop: document.querySelector('.sd-inzicht a.sd-iz-hoofd')?.getAttribute('href'), terug: document.querySelector('.sd-inzicht a.sd-iz-terug')?.getAttribute('href'),
+    lijst: document.querySelector('[data-sd-inzicht-lijst] h4')?.textContent.trim() }));
+  check(bw.soort === 'bewaard' && bw.tegel === 'none' && bw.titel === 'Wie heeft deze opdracht af?' && bw.knop === '/analytics/assignmentbygroups' && bw.terug === '/analytics' && !!bw.lijst,
+    `bewaarde rapportages: de vraag als kop met de knop Nieuwe rapportage, de tegel is weg en de lijst van Simulise blijft (${JSON.stringify(bw)})`);
+  await sim.goto('https://ma.simulise.com/analytics/educationbygroups/result?type=educationbygroups&view=table'); await sim.waitForTimeout(900);
+  await beeld(sim, 'resultaat', '#scrollable-page-wrapper');
+  const rs = () => sim.evaluate(() => ({ soort: document.documentElement.getAttribute('data-sim-inzicht'), filters: document.querySelector('#content header .btn-group .btn span').textContent.trim(),
+    download: getComputedStyle(document.querySelector('#content header .btn:has(> i.fa-download)'), '::after').content, weergave: [...document.querySelectorAll('#scrollable-page-wrapper ul.list-inline button')].map((b) => b.textContent.trim()).join('|'),
+    kop: document.querySelector('.sd-inzicht h2')?.textContent, uitleg: document.querySelector('.sd-inzicht .sd-iz-uitleg')?.textContent.replace(/\s+/g, ' ').trim(),
+    lijnen: [...document.querySelectorAll('.sd-inzicht .sd-iz-lijn')].map((l) => `${l.querySelector('strong').textContent}: ${[...l.querySelectorAll('.sd-iz-stap > b')].map((b) => b.textContent).join(',')}`).join(' | '),
+    tip: document.querySelector('.sd-inzicht .sd-iz-stap')?.title, plek: document.querySelector('.sd-inzicht')?.nextElementSibling?.querySelector('table.table-index') ? 'boven de tabel' : 'elders',
+    thead: getComputedStyle(document.querySelector('table.table-index thead')).position, naam: getComputedStyle(document.querySelector('table.table-index tbody td')).position, rijen: document.querySelectorAll('table.table-index tbody tr').length,
+    meer: [...document.querySelectorAll('#scrollable-page-wrapper .text-center > button')].map((b) => b.textContent.trim()).join('') }));
+  let r1 = await rs();
+  check(r1.soort === 'resultaat' && r1.filters === 'Keuzes wijzigen' && /Downloaden/.test(r1.download) && r1.weergave === 'Tabel|Diagram' && r1.meer === 'Toon meer',
+    `resultaat: knoppen met woorden (${r1.filters}; ${r1.download}; ${r1.weergave}; ${r1.meer})`);
+  check(r1.kop === 'MEP1A in één oogopslag' && r1.lijnen === '1. Adviseren: 2,0 | 2. Voorbereiden: 1,0' && r1.plek === 'boven de tabel' && r1.tip === 'Stap 1: 2 van 3 behaald, 1 beoordeeld maar nog niet aangetoond' && /Simulise toont er nu 3 van de 5\. Toon alle 5$/.test(r1.uitleg),
+    `resultaat Opleiding per groep: de stand van de klas boven de tabel, geteld uit de stippen (${r1.lijnen}; "${r1.tip}"; "${r1.uitleg}")`);
+  check(r1.thead === 'sticky' && r1.naam === 'sticky', 'resultaat: de kop en de namen blijven in beeld bij het schuiven');
+  await sim.click('.sd-inzicht [data-sd-inzicht="alles"]'); await sim.waitForTimeout(1500);
+  r1 = await rs();
+  check(r1.rijen === 5 && r1.lijnen === '1. Adviseren: 3,1 | 2. Voorbereiden: 3,0' && /^Hoeveel van de 5 studenten[^.]*\.$/.test(r1.uitleg), `resultaat: "Toon alle" laadt de rest via de knop van Simulise en telt opnieuw (${r1.rijen} rijen; ${r1.lijnen}; "${r1.uitleg}")`);
+  await pz.evaluate(() => chrome.storage.sync.set({ insight: false })); await sim.waitForTimeout(500);
+  r1 = await rs();
+  check(r1.soort === null && r1.filters === 'Filters' && r1.kop === undefined && r1.weergave === 'Tabel weergave|Diagram weergave' && r1.thead !== 'sticky', 'module inzicht uit: de resultaatpagina is weer die van Simulise');
+  await pz.evaluate(() => chrome.storage.sync.set({ insight: true })); await pz.close();
+
+  // Media bij het nakijken: video, audio en bestanden van een ingeleverde portfoliopagina onder de pdf (module media)
+  mediaVerzoeken.length = 0;
+  await sim.goto('https://ma.simulise.com/@student2/assignment/00000000-0000-4000-8000-000000000002/review?nr=2&group=vg-mr1a'); await sim.waitForSelector('.sd-media video', { timeout: 8000 }).catch(() => {});
+  const mdia = () => sim.evaluate(() => { const el = document.querySelector('.sd-media'); if (!el) return null; return { plek: el.parentElement.querySelector('h2')?.textContent, na: el.previousElementSibling?.className,
+    kaarten: [...el.querySelectorAll('.sd-media-kaart')].map((k) => `${k.querySelector('.sd-media-soort').textContent}:${k.querySelector('b').textContent}`).join(' | '),
+    video: el.querySelector('video')?.getAttribute('src'), poster: el.querySelector('video')?.getAttribute('poster'), audio: el.querySelector('audio')?.getAttribute('src'), kaders: el.querySelectorAll('iframe').length,
+    links: [...el.querySelectorAll('a')].map((a) => `${a.textContent}=${a.getAttribute('href')}`).join(' , '), html: el.innerHTML.includes('<1>') }; });
+  let mm = await mdia();
+  check(mm && mm.plek === 'Ingevulde pagina' && mm.na === 'rounded-content-wrapper' && mm.kaarten === 'Video:Mijn pitch | Audio:podcast | DOCX:Verslag | Link:Bron' && mm.video === 'https://usercontent.on.simulise.cloud/portfolio/f-video/upload.mp4' && /preview\.jpg$/.test(mm.poster)
+    && mm.audio === 'https://usercontent.on.simulise.cloud/portfolio/f-audio/upload.mp3' && mm.kaders === 0 && !mm.html && !/javascript:/.test(mm.links) && /Openen=https:\/\/voorbeeld\.nl\/bron/.test(mm.links) && mediaVerzoeken.join(',') === '@student2',
+    `media bij het nakijken: onder de pdf van de pagina een speler voor video en audio, andere bestanden en links erbij, in de volgorde van de pagina (${mm ? mm.kaarten : 'geen blok'})`);
+  await sim.click('.sd-media [data-sd-media="toon"]'); await sim.waitForTimeout(300);
+  mm = await mdia();
+  const kaderSrc = await sim.evaluate(() => document.querySelector('.sd-media iframe')?.getAttribute('src') || '');
+  check(mm.kaders === 1 && kaderSrc === 'https://api.simulise.com/preview/f-doc?signature=x', `media bij het nakijken: een ander bestand opent op verzoek de voorvertoning van Simulise in de pagina (${mm.kaders} kader, ${kaderSrc})`);
+  await sim.click('.review-group-panel a.item >> nth=0'); await sim.waitForSelector('.sd-media video', { timeout: 8000 }).catch(() => {});
+  check(mediaVerzoeken.join(',') === '@student2,@student1' && (await sim.locator('.sd-media').count()) === 1 && (await sim.evaluate(() => document.querySelector('.sd-media').dataset.sleutel.startsWith('student1/'))), `media bij het nakijken: bij de volgende student opnieuw opgehaald, één blok (${mediaVerzoeken.join(',')})`);
+  { const pm = await nieuw(`chrome-extension://${id}/popup.html`); await pm.evaluate(() => chrome.storage.sync.set({ reviewMedia: false })); await sim.waitForTimeout(700);
+    check((await sim.locator('.sd-media').count()) === 0, 'module media uit: het blok is weg');
+    await pm.evaluate(() => chrome.storage.sync.set({ reviewMedia: true })); await pm.close(); }
+
+  // Snelle opdracht: een opdracht aanmaken op één scherm (indeling als Teams), opslaan in vijf stappen met herstel (module opdracht)
+  await sim.goto('https://ma.simulise.com/school/assignments'); await sim.waitForTimeout(900);
+  check(await sim.isVisible('#content header .sd-opdracht-knop'), 'opdrachtenlijst: knop Snelle opdracht naast Nieuwe opdracht');
+  await sim.click('#content header .sd-opdracht-knop'); await sim.waitForSelector('.sd-opdracht #sdo-titel', { timeout: 8000 }).catch(() => {});
+  const so = () => sim.evaluate(() => ({ klassen: [...document.querySelectorAll('.sd-opdracht .sd-o-zij [data-sd-opdracht="klas"]')].map((b) => b.textContent + (b.classList.contains('aan') ? '*' : '')).join(','),
+    labels: [...document.querySelectorAll('.sd-opdracht [data-sd-opdracht="label"]')].map((b) => b.textContent + (b.classList.contains('aan') ? '*' : '')).join(','), knop: document.querySelector('.sd-opdracht .sd-o-acties .sd-o-hoofd')?.disabled,
+    acties: document.querySelector('.sd-opdracht [data-acties]').innerText.replace(/\s+/g, ' ').trim(), controle: document.querySelector('.sd-opdracht [data-controle]').innerText.replace(/\s+/g, ' ').trim(), lijst: getComputedStyle(document.querySelector('.lijst-van-simulise')).display,
+    stappen: [...document.querySelectorAll('.sd-opdracht .sd-o-stappen li')].map((li) => li.className).join(','), vervolg: document.querySelector('.sd-opdracht .sd-o-acties a[data-vervolg]')?.getAttribute('href') || '',
+    zij: [...document.querySelectorAll('.sd-opdracht .sd-o-zij h2')].map((h) => h.textContent.replace('*', '').trim()).join(','), hoofd: [...document.querySelectorAll('.sd-opdracht .sd-o-form h2, .sd-opdracht .sd-o-form .sd-o-blok:first-child label[for]')].map((h) => h.textContent.replace('*', '').trim()).join(','),
+    kolommen: getComputedStyle(document.querySelector('.sd-opdracht .sd-o-raster')).gridTemplateColumns.split(' ').length, rubrics: [...document.querySelectorAll('.sd-opdracht .sd-o-rubric .sd-o-naam')].map((x) => x.textContent).join(',') }));
+  let o1 = await so();
+  check(o1.klassen === 'MEP1A,MIP1B,MR1A' && o1.labels === 'Mediaproducer*,Music Industry Professional*' && o1.knop === true && /Nog nodig: een titel; minstens één klas/.test(o1.acties) && o1.lijst === 'none',
+    `snelle opdracht: je eigen klassen als knoppen, opleidingen staan al goed, aanmaken kan pas als het verplichte er is (${o1.klassen}; ${o1.labels})`);
+  check(o1.kolommen === 2 && o1.hoofd === 'Titel,Instructies,Rubrics,Inleverstukken' && o1.zij === 'Toewijzen aan,Planning,Beoordelaars,Reflectie,Labels,Overig' && /Annuleren Aanmaken$/.test(o1.acties),
+    `snelle opdracht: indeling als Teams, inhoud links (${o1.hoofd}), kleine keuzes in de smalle kolom rechts (${o1.zij}), knoppen bovenin`);
+  await sim.fill('#sdo-titel', 'ENG_2.4: Podcast pitch');
+  await sim.fill('#sdo-tekst', 'Maak een pitch.\nMaximaal twee minuten.\n\nLever <in> als audio.');
+  await sim.click('.sd-opdracht [data-sd-opdracht="klas"]:has-text("MEP1A")');
+  await sim.fill('.sd-opdracht [data-zoek="groepen"]', 'MEP2'); await sim.waitForTimeout(700);
+  await sim.click('.sd-opdracht [data-lijst="groepen"] button:has-text("MEP2A")');
+  await sim.fill('#sdo-start', '2026-11-23');
+  await sim.click('.sd-opdracht [data-sd-opdracht="deadline"][data-id="week"]');
+  await sim.check('.sd-opdracht [data-veld="zacht"]');
+  // Rubrics in een popup met zoekveld
+  await sim.click('.sd-opdracht [data-sd-opdracht="popup"]'); await sim.waitForSelector('.sd-opdracht dialog[open] [data-pop]', { timeout: 8000 }).catch(() => {});
+  const popVoor = await sim.locator('.sd-opdracht dialog[open] [data-pop]').count();
+  await sim.fill('.sd-opdracht dialog [data-pop-zoek]', 'vak'); await sim.waitForTimeout(200);
+  const popNa = await sim.locator('.sd-opdracht dialog[open] [data-pop]').count();
+  await sim.check('.sd-opdracht dialog [data-pop="b-5"]');
+  const popTel = await sim.textContent('.sd-opdracht dialog [data-poptel]');
+  await sim.click('.sd-opdracht dialog [data-sd-opdracht="popupKlaar"]'); await sim.waitForTimeout(200);
+  o1 = await so();
+  check(popVoor === 2 && popNa === 1 && popTel === '1 gekozen' && o1.rubrics === '5. Vakvaardigheden (MEP/MIP)' && !(await sim.$('.sd-opdracht dialog[open]')), `rubrics kiezen in een popup: zoeken, aanvinken, toevoegen (${popVoor} rubrics, ${popNa} na zoeken; gekozen: ${o1.rubrics})`);
+  await sim.click('.sd-opdracht [data-sd-opdracht="stukErbij"]'); await sim.fill('.sd-opdracht [data-veld="stuk.titel"]', 'Audio van de pitch');
+  await sim.click('.sd-opdracht [data-sd-opdracht="stukOpen"]'); await sim.check('.sd-opdracht [data-veld="stuk.meerdere"]'); await sim.fill('.sd-opdracht [data-veld="stuk.max"]', '3');
+  await sim.click('.sd-opdracht [data-sd-opdracht="linkErbij"]'); await sim.fill('.sd-opdracht [data-veld="link.titel"]', 'Voorbeeld'); await sim.fill('.sd-opdracht [data-veld="link.url"]', 'https://voorbeeld.nl/pitch');
+  await sim.click('.sd-opdracht [data-sd-opdracht="labels"][data-id="t-mod"]'); await sim.waitForTimeout(500);
+  await sim.click('.sd-opdracht [data-sd-opdracht="label"]:has-text("M02")');
+  await sim.fill('.sd-opdracht [data-zoek="beoordelaars"]', 'col'); await sim.waitForTimeout(700);
+  await sim.click('.sd-opdracht [data-lijst="beoordelaars"] button:has-text("Collega Test")');
+  await sim.selectOption('#sdo-refl2', 'REQUIRED'); await sim.fill('.sd-opdracht [data-veld="feedback"]', '2');
+  o1 = await so();
+  check(o1.knop === false && /^ENG_2\.4: Podcast pitch voor MEP1A, MEP2A · start maandag 23 november · deadline vrijdag 27 november om 23:59 · 1 rubric · inleveren: Audio van de pitch · 1 link · meteen actief/.test(o1.controle) && (await sim.inputValue('#sdo-titel')) === 'ENG_2.4: Podcast pitch',
+    `snelle opdracht: bovenin staat in één zin wat er wordt aangemaakt (${o1.controle.slice(0, 220)})`);
+  await beeld(sim, 'opdracht', '.sd-opdracht');
+  await sim.click('.sd-opdracht .sd-o-acties .sd-o-hoofd'); await sim.waitForSelector('.sd-opdracht .sd-o-fout', { timeout: 8000 }).catch(() => {});
+  o1 = await so();
+  check(o1.stappen === 'klaar,klaar,klaar,fout,wacht' && /Stap 4 lukte niet: startDate: De startdatum is ongeldig\./.test(o1.controle) && /bestaat al in Simulise, maar is nog niet af en niet actief/.test(o1.controle) && o1.vervolg === '/school/assignment/op-1/connections/create/group'
+    && opdrachtVerzoeken.map((v) => v.op).join(',') === 'assignmentCreate,assignmentBadgesUpdate,assignmentDeliverablesUpdate,assignmentConnectionCreate',
+    `snelle opdracht: een stap die Simulise weigert stopt het opslaan, met de melding en een weg verder in Simulise (${o1.stappen}; ${o1.vervolg})`);
+  await sim.click('.sd-opdracht .sd-o-acties .sd-o-hoofd'); await sim.waitForSelector('.sd-opdracht .sd-o-goed', { timeout: 8000 }).catch(() => {});
+  o1 = await so();
+  const opv = Object.fromEntries(opdrachtVerzoeken.map((v) => [v.op, v.vars]));
+  check(o1.stappen === 'klaar,klaar,klaar,klaar,klaar' && /De opdracht is aangemaakt en staat actief/.test(o1.controle)
+    && opdrachtVerzoeken.map((v) => v.op).join(',') === 'assignmentCreate,assignmentBadgesUpdate,assignmentDeliverablesUpdate,assignmentConnectionCreate,assignmentConnectionCreate,assignmentWizardFinish',
+    `snelle opdracht: opnieuw proberen gaat verder vanaf de mislukte stap, zonder een tweede opdracht te maken (${opdrachtVerzoeken.map((v) => v.op.replace('assignment', '')).join(' > ')})`);
+  const c1 = opv.assignmentCreate.input, blok = c1.blocks[0];
+  check(c1.title === 'ENG_2.4: Podcast pitch' && c1.isActive === false && c1.cover === null && JSON.stringify(c1.authors) === '["4242"]' && JSON.stringify(c1.labels) === '["l-mep","l-mip","l-m02"]' && c1.feedbackCount === 2 && c1.duration === 0
+    && blok.type === 'SIMULISE__TEXT' && JSON.parse(blok.data).text === '<p>Maak een pitch.<br>Maximaal twee minuten.</p><p>Lever &lt;in&gt; als audio.</p>' && JSON.stringify(c1.resources) === '[{"title":"Voorbeeld","url":"https://voorbeeld.nl/pitch","type":"SIMULISE__LINK","id":null}]',
+    `stap 1 zoals Simulise die stuurt: titel, tekstblok (zonder opmaak van buiten), link, labels, auteur, feedbackvragen en doorlooptijd (${JSON.stringify(c1).slice(0, 200)})`);
+  const c2 = opv.assignmentBadgesUpdate.input, c3 = opv.assignmentDeliverablesUpdate.input.deliverables[0], c4 = opv.assignmentConnectionCreate.input;
+  check(JSON.stringify(c2) === '{"id":"op-1","badges":[{"id":"b-5","isOptional":false}],"optionalBadges":{"min":0,"max":0},"reflectionOther":{"type":"REQUIRED","min":1,"max":null},"reflectionIsOptional":false}',
+    `stap 2: rubric en de reflectie-instellingen (${JSON.stringify(c2)})`);
+  check(c3.title === 'Audio van de pitch' && c3.type === 'simulise.portfolio_item' && c3.id === null && JSON.stringify(c3.templates) === '["BLOG","FILE"]' && c3.multi === true && c3.minimum === 1 && c3.maximum === 3 && c3.isOptional === false && c3.plagiarism === false
+    && c4.id === 'op-1' && JSON.stringify(c4.connectables) === '["group:gr-mep1a","group:gr-mep2a"]' && c4.connectableType === 'GROUP' && /^2026-11-23T00:00:00[+-]\d{4}$/.test(c4.startDate) && /^2026-11-27T23:59:00[+-]\d{4}$/.test(c4.deadline) && c4.deadlineIsSoft === true && c4.deliverAsWorkgroup === false
+    && JSON.stringify(c4.reviewers) === '[{"minimumReviews":1,"reviewers":["4242","77"],"order":0}]' && JSON.stringify(opv.assignmentWizardFinish) === '{"id":"op-1","activate":true}',
+    `stappen 3 tot en met 5: inleverstuk met instellingen, klassen met start en deadline (inleveren na deadline mag), twee beoordelaars, afronden en actief maken (${c4.startDate} tot ${c4.deadline})`);
+  const pq = await nieuw(`chrome-extension://${id}/popup.html`);
+  const bewaardQa = await pq.evaluate(() => chrome.storage.sync.get('qaStandaard').then((x) => JSON.stringify(x.qaStandaard)));
+  const qa = JSON.parse(bewaardQa);
+  check(qa.deadline === 'week' && qa.zacht === true && qa.reflectieAnder === 'REQUIRED' && qa.feedback === 2 && qa.labels.Modules[0].naam === 'M02' && qa.stukken[0].titel === 'Audio van de pitch' && qa.stukken[0].max === 3 && !/Podcast|MEP1A|Collega|Docent/.test(bewaardQa),
+    `snelle opdracht: je vaste keuzes worden onthouden, zonder titel, klassen of namen (${bewaardQa.slice(0, 200)})`);
+  await sim.click('.sd-opdracht [data-sd-opdracht="nogeen"]'); await sim.waitForSelector('.sd-opdracht #sdo-titel', { timeout: 8000 }).catch(() => {}); await sim.waitForTimeout(300);
+  const o2 = await sim.evaluate(() => ({ titel: document.querySelector('#sdo-titel').value, stuk: document.querySelector('.sd-opdracht [data-veld="stuk.titel"]')?.value, dl: document.querySelector('.sd-opdracht [data-sd-opdracht="deadline"].aan')?.dataset.id, refl: document.querySelector('#sdo-refl2').value }));
+  check(o2.titel === '' && o2.stuk === 'Audio van de pitch' && o2.dl === 'week' && o2.refl === 'REQUIRED', 'snelle opdracht: een volgende opdracht begint leeg, met je vaste keuzes al ingevuld');
+  await sim.click('.sd-opdracht [data-sd-opdracht="sluit"]'); await sim.waitForTimeout(200);
+  check(!(await sim.$('.sd-opdracht')) && (await sim.evaluate(() => getComputedStyle(document.querySelector('.lijst-van-simulise')).display)) !== 'none', 'snelle opdracht sluiten: de lijst van Simulise staat er weer');
+  await pq.evaluate(() => chrome.storage.sync.set({ quickAssign: false })); await sim.waitForTimeout(900);
+  const knopNa = await sim.evaluate(() => `${document.querySelectorAll('.sd-opdracht-knop').length} knop(pen)`);
+  check(knopNa === '0 knop(pen)', `module snelle opdracht uit: de knop is weg (${knopNa})`);
+  await pq.evaluate(() => chrome.storage.sync.set({ quickAssign: true })); await pq.evaluate(() => chrome.storage.sync.remove('qaStandaard')); await pq.close();
+
   // Rapportprofielen en voorvertoning van het voortgangsrapport
   const prof = await nieuw(`chrome-extension://${id}/rapport/profielen.html`);
   await prof.waitForTimeout(600);
@@ -935,6 +1314,15 @@ function bouwZip() {
   const bewaard = await prof.evaluate(() => chrome.storage.local.get('rpProfielen').then((s) => s.rpProfielen[0].weergave.accent));
   check(bewaard === '#123456' && (await srcdoc()).includes('--accent-waarde: #123456'), 'profiel opslaan en accentkleur in het rapport');
   check(!/<script/i.test(await srcdoc()), 'rapport bevat geen scripts');
+  // Vergaderlijst in de voorvertoning en de instellingen ervoor
+  await prof.selectOption('#soort', 'vergader'); await prof.waitForTimeout(300);
+  doc = await srcdoc();
+  check(doc.includes('Besluit of afspraak') && doc.includes('aanwezigheid 74,5% (grens 80%)') && /class="sig-(onder|bespreek)"/.test(doc), 'voorvertoning: vergaderlijst met signaal, aanwezigheid en een kolom voor het besluit');
+  await prof.fill('#grens', '70'); await prof.dispatchEvent('#grens', 'change'); await prof.waitForTimeout(300);
+  doc = await srcdoc();
+  check(!doc.includes('aanwezigheid 74,5%') && JSON.parse(await prof.inputValue('#json')).aanwezigheid.grens === 70, 'instelling: de grens voor aanwezigheid past het profiel en de vergaderlijst aan');
+  await beeld(prof, 'profielen', 'main > section >> nth=0');
+  check(await prof.isVisible('#bronToestemming') && await prof.isVisible('#bronProfiel') && await prof.isVisible('#bronAanwezig'), 'rapportprofielen: links voor het toetsplan en de aanwezigheid van het team, met een knop voor toestemming');
 
   await ctx.close();
   console.log(fouten.length ? `\nMISLUKT:\n- ${fouten.join('\n- ')}` : '\nOK');

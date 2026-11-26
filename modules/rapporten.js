@@ -389,6 +389,8 @@ SD.register({
   },
 
   async profiel() {
+    // Het gedeelde toetsplan van het team (rapport/bron.js): hooguit eens per 12 uur verversen; lukt dat niet, dan het vorige.
+    try { await SDBron.profiel(); } catch { /* het bewaarde profiel blijft gelden */ }
     const s = await chrome.storage.local.get({ rpProfielen: null, rpGekozen: null });
     const lijst = Array.isArray(s.rpProfielen) && s.rpProfielen.length ? s.rpProfielen : [globalThis.SD_RAPPORT_STANDAARD];
     return lijst.find((p) => p.id === s.rpGekozen) || lijst[0];
@@ -421,6 +423,12 @@ SD.register({
   async toonRapport(w, studenten, profiel, titel, fouten = [], startSoort = null) {
     if (!w || w.closed) return;
     if (w.inPagina) {
+      // Aanwezigheid uit het bestand van het team (alleen in het geheugen); zonder link gebeurt er niets.
+      try {
+        this.voortgang(w, 'Aanwezigheid ophalen…');
+        const a = await SDBron.aanwezigheid(profiel);
+        if (a) { const n = SDBron.koppel(studenten, a.lijst); w.noten = n < studenten.length ? [`aanwezigheid van ${n} van de ${studenten.length} studenten gevonden`] : []; }
+      } catch (e) { w.noten = [`aanwezigheid niet opgehaald: ${e.message || e}`]; }
       w.onAfdruk = (lijst, soort) => {
         const t = lijst.length === 1 ? `${soort === 'gesprek' ? 'Gespreksformulier' : 'Voortgangsrapport'} ${lijst[0].student.naam}` : titel;
         const pw = this.printVenster(t);
@@ -484,7 +492,7 @@ SD.register({
     }
     balk.append(
       el('b', { textContent: titel }),
-      el('span', { className: 'groepje' }, ['Soort', keuze('sd-soort', [['student', 'Voortgangsrapport'], ['gesprek', 'Gespreksformulier'], ['groep', 'Groepsoverzicht'], ['perioden', 'Meetmomenten naast elkaar']], opties.soort, (v) => { opties.soort = v; })]),
+      el('span', { className: 'groepje' }, ['Soort', keuze('sd-soort', [['student', 'Voortgangsrapport'], ['gesprek', 'Gespreksformulier'], ['groep', 'Groepsoverzicht'], ['perioden', 'Meetmomenten naast elkaar'], ['vergader', 'Vergaderlijst']], opties.soort, (v) => { opties.soort = v; })]),
       el('span', { className: 'groepje' }, ['Peildatum', datum]),
       el('span', { className: 'groepje' }, ['Vergelijk met', keuze('sd-vergelijk', [['vorige', 'vorige periode'], ['geen', 'niets'], ...(profiel.perioden || []).map((p) => [p.code, `${p.code} (${p.naam || ''})`])], opties.vergelijkMet, (v) => { opties.vergelijkMet = v; })]),
       el('span', { className: 'groepje', id: 'sd-rollen' }, rollen.map((x) => vink(x.titel, true, (v) => { v ? gekozenRollen.add(x.rol) : gekozenRollen.delete(x.rol); opties.opleidingen = [...gekozenRollen]; }))),
@@ -501,7 +509,7 @@ SD.register({
         if (bewerkt[x.dataset.bewerk] != null) { x.innerText = bewerkt[x.dataset.bewerk]; x.dataset.aangepast = '1'; }
         x.addEventListener('input', () => { x.dataset.aangepast = '1'; });
       });
-      const overzicht = opties.soort === 'groep' || opties.soort === 'perioden';
+      const overzicht = opties.soort === 'groep' || opties.soort === 'perioden' || opties.soort === 'vergader';
       onderdeelVakjes.hidden = overzicht;
       groepVakjes.hidden = !groep && !overzicht;
       csvKnop.hidden = !groep && !overzicht;

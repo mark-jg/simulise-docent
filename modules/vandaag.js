@@ -119,7 +119,7 @@ SD.register({
     .confetti i { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; background: var(--c); left: var(--x); animation: val 1.8s var(--d) ease-in forwards; }
     @keyframes val { to { transform: translateY(260px) rotate(540deg); opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .confetti { display: none; } .ring .boog { transition: none; } }
-    h2 { margin: 26px 0 10px; font-size: 18px; font-weight: 600; }
+    h2 { margin: 26px 0 10px; font-size: var(--sim-title-2, 17px); font-weight: 600; }
     .strook { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 6px 18px; align-items: center; padding: 12px 0; border-top: 1px solid var(--sim-border, #e3e6ea); }
     .strook:first-child { border-top: 0; }
     .strook .som { grid-column: 2; font-size: 12px; color: var(--sim-text-2, #5b6470); }
@@ -241,7 +241,7 @@ SD.register({
 
   /* Het menu-item Vandaag als actief tonen zolang het scherm open is; daarna het oude item weer. */
   markeer(aan) {
-    const li = this.klas ? document.querySelector(`.sim-docent-klas[data-klas="${CSS.escape(this.klas.id)}"]`)?.parentElement : document.querySelector('.sim-docent-vandaag-li');
+    const li = this.klas ? document.querySelector(`aside#nav .sim-docent-klas[data-klas="${CSS.escape(this.klas.id)}"]`)?.parentElement : document.querySelector('.sim-docent-vandaag-li');
     if (aan) {
       this._actief = [...document.querySelectorAll('aside#nav .nav-main > li.active')];
       this._actief.forEach((el) => el.classList.remove('active'));

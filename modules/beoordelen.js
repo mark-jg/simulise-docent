@@ -25,7 +25,7 @@ SD.register({
   CSS: `
     :host { all: initial; display: block; margin: 0 0 12px; }
     [hidden] { display: none !important; }
-    .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 13px/1.4 Inter, system-ui, sans-serif;
+    .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font: 13px/1.4 var(--sim-font, Inter, system-ui, sans-serif);
       color: var(--sim-text, #1e2328); background: var(--sim-surface, #fff); border: 1px solid var(--sim-border, #e3e6ea);
       border-radius: var(--sim-radius, 10px); padding: 8px 10px; }
     .lbl { color: var(--sim-text-2, #5b6470); font-weight: 600; margin-right: 2px; }

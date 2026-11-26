@@ -2,39 +2,41 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
+<link rel="stylesheet" href="update/pagina.css">
 <style>
-  body { font: 14px/1.4 system-ui, sans-serif; margin: 0; padding: 16px; width: 240px; color: #1f2328; }
-  h1 { font-size: 14px; margin: 0 0 12px; }
+  body { line-height: 1.4; padding: 16px; width: 250px; background: var(--card); }
+  h1 { font-size: 15px; margin: 0 0 12px; }
   label { display: flex; align-items: center; gap: 10px; padding: 5px 0; cursor: pointer; }
   .swatch { width: 18px; height: 18px; border-radius: 5px; border: 1px solid rgba(0,0,0,.12); flex: none;
             background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%); }
-  small { color: #6b7280; }
-  hr { border: 0; border-top: 1px solid #e4e7eb; margin: 10px 0; }
+  small { color: var(--muted); }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 10px 0; }
   .themes { display: flex; flex-direction: column; }
   #modules label, label:has(#developer) { align-items: flex-start; }
   label:has(#developer) small { display: block; font-size: 11px; line-height: 1.3; }
-  button.dev { font: inherit; font-size: 12px; font-weight: 600; margin: 4px 0 0 26px; padding: 5px 10px; border: 1px solid #d4d9df; border-radius: 6px; background: #fff; cursor: pointer; }
-  button.dev:hover { border-color: #0e8a74; color: #0b6f5e; }
+  button.dev { font: inherit; font-size: 12px; font-weight: 600; margin: 4px 0 0 26px; padding: 5px 10px; border: 1px solid var(--border-2); border-radius: var(--pil); background: var(--card); cursor: pointer; }
+  button.dev:hover { border-color: var(--accent); color: var(--accent-text); }
   #modules small { display: block; font-size: 11px; line-height: 1.3; }
   .head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 12px; }
   .head h1 { margin: 0; }
-  .ver, .foot { font-size: 11px; color: #6b7280; }
-  .update { background: #fdf1e2; border-radius: 8px; padding: 8px 10px; margin: 0 0 10px; }
+  .ver, .foot { font-size: 11px; color: var(--muted); }
+  .update { background: var(--warn-soft); border-radius: var(--radius-sm); padding: 8px 10px; margin: 0 0 10px; }
   .update strong { display: block; font-size: 13px; }
-  .update p { margin: 2px 0 6px; font-size: 12px; color: #6b7280; }
-  .update button { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 9px; border: 0; border-radius: 6px; background: #0e8a74; color: #fff; cursor: pointer; }
-  .update button.sec { background: #fff; color: #1f2328; }
+  .update p { margin: 2px 0 6px; font-size: 12px; color: var(--muted); }
+  .update button { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 9px; border: 0; border-radius: var(--pil); background: var(--accent); color: var(--op-accent); cursor: pointer; }
+  .update button.sec { background: var(--card); color: var(--fg); }
   .update button[disabled] { opacity: .5; cursor: default; }
   .update .btns { display: flex; gap: 6px; flex-wrap: wrap; }
   #updateProgress { margin: 6px 0 0; font-size: 11px; }
   #updateProgress:empty { display: none; }
   .update .small { margin: 6px 0 0; font-size: 11px; }
   .update .small a { color: inherit; }
-  .note { font-size: 12px; color: #6b7280; margin: 0 0 8px; }
+  .note { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
   .note:empty { display: none; }
   .foot { display: flex; justify-content: space-between; margin-top: 10px; }
   .foot a { color: inherit; }
 </style>
+<script src="update/pagina.js"></script>
 </head>
 <body>
   <div class="head"><h1>Simulise Docent</h1><span class="ver" id="ver"></span></div>

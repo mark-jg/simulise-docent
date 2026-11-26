@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.19.0)
+## Huidige staat (v0.23.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -71,6 +71,23 @@ modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.
                 --sdf-rubric en toont de toelichting (.tip in de shadow root) bij een niveau.
                 De eigen balk is een vaste strook van 52px bovenaan; plaats() meet de rechterrand van .review-group-panel en de
                 breedte van de kolom (uit de plek van .assignment-status-bar) en zet --fb-l en --fb-r op de shadow host.
+                matrix.js (opdrachten van een klas op /groups/school/<uuid>/assignments, twee weergaven via matrixWeergave:
+                'overzicht' (standaard; eigen DOM .sd-matrix-overzicht: blok "Wacht op jou" en daarna per vak inklapbaar, één
+                balk per opdracht, geen studenten; het deel met de tabel krijgt data-sd-matrix-tabel en wordt verborgen) en
+                'student' (de tabel als stippenkaart, opmaak onder html[data-sim-matrix-student]); leest alles uit de tabel op
+                de pagina, markeert cellen die op jou wachten met data-sd-mij, balk .sd-matrix-balk met de keuze van de
+                weergave; instellingen matrixView, matrixWeergave, matrixMij),
+                inzicht.js (Analytics: op /analytics een eigen overzicht .sd-inzicht vóór de rij met tegels, die
+                data-sd-inzicht-rij krijgt en verborgen wordt tot html[data-sim-inzicht-tegels]; tegels herkend aan hun titel
+                (SOORTEN: titel -> soort, vraag, deel); klassen als a.sim-docent-rapport[data-groep][data-naam], zodat
+                rapporten.js het groepsrapport opent; op /analytics/<soort> vertaalt het de teksten van #analyticsForm en de
+                kruimelkop (STAP voor de koppen van stappen, TEKST voor de rest) en zet html[data-sim-inzicht="keuzes"];
+                op /analytics/<soort>/reports html[data-sim-inzicht="bewaard"]: kop .sd-inzicht met de vraag, de tegelkolom
+                krijgt data-sd-inzicht-tegel (verborgen), de lijst data-sd-inzicht-lijst; op /analytics/<soort>/result
+                html[data-sim-inzicht="resultaat"]: vertaalt kop, labels en het venster "Keuzes wijzigen", de omhulling van
+                table.table-index krijgt data-sd-iz-tabel (vaste kop en naamkolom) en bij educationbygroups komt
+                .sd-inzicht.sd-iz-stand boven de tabel, geteld uit de kleur van a.score-dot; "Toon alle" drukt hooguit
+                tien keer op "Laad meer..." van Simulise; staat(naam) ruimt op bij een wissel van pagina; instelling insight),
                 zoeken.js (Cmd+K; indexeert alleen aside#nav-links en /groups/school/<uuid>, groepsnamen in
                 chrome.storage.local.sdGroups), zijbalk.js (data-sim-nav-mini, knop linksonder)
                 inspector.js (alleen als `developer` aan staat; Alt+I, R = rapport met namen vervangen,
@@ -82,7 +99,44 @@ modules/        registry.js (SD_MODULES + SD_DEFAULTS, gedeeld met popup), core.
 rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel MEP/MIP 2026-2027,
                 SD_RAPPORT_VOORBEELD: verzonnen student), render.js (SDRapport.bereken/html: A4-rapport met
                 SVG-diagrammen, doelstap uitvergroot, vergelijking vorige periode, categorieën, normen),
-                profielen.html/.js (profielen beheren in chrome.storage.local rpProfielen, live voorbeeld).
+                profielen.html/.js (profielen beheren in chrome.storage.local rpProfielen, live voorbeeld; ook de links
+                voor het team en de instellingen van de vergaderlijst),
+                xlsx.js (SDXlsx.lees: eerste werkblad van een .xlsx of een CSV, zonder bibliotheek),
+                bron.js (SDBron: toetsplan (.json) en aanwezigheid (Excel) achter een gedeelde OneDrive- of SharePoint-link;
+                instellingen in chrome.storage.local rpBron = { profielUrl, aanwezigUrl, profielTijd, profielFout }; ophalen
+                via background.js (bericht sdBron, alleen Microsoft-adressen, optional_host_permissions); het toetsplan
+                wordt een profiel met gedeeld: true en ververst hooguit eens per 12 uur; aanwezigheid alleen in het
+                geheugen, gekoppeld op naam (SDBron.koppel zet g.aanwezig)). render.js geeft per student m.signaal
+                { niveau: onder | bespreek | ok | geen, redenen } en m.aanwezig; weergave "vergader" (Vergaderlijst) in
+                weergave.js en als afdruk/CSV in render.js. Profiel: aanwezigheid { grens, kolommen }, vergadering
+                { netAan, onbeoordeeld }.
+modules/media.js: media bij het nakijken (instelling reviewMedia). Op /@gebruiker/assignment/<uuid>/review komt onder het vak met het
+                ingeleverde werk een blok .sd-media met de bestanden en links van de ingeleverde portfoliopagina: eigen vraag sdNakijkMedia
+                (assignmentAssignedForUser, zelfde opbouw als getUserAssignmentForReview plus PortfolioPage.blocks), spelers voor VIDEO en
+                AUDIO, afbeeldingen, en voor de rest de voorvertoning van Simulise in een iframe op verzoek. Het afspeelbare adres staat in
+                de voorvertoning (file.renderedPreviewUrl); die haalt de brug modules/gql.js op (bericht sd-voorvertoning, alleen
+                api.simulise.com). Niets wordt bewaard.
+modules/opdracht.js: snelle opdracht (instelling quickAssign; vaste keuzes in chrome.storage.sync qaStandaard). Knop
+                a.sd-opdracht-knop naast "Nieuwe opdracht" op /school/assignments, adres #snel, Cmd+K. Eigen scherm .sd-opdracht in
+                #scrollable-page-wrapper (de inhoud van Simulise wordt verborgen en komt terug bij sluiten). Leest
+                getContextForAssignmentEditor (letterlijk de vraag van de app), assignmentSelectableDeliverableTypes,
+                badges (eigen deelvraag sdOpdrachtRubrics), schoolTopicFilteredLabels (sdOpdrachtLabels) en
+                /api/autocomplete/assignment/plan/connects. Stuurt na elkaar assignmentCreate, assignmentBadgesUpdate,
+                assignmentDeliverablesUpdate, assignmentConnectionCreate en assignmentWizardFinish; onthoudt het nummer van de
+                opdracht (opdrachtId, NIET this.id: dat is de naam van de module voor core.js) en de laatste gelukte stap, zodat
+                opnieuw proberen niet dubbel aanmaakt. Indeling als Opdrachten in Teams: kop .sd-o-balk met de knoppen (data-acties),
+                de zin en de stappen in [data-controle], links .sd-o-form, rechts .sd-o-zij met alle kleine instellingen, rubrics in
+                dialog.sd-o-popup. Alle instellingen van de vier pagina's zitten erin (reflectie: reflectionIsOptional en
+                reflectionOther { type NONE|OPTIONAL|REQUIRED, min, max }, optionalBadges { min, max }; inleverstuk: optioneel, meerdere
+                met minimum/maximum, plagiaat, woorden, bestandssoorten, pagina weer bewerkbaar; koppeling: deadlineIsSoft "Inleveren na
+                deadline toegestaan", deliverAsWorkgroup "Inleveren als werkgroep", reviewsHiddenUntilReviewed met het label van Simulise
+                "Beoordelingen zichtbaar voor overige beoordelaars"; docenten zoeken via /api/autocomplete/teachers en
+                /api/autocomplete/assignmentauthors). Luistert alleen naar 'input', niet naar 'change': opnieuw tekenen bij het verlaten
+                van een veld laat de klik op een knop verloren gaan. NOG NIET ECHT OPGESLAGEN: alleen tegen een nagebootste server getest.
+                Aannames die pas bij de eerste echte opdracht blijken: een nieuw blok krijgt een eigen uuid als id; een
+                portfolio-item krijgt alle bestandssoorten (templates); een beoordelaarsgroep zonder id; labels als uuid;
+                groepen als "group:<uuid>"; datums als 2026-11-19T00:00:00+0100.
+update/pagina.css + pagina.js: gedeelde opmaak van popup, updatepagina en Rapportprofielen; volgt het gekozen thema.
                 modules/rapporten.js: knop "Voortgangsrapport" op het profiel (kaart Opleidingen) en
                 "Voortgangsrapporten" in het menu per groep op /groups; haalt via modules/gql.js (world MAIN,
                 GraphQL-brug met de headers van de app, postMessage sd-gql / sd-gql-antwoord) de
@@ -114,7 +168,7 @@ Thema's zijn alleen tokenblokken (`html[data-sim-theme="naam"] { --sim-* }`). Do
 staan in `DARK` in modules/thema.js. Nieuwe thema toevoegen = tokenblok + naam in `THEMES` (popup.js)
 + evt. `DARK`.
 
-Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, grading, bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen, today, shell, shellMeer, focus, focusAan, focusKolom, notifFilter, reports, search, navToggle, navMini, updateCheck, developer }`.
+Instellingen in `chrome.storage.sync`, plat: `{ enabled, theme, compact, hideSupport, grading, bdModus, bdOpleidingen, bdUitsluiten, bdEenPagina, bdGroepen, today, shell, shellMeer, focus, focusAan, focusKolom, matrixView, matrixWeergave, matrixMij, insight, notifFilter, reports, search, navToggle, navMini, updateCheck, developer }`.
 `enabled` is de aan/uit van module thema, `hideSupport` die van module hulpknop (namen uit v0.2
 bewaard). Nieuwe module: `modules/<id>.js`, regel in registry.js met eigen `key`, en in manifest.json.
 Updatestatus in `chrome.storage.local.update`. Het updatemechanisme is overgenomen uit de
@@ -264,6 +318,22 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   ([{ id text value prefix }]). Kop: `header .header-title` met `div.btn-group` Filters en `a.btn.btn-info` met `i.fa-download`;
   keuzes als `ul.list-inline li.list-group-item` (opleiding met `i.fa-school`, groep, tijdsbereik, weergave tabel/diagram).
   Tabel `#scrollable-page-wrapper table.table-index`, cellen `a.score-dot[href=/@{gebruiker}/education/aspect/{uuid}/phase/{n}]`.
+- **Analytics, resultaat (gezien november 2026, Opleiding per groep)**: adres
+  `/analytics/educationbygroups/result?type=educationbygroups&view=table|educationdiagrams&education=education:<uuid>&users=user:&users=group:<uuid>&timerange=dd-mm-jjjj&timerange=dd-mm-jjjj`
+  (let op het voorvoegsel `education:` en `group:`; zonder komt de wizard terug met "Er ging iets fout bij het ophalen van de
+  gegevens!"). Kop: `div.btn-group > a.btn.btn-info` Filters (opent `div.modal` "Keuzes wijzigen" met dezelfde stappen als de
+  wizard en knop "Uitvoeren"), `a.btn.btn-success > i.fa-save` (Opslaan: NIET aanklikken), `a.btn.btn-info > i.fa-download`.
+  Labels: `ul.list-inline > li.list-group-item` met `i.fa-school`, `i.fa-list-ul`, `i.fa-user-friends` (groep), `i.fa-calendar-alt`
+  en een `div.btn-group` (inline style height 16px) met "Tabel weergave" en "Diagram weergave". Tabel: `#scrollable-page-wrapper >
+  div > div (overflow auto) > table.table.table-v-a-m.table-index`, twee koprijen (leerlijn met colspan, daaronder stap 1..n),
+  `tbody tr > td` (avatar 38px + `strong` naam) en per stap `td.text-center(.aspect-start) > a.score-dot` (16px, kleur als inline
+  background-color). Kleur: wit = nog niet beoordeeld, grijs rgb(212,212,212) = beoordeeld "Nog niet aangetoond", lichte
+  leerlijnkleur = "Op koers", donkere = "Boven verwachting" (tooltip bij aanwijzen: leerlijn, stap, "Behaald 1/1", beoordeling
+  met datum). Daaronder `div.panel-footer.table-footer` "1-25 van de 28 record(s)" en `div.text-center > button.btn.btn-default`
+  "Laad meer...". Diagramweergave: per student `div.panel.panel-default` (kop met link naar het profiel) met een canvas van 2:1;
+  in een rooster worden ze te klein. Bewaarde rapportages `/analytics/<soort>/reports`: links de tegel (`div.col-lg-4 >
+  section.panel-link`), rechts `div.col-lg-8 > div.panel` met "Geen opgeslagen rapportages"; een gevulde lijst is niet gezien.
+  In de wizard zet je keuzes via selectize (`select.selectized`.selectize, valueField `value`).
 - Op /groups staan in het groepsmenu links met teksten als "Studenten"; zoeken.js slaat links in
   `.nav-tabs, .dropdown-menu, .btn-group` over en ruimt zulke namen op (GEEN_NAAM).
 - Inline in de pagina: Vue-modals hebben id's als `vue-modal-<hash>`: niet op selecteren.
@@ -285,6 +355,43 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   vier stappen plus afronden, elke stap slaat op. Mutaties (uit de code van Simulise, niet zelf verstuurd):
   `assignmentCreate` / `assignmentUpdate`, `assignmentBadgesUpdate`, `assignmentDeliverablesUpdate`,
   `assignmentConnectionCreate`, `assignmentWizardFinish(id, activate)`. Verplicht: Opleidingen, Groepen, Startdatum.
+- **Opdracht aanmaken, opbouw van de opslagstappen** (gelezen in de eigen scripts van Simulise op cdn.simulise.cloud, `assignments.js`
+  en `connections.js`, november 2026; niets verstuurd). Alle antwoorden hebben `...mutationFields` = `status { success errors { name messages } }`.
+  1. `assignmentCreate($input: AssignmentCreateInput!)` (bewerken: `assignmentUpdate` met `id`). Input = het formulier:
+     `{ title, cover (id of null), blocks: [{ id, type, data (JSON als tekst), title, caption }], labels: [id's, alle soorten door elkaar],
+     authors, aspects, isActive, duration, resources: [{ title, url, attachmentId, type: SIMULISE__FILE | SIMULISE__LINK | SIMULISE__VIDEO, id }],
+     forEducations, feedbackCount, catalogueTenants }`. Bloktypes o.a. `SIMULISE__TEXT`, `SIMULISE__FILE`, `SIMULISE__LINK`.
+  2. `assignmentBadgesUpdate($input: assignmentBadgesUpdateInput!)`: `{ id, badges: [{ id, isOptional }], optionalBadges, reflectionOther, reflectionIsOptional }`.
+  3. `assignmentDeliverablesUpdate($input: AssignmentDeliverablesUpdateInput!)`: `{ id, deliverables: [{ title, isOptional, plagiarism,
+     unfreezePageAfterReview, id (null bij nieuw), type (bijv. simulise.portfolio_page), multi, block { id, type, data, title, caption }, minimum, ... }] }`.
+  4. `assignmentConnectionCreate($input: AssignmentConnectionCreateInput!)`: `{ id (opdracht), startDate, deadline, deadlineIsSoft, deliverAsWorkgroup,
+     reviewGroupsAreSequenced, reviewsHiddenUntilReviewed, reviewers: [{ id, minimumReviews, reviewers, order }], connectables: [id's],
+     connectableType (bijv. GROUP) }`; antwoord `createdConnectionsCount`, `skippedConnectionsCount`.
+  5. `assignmentWizardFinish($id: ID!, $activate: Boolean!)`.
+  Schermen: `/school/assignment/create` (titel, afbeelding, omschrijving in blokken tekst/bestand/link, bijlagen bestand/link/video, rechts Actief en
+  Opleidingen*, achter "Meer instellingen bekijken" een zijpaneel met Deelaspecten, Tags, Cohorten, Modules, Versies, Feedbackvragen, Doorlooptijd,
+  Auteurs; knop "Afronden & volgende"); `/badges` (rubric zoeken en toevoegen, Optioneel, reflectie door student en reflectie-uitnodiging);
+  `/deliverables` (Portfolio item, Pagina of Pagina sjabloon als inleverstuk, elk met naam en instellingen); `/connections/create` (keuze Groepen,
+  Virtuele groep, Studenten) en `/connections/create/group` (Groepen*, Startdatum* staat op nu, Deadline, beoordelaars staat op jezelf, twee schakelaars).
+  In het menu van een opdracht staat ook Kopiëren (`/school/assignment/<uuid>/copy`): niet geopend, kan bij openen al een kopie maken.
+- **Opdracht aanmaken, wat de app zelf opvraagt** (meegekeken in de pagina, november 2026): bij het openen `getContextForAssignmentEditor`
+  (viewer.autocompletion.value = je gebruikersnummer, gebruikt voor authors en reviewers; topics met `defaultValueForForms`: Opleidingen is verplicht en
+  staat op drie opleidingen, verder Deelaspecten, Tags, Cohorten, Modules, Versies), bij Rubrics `badgesForModal` (filters `["status:activated"]`, orderBy NAME ASC,
+  25 per pagina), bij Inleverstukken `assignmentSelectableDeliverableTypes` (simulise.portfolio_item met 7 bestandssoorten, simulise.portfolio_page, en dezelfde
+  als sjabloon met isTemplate) en bij Studenten het zoekveld `/api/autocomplete/assignment/plan/connects?query=&page=1` ([{ text "Groep: MEP1A", search, value
+  "group:<uuid>", caption }]). Elke keer dat de opdrachtenlijst opent stuurt de app zelf `userTableSettingsUpdate` (eigen tabelinstellingen).
+  De pagina's zijn één Vue-app: `document.querySelector('#app').__vue_app__.config.globalProperties.$router` wisselt van pagina zonder herladen.
+- **Beoordeelscherm, ingeleverde portfoliopagina (gezien november 2026)**: vak "Ingevulde pagina" met een tegel `.deliverable-item` en daaronder
+  `.expanded-preview` > `.ui-file-preview-inline-wrapper` > `.ui-file-preview-inline-pdf` met `<embedpdf-container>`: Simulise toont de pagina als pdf
+  (`usercontent.on.simulise.cloud/portfolio/<uuid>/upload.pdf`), dus video en audio spelen niet. De echte pagina op portfolio.simulise.com mag niet in een
+  kader (X-Frame-Options sameorigin). Wel op te vragen: `assignmentAssignedForUser(user: "@gebruiker", id)` > `delivered { item { ... on PortfolioPage { blocks
+  { id type title data } } } }`. De gebruikersnaam moet met @ beginnen en de vraag moet de velden van de app bevatten (o.a. `canView preview deliverable { id }` en de
+  velden van MedialibraryFile, PortfolioPage en PortfolioItem), anders "Internal server error". Blokken van een sjabloonpagina zijn `SIMULISE__PICKER`
+  (`ContentBlockSimulisePickerData { choice nestedData }`) en `SIMULISE__FORM`; een bestand is `ContentBlockSimuliseFileData { file { id type (VIDEO, ...) icon
+  size title thumbnail extension downloadUrl renderedPreviewUrl } }`. `downloadUrl` is het origineel (bijv. .mov, niet afspeelbaar in de browser);
+  `renderedPreviewUrl` is een kleine pagina op api.simulise.com (mag wel in een kader, CORS toegestaan voor de pagina) met `<video><source src=".../upload.mp4">`
+  en een poster. De adressen zijn ondertekend en verlopen. Het beoordeelscherm openen gebruikt `getAndClaimUserAssignmentForReview`: wie het opent, neemt de
+  inlevering mogelijk in behandeling.
 - **Labels ("school topics")**: per onderdeel aan of uit (`getTopicsForFeature`, `schoolTopicUpdateEnabled`, beheerpagina
   `pages/manage/topics`), met `required` en `canCreateLabelsInline`. Bij opdrachten: Opleidingen, Deelaspecten, Tags, Cohorten,
   Modules (M01 t/m M12), Versies. Het label **Vakken** (`labels(only: [SUBJECTS])`) bestaat en staat op rubrics (Nederlands,
@@ -340,10 +447,36 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   groepen waarvan 27 gearchiveerd (eerdere jaren, zelfde namen). In `assignedAssignments` werkt een groepsfilter als
   eigen element in de lijst: `filters: ["status:...", "group:<uuid>"]` (niet met een | in één tekst). De
   `aggregations.statuses` volgen dan het groepsfilter maar niet het statusfilter.
+- **Opdrachtenmatrix, aangevuld** (door de server gemaakt, jQuery, geen Vue): `#content > section.vbox > header` (tabs) +
+  `section#content-wrapper.wrapper` > `div.row.m-b` (filter `select#group-assignments-filter`, met `data-prefixes` waaronder
+  `subjects: Vakken`) + `div.row > div.col-lg-12 > div.panel > section.panel-body` >
+  `table.table-group-assignments-overview.rotated-header` (display block, eigen scroll, `thead tr.sticky.top`).
+  Kolomkop `th.rotated` (75px) > `div.rotated-header-container > a[href=/@{gebruiker}/assignments] > div.rotated-header-content`
+  (200px, 45 graden gedraaid). Rij: `td.sticky.left.bg-white` (437px) > `div.position-relative` > `a.divider-plan` (titel) +
+  `small.reviewers` met tekst "Beoordelaars:", `strong` (inklapbaar), `div.collapse` met de namen, soms
+  `a > small.text-muted` ("Deadline: dd-mm-jjjj uu:mm", link naar de koppeling) en `div.btn-group.dropdown-btn` (menu:
+  Opdracht bekijken, Deadline aanpassen, ...). Tussenkop `tr.active > td.divider-title` (icoon, titel, `br`, `small`); een lege
+  rij is `tr > td` (één cel). Cel `td.full-column-size[data-status]` (75px, class success | warning | danger | info | blank)
+  > `a[data-title][data-toggle=tooltip]` > `i.fa`. De toelichting `data-title` zegt van wie de beurt is: "Te beoordelen"
+  (jij), "Nog niet beoordeeld" (een collega), "Wordt beoordeeld door <naam>", "Afgerond en beoordeeld", "Afgerond",
+  "Bezig", "Nog niet begonnen", "Deadline verlopen". Met `?filters=status:actionable` blijven alleen de opdrachten en de
+  studenten met actie over (MIP1B: 9 rijen en 12 kolommen in plaats van 35 en 31); het filter wordt per groep onthouden.
+  De algemene tabelregels van theme.css (`.table > tbody > tr > td`: padding 10px 18px, achtergrond bij aanwijzen) raken
+  deze tabel ook: matrixregels beginnen daarom met html:root:root[...]. Een proef in de ingebouwde browser laat die
+  themaregels niet zien (de extensie draait daar niet); de rooktest wel.
 - **Tellers**: de Beoordelen-tegel telt alleen waar jij beoordelaar bent; de groepstellers (`status:actionable`) tellen alle
   beoordelaars. In de matrix verbergt "Actie nodig" alleen rijen, niet de cellen.
 - **Andere beoordeelroutes**: Bulk in Beoordelen ("Afronden met beoordeling" naar `/assignments/review/bulk`) en beoordelen op
   leerlijn (`/@{gebruiker}/education/<id>/review`, `/@{gebruiker}/education/aspect/<id>/review`).
+- **Analytics, soorten** (`analyticsQueryTypes { type icon title color description reportCount }`): skills (Leerlijnen),
+  skillsbygroup (Leerlijnen per groep), assignmentsbyuser (Opdrachten per student), assignmentbygroups (Status opdracht over
+  groepen), portfolioactivity (Portfolio Activiteit), templatebygroups (Status sjablonen over groepen), educationbygroups
+  (Opleiding per groep). Adressen: `/analytics/<type>` (keuzes), `/analytics/<type>/reports` (bewaard),
+  `/analytics/<type>/result?...`. Alle Analytics-pagina's zijn dezelfde Vue-schil (ook bij rechtstreeks laden).
+  Keuzes: `form#analyticsForm` > `div.m-b-lg` (`h2.text-center` "Learning Analytics", `h4.text-center` met icoon en de naam
+  van de soort) + `div.panel > ul.list-group > a.list-group-item` per stap (de open stap heeft `list-group-item-current`;
+  `h4` met icoon en titel, daaronder de keuze of `em > i` met de samenvatting, `div.alert.alert-warning` "Deze keuze is
+  verplicht!", `button.btn-primary` "Volgende") + `button.btn.btn-success.btn-lg` "Uitvoeren" met een `p` eronder.
 - **Analytics**: zeven kaarten met `href="#"`; kaart, tussenpagina `/analytics/<type>/reports`, dan `/analytics/<type>` met een
   wizard. Het resultaatadres bevat alle keuzes.
 - Een eigen introspectievraag (`__type`) is niet geprobeerd op de echte server; blijf bij vragen die de app zelf ook stelt.
@@ -369,8 +502,11 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
 
 - Nederlands in UI-teksten en commentaar. Geen gedachtestreepjes (—) in Nederlands.
 - Geen persoonsgegevens van studenten in code, commits, logs of documentatie. Klasnamen zijn ok.
-- Niets naar externe servers sturen; alles lokaal in de browser. Enige uitzondering: de
-  updatecontrole haalt bij GitHub het versienummer en de zip op (er gaat niets mee). Alleen de bestaande
+- Niets naar externe servers sturen; alles lokaal in de browser. Uitzonderingen: de
+  updatecontrole haalt bij GitHub het versienummer en de zip op (er gaat niets mee), en op verzoek van Mark
+  (november 2026) leest rapport/bron.js het toetsplan en de aanwezigheid van het team van een gedeelde OneDrive- of
+  SharePoint-link (alleen lezen, alleen na toestemming, er gaat niets uit Simulise mee; aanwezigheid wordt niet bewaard).
+  Nog niet met een echte link geprobeerd: alleen nagebootst in de rooktest. Alleen de bestaande
   Simulise-sessie gebruiken, geen eigen opslag van studentdata buiten `chrome.storage` voor
   instellingen.
 - Buiten scope: Teams-koppeling. Simulise heeft geen publieke API; Teams for Education geen LTI.
