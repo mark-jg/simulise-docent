@@ -398,6 +398,7 @@ function bouwZip() {
       const VG = { MEP1A: 'vg-mep1a', MR1A: 'vg-mr1a', SD2B: 'vg-sd2b' };
       const geleden = (d) => new Date(Date.now() - d * 864e5 - 36e5).toISOString();
       const inl = (i, titel, opdr, groep, dagen, wie, status = 'HANDED_IN') => ({ id: `vd-${i}`, status, deliveredAt: geleden(dagen), connectableKey: `connectable:vc-${opdr}-${groep}`,
+        endDate: opdr === 'o-ps' ? new Date(Date.now() + 5 * 864e5).toISOString() : opdr === 'o-lob' ? new Date(Date.now() - 10 * 864e5).toISOString() : null,
         user: { username: wie, name: 'Piet Jansen' }, assignment: { id: opdr, title: titel, forEducations: /^Meetmoment/.test(titel) },
         assignmentConnection: { id: `vc-${opdr}-${groep}`, connectable: { id: VG[groep] } } });
       const open = [inl(1, 'ENG_1.5: True crime', 'o-eng', 'MEP1A', 2, 'sdevries'), inl(2, 'ENG_1.5: True crime', 'o-eng', 'MEP1A', 12, 'pjansen'), inl(3, 'Meetmoment SD Engels M4', 'o-sd', 'SD2B', 20, 'abouzid'),
@@ -453,7 +454,24 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
+  const alleOpen = (p) => p.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; })); // het zijpaneel klapt blokken in
+  await alleOpen(popup);
   check(await popup.locator('#modules input').count() === 14, 'popup toont aan/uit per module');
+  { const mf = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8'));
+    const pan = await popup.evaluate(() => ({ koppen: [...document.querySelectorAll('#modules h3')].map((h) => h.textContent).join(','), blokken: [...document.querySelectorAll('details.blok > summary')].map((x) => x.firstChild.textContent.trim()).join(','), tel: document.getElementById('modTel').textContent,
+      perioden: [...document.querySelectorAll('#perioden .periode > summary b')].map((b) => b.textContent).join(','), breed: getComputedStyle(document.body).minWidth }));
+    check(mf.side_panel?.default_path === 'popup.html' && !mf.action.default_popup && mf.permissions.includes('sidePanel') && pan.koppen === 'Nakijken,Klassen en opdrachten,Rapporten en inzicht,Uiterlijk en schil,Overig'
+      && pan.blokken === 'Onderdelen,Periodes en normen,Uiterlijk,Updates en ontwikkelaar' && /^\d+ van 14 aan$/.test(pan.tel) && pan.perioden === 'M1,M2',
+      `instellingen als zijpaneel naast de pagina: onderdelen per soort werk (${pan.koppen}), blokken ${pan.blokken}, periodes ${pan.perioden}`);
+    // Een periode toevoegen en opslaan: komt in het gekozen rapportprofiel, waar de andere modules het lezen.
+    await popup.click('#pErbij'); await popup.fill('#perioden .periode:last-child [data-p="code"]', 'M3'); await popup.fill('#perioden .periode:last-child [data-p="norm"]', 'alle leerlijnen op stap 2');
+    await popup.fill('#perioden .periode:last-child [data-p="doel"][data-rol="beroeps"]', '2'); await popup.click('#pOpslaan'); await popup.waitForTimeout(300);
+    const bewaardP = await popup.evaluate(() => chrome.storage.local.get(['rpProfielen']).then((x) => { const p = x.rpProfielen[0].perioden.at(-1); return `${x.rpProfielen[0].perioden.length}:${p.code}:${p.van}:${p.doel.beroeps}:${p.norm}:${'_nieuw' in p}`; }));
+    check(bewaardP === '3:M3:2027-02-06:2:alle leerlijnen op stap 2:false' && (await popup.textContent('#pMelding')) === 'Opgeslagen.', `zijpaneel: een periode met norm en doelstap toevoegen en opslaan in het rapportprofiel (${bewaardP})`);
+    await alleOpen(popup);
+    await popup.fill('#perioden .periode:last-child [data-p="tot"]', '2027-01-01'); await popup.click('#pOpslaan');
+    check(/einddatum ligt voor de begindatum/.test(await popup.textContent('#pMelding')), 'zijpaneel: een einddatum voor de begindatum wordt geweigerd');
+    await popup.evaluate(() => chrome.storage.local.remove(['rpProfielen', 'rpGekozen'])); await popup.reload(); await alleOpen(popup); }
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -531,7 +549,7 @@ function bouwZip() {
   const balk = '#sim-docent-inspector .bar';
   await sim.keyboard.press('Alt+KeyI');
   check(!(await sim.isVisible(balk)), 'Inspector werkt niet zonder ontwikkelaarsmodus');
-  await popup.reload();
+  await popup.reload(); await alleOpen(popup);
   check(await popup.isHidden('#inspect'), 'popup: knop Inspector verborgen zonder ontwikkelaarsmodus');
   await popup.check('#developer'); await sim.waitForTimeout(300);
   check(await popup.isVisible('#inspect'), 'popup: ontwikkelaarsmodus toont de knop Inspector starten');
@@ -686,7 +704,7 @@ function bouwZip() {
 
   // 4. Bijwerken vanuit de popup. Het mapvenster kan headless niet; een map in het Origin Private
   // File System is hetzelfde soort maphandle, dus die zetten we klaar als "gekozen extensiemap".
-  const popup2 = await nieuw(`chrome-extension://${id}/popup.html`);
+  const popup2 = await nieuw(`chrome-extension://${id}/popup.html`); await alleOpen(popup2);
   await popup2.evaluate(async () => {
     const root = await navigator.storage.getDirectory();
     const dir = await root.getDirectoryHandle('extensiemap', { create: true });
@@ -710,7 +728,7 @@ function bouwZip() {
     await new Promise((r) => setTimeout(r, 1000));
     return { versie: mf.version, mods: mods.length, herladen: window.__herladen === true };
   });
-  check(geschreven.versie === '9.9.9' && geschreven.mods === 23, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
+  check(geschreven.versie === '9.9.9' && geschreven.mods === 24, `bestanden in de map geschreven (manifest ${geschreven.versie}, ${geschreven.mods} modules)`);
   check(geschreven.herladen, 'extensie herlaadt zich na het bijwerken');
 
   // Voortgangsrapport vanaf het profiel van een student: in de pagina zelf, in de opmaak van Simulise
@@ -953,6 +971,15 @@ function bouwZip() {
   check((await vd.locator('.strook').count()) === 2 && (await vd.locator('.strook').first().locator('.stippen i').count()) === 4 && (await vd.locator('.strook').first().locator('.stippen i.wacht').count()) === 1
     && (await vd.locator('.strook').first().locator('.som').innerText()) === '1 wacht op jou · 1 te laat · 2 niet gestart' && (await vd.locator('.strook').nth(1).locator('.stippen i.bezig').count()) === 1,
     'thuispagina per klas: stippenkaart met één stip per inlevering, de opdracht die op jou wacht bovenaan');
+  { const dl = await vd.locator('.deadlines').evaluate((el) => ({ kop: el.previousElementSibling.textContent, periodes: [...el.querySelectorAll('select[data-periode] option')].map((o) => o.value).join(','), komt: [...el.querySelectorAll('.dl-twee > div:first-child .dl-rij')].map((r) => `${r.querySelector('a').textContent}|${r.querySelector('.dl-dag small').textContent}`).join(' ; '),
+      voorbij: [...el.querySelectorAll('.dl-twee > div:last-child .dl-rij')].map((r) => `${r.querySelector('a').textContent}|${r.querySelector('.dl-dag small').textContent}`).join(' ; '), link: el.querySelector('.dl-rij a').getAttribute('href') })).catch(() => null);
+    const klein = await vd.locator('.strook small.dl').allTextContents();
+    await vd.locator('select[data-periode]').selectOption(''); await sim.waitForTimeout(200);
+    const alle = await vd.locator('.deadlines').evaluate((el) => `${el.querySelectorAll('.dl-twee > div:first-child .dl-rij').length}+${el.querySelectorAll('.dl-twee > div:last-child .dl-rij').length}`);
+    check(dl && dl.kop === 'Deadlines' && dl.periodes === ',M1,M2' && klein.length === 2 && /^Deadline /.test(klein[0]) && alle === '1+1' && /#sd-opdracht=/.test(dl.link),
+      `klaspagina: bij elke opdracht klein de deadline, en een blok Deadlines per periode met aankomend en afgelopen (${JSON.stringify(dl)}; alle periodes: ${alle})`);
+    const dlAlle = await vd.locator('.deadlines').evaluate((el) => [...el.querySelectorAll('.dl-rij')].map((r) => `${r.querySelector('a').textContent}|${r.querySelector('.dl-dag small').textContent}`).join(' ; '));
+    check(dlAlle === 'PS_1.8: Wie ben ik?|over 5 dagen ; LOB - werkveld verkennen|10 dagen geleden', `klaspagina deadlines: wat komt eerst, daarna wat voorbij is (${dlAlle})`); }
   { const sl = await vd.locator('.strook').first().evaluate((el) => ({ overzicht: el.querySelector('.titel > a')?.getAttribute('href') || '', nakijk: el.querySelector('a.nakijk')?.getAttribute('href') || '', tekst: el.querySelector('a.nakijk')?.textContent || '', tweede: !!el.parentElement.children[1].querySelector('a.nakijk') }));
     check(/^\/groups\/school\/[^/]+\/assignments#sd-opdracht=/.test(sl.overzicht) && /^\/@[^/]+\/assignment\/[^/]+\/review\?/.test(sl.nakijk) && sl.tekst === 'Nakijken (1)' && !sl.tweede,
       `klaspagina: de titel van een opdracht opent het overzicht per student, "Nakijken" de eerste inlevering die op jou wacht (${sl.overzicht.replace(/=.*/, '=…')}; ${sl.tekst})`); }
@@ -1133,6 +1160,19 @@ function bouwZip() {
     && d1.simulise === 'none' && d1.groot === '18px' && d1.plak === 'sticky' && d1.link === '/@studenta/assignment/00000000-0000-4000-8000-000000000000/view' && d1.naamLink === '/@studenta/assignments'
     && (await pm.evaluate(() => chrome.storage.sync.get('matrixDraai').then((x) => x.matrixDraai))) === true,
     `matrix gedraaid: studenten onder elkaar, opdrachten als kolommen met een korte code en de hele titel als toelichting, dezelfde stippen en links (${d1 ? `${d1.koppen} // ${d1.rijen}` : 'geen tabel'})`);
+  { const kies = (sleutel, waarde) => sim.selectOption(`.sd-matrix-draai select[data-sd-matrix-kies="${sleutel}"]`, waarde).then(() => sim.waitForTimeout(450));
+    const koppen = () => sim.evaluate(() => [...document.querySelectorAll('.sd-matrix-draai thead th[data-kol]')].map((th) => th.querySelector('a, span').textContent).join(','));
+    const opties = await sim.evaluate(() => [...document.querySelectorAll('.sd-matrix-draai select[data-sd-matrix-kies]')].map((sel) => `${sel.dataset.sdMatrixKies}:${[...sel.options].map((o) => o.value).join('/')}`).join(' '));
+    await kies('matrixKolommen', 'code');
+    const opCode = await koppen();
+    await kies('matrixPeriode', 'M1');
+    const inM1 = await sim.evaluate(() => `${document.querySelector('.sd-matrix-draai .sd-md-aantal').textContent} | ${document.querySelector('.sd-matrix-draai .sd-md-leeg')?.textContent || ''}`);
+    await kies('matrixPeriode', 'M2');
+    const inM2 = await sim.evaluate(() => document.querySelector('.sd-matrix-draai .sd-md-aantal').textContent);
+    await kies('matrixPeriode', ''); await kies('matrixKolommen', 'simulise');
+    const onder = await sim.evaluate(() => getComputedStyle(document.querySelector('.sd-matrix-draai')).marginBottom);
+    check(opties === 'matrixSorteer:voornaam/achternaam/wacht/laat/klaar matrixKolommen:simulise/deadline/code matrixPeriode:/M1/M2' && opCode === 'BUR,ENG_1.5,LOB,PS_1.8' && /^0 van 4 opdrachten \| Geen opdrachten/.test(inM1) && inM2 === '4 van 4 opdrachten' && (await koppen()) === 'ENG_1.5,PS_1.8,LOB,BUR' && onder === '32px',
+      `matrix gedraaid: sorteren van studenten en opdrachten en filteren op de periode van de deadline (${opties}; op code: ${opCode}; M1: ${inM1}; M2: ${inM2}; marge onder ${onder})`); }
   await sim.evaluate(() => { location.hash = '#sd-opdracht=' + encodeURIComponent('LOB - werkveld verkennen'); }); await sim.waitForTimeout(500);
   d1 = await dr();
   check(d1.hier === 'LOB' && (await sim.evaluate(() => location.hash)) === '', `matrix gedraaid: het adres van de klaspagina (#sd-opdracht) markeert de kolom van die opdracht (${d1.hier})`);

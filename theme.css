@@ -1249,3 +1249,12 @@ html:root:root .sd-matrix-draai table.sd-md .sd-m-hier { background: color-mix(i
 .sd-matrix-draai .sd-md-stip.mij::before { width: 18px; height: 18px; background: var(--sim-accent, #0e8a74); border: 0; box-shadow: 0 0 0 3px color-mix(in srgb, var(--sim-accent, #0e8a74) 22%, transparent); }
 html[data-sim-matrix-mij] .sd-matrix-draai .sd-md-stip:not(.mij)::before { opacity: .22; }
 .sd-matrix-draai .sd-md-voet { margin: 8px 2px 0; font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+
+/* Matrix: ruimte onder het overzicht en de keuzes boven de gedraaide tabel */
+.sd-matrix-overzicht, .sd-matrix-draai { margin-bottom: 32px; }
+html[data-sim-matrix] [data-sd-matrix-tabel] { margin-bottom: 32px !important; }
+.sd-matrix-draai .sd-md-kies { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin: 0 2px 10px; font-size: 13px; color: var(--sim-text-2, #5b6470); }
+.sd-matrix-draai .sd-md-kies label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; }
+html:root:root .sd-matrix-draai .sd-md-kies select { width: auto; height: auto; font: inherit; font-size: 13px; padding: 4px 26px 4px 10px; border: 1px solid var(--sim-border-2, #d4d9df); border-radius: var(--sim-pill, 999px); background-color: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); }
+.sd-matrix-draai .sd-md-aantal { margin-left: auto; color: var(--sim-text-3, #8a93a0); }
+.sd-matrix-draai .sd-md-leeg { padding: 24px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); color: var(--sim-text-2, #5b6470); }

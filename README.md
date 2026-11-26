@@ -101,6 +101,13 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.25.0: de instellingen staan in een zijpaneel naast de pagina (klik op het icoon), niet meer in een venster
+  eroverheen. Onderdelen staan per soort werk, en er is een blok "Periodes en normen": periodes met begin en eind,
+  de norm in woorden en de doelstap per opleiding. Die periodes gelden overal: voortgangsrapport en vergaderlijst, een
+  filter op deadline in de gedraaide matrix en de deadlines op de klaspagina. De gedraaide matrix sorteert studenten
+  (voornaam, achternaam, wacht op jou, te laat, klaar) en opdrachten (volgorde van Simulise, deadline, code), en heeft
+  meer ruimte aan de onderkant. Op de klaspagina staat bij elke opdracht klein de deadline, met een blok Deadlines:
+  per periode wat nog komt en wat voorbij is.
 - 0.24.0: de opdrachten van een klas per student kun je draaien. Met de knop "Draaien" staan de studenten onder elkaar
   en de opdrachten als kolommen, met bovenaan een korte code uit de titel (PS_1.8, ENG_2.3); de hele titel en de
   deadline zie je als je de code aanwijst. De keuze wordt onthouden. Op de klaspagina zijn de opdrachten doorklikbaar:

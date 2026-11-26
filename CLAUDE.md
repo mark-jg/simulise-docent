@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.24.0)
+## Huidige staat (v0.25.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -110,6 +110,13 @@ rapport/        Voortgangsrapporten. standaard.js (SD_RAPPORT_STANDAARD: profiel
                 { niveau: onder | bespreek | ok | geen, redenen } en m.aanwezig; weergave "vergader" (Vergaderlijst) in
                 weergave.js en als afdruk/CSV in render.js. Profiel: aanwezigheid { grens, kolommen }, vergadering
                 { netAan, onbeoordeeld }.
+v0.25: popup.html is het zijpaneel (manifest side_panel, permissie sidePanel, geen default_popup; background.js zet
+                openPanelOnActionClick). Blokken details.blok: Onderdelen (per groep uit registry.js, veld groep), Periodes en normen,
+                Uiterlijk, Updates en ontwikkelaar. Periodes bewerk je daar in het gekozen rapportprofiel (rpProfielen / rpGekozen).
+                modules/perioden.js: SD.perioden (laad, lijst, huidige, vind, bevat, volg) leest die periodes voor de modules.
+                matrix.js: boven de gedraaide tabel drie keuzes (select[data-sd-matrix-kies]): matrixSorteer, matrixKolommen,
+                matrixPeriode (alleen opdrachten met een deadline in die periode). vandaag.js vraagt nu ook endDate op; de klaspagina
+                toont per strook small.dl en een blok .deadlines (periode kiezen, aankomend en afgelopen).
 matrix.js, aanvulling v0.24: in de weergave per student de knop "Draaien" (instelling matrixDraai, standaard aan): eigen tabel
                 .sd-matrix-draai table.sd-md met studenten als rijen en opdrachten als kolommen (code() maakt de korte kop uit de titel),
                 html[data-sim-matrix-draai] verbergt dan de tabel van Simulise. Het adres #sd-opdracht=<titel> (links op de klaspagina van

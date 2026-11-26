@@ -3,25 +3,26 @@
  * die namen blijven gelijk aan v0.2, zodat bestaande instellingen blijven werken.
  * Nieuwe module: bestand modules/<id>.js met SD.register({ id, init, update, destroy }),
  * een regel hieronder, en het bestand toevoegen aan content_scripts in manifest.json.
+ * `groep` bepaalt onder welk kopje de module in het zijpaneel staat (nakijken, klassen, rapporten, uiterlijk, overig).
  * Modules met dev: true staan niet in de lijst, maar onder "Ontwikkelaarsmodus" in de popup.
  */
 globalThis.SD_MODULES = [
-  { id: 'thema', naam: 'Thema', uitleg: 'Opmaak en thema\'s voor Simulise', key: 'enabled' },
-  { id: 'vandaag', naam: 'Vandaag', uitleg: 'Eigen startscherm met je beoordeelwachtrij over alle groepen; bovenaan de zijbalk en via Cmd+K', key: 'today' },
-  { id: 'schil', naam: 'Nieuwe schil (thema Helder)', uitleg: 'Zijbalk rond taken, gewone taal en een kleur per klas; werkt alleen met het thema Helder', key: 'shell' },
-  { id: 'focus', naam: 'Focusmodus bij beoordelen', uitleg: 'Het werk met rubric, feedback en beoordeling toekennen ernaast, en een compacte lijst van de klas; Alt+F', key: 'focus' },
-  { id: 'media', naam: 'Media bij het nakijken', uitleg: 'Video, audio en bestanden van een ingeleverde portfoliopagina afspelen op het beoordeelscherm', key: 'reviewMedia' },
-  { id: 'matrix', naam: 'Opdrachten van een klas', uitleg: 'Rustig overzicht per vak met wat op jou wacht bovenaan; de matrix per student als stippenkaart', key: 'matrixView' },
-  { id: 'inzicht', naam: 'Inzicht in gewone taal', uitleg: 'Analytics als vragen, geordend, met je klassen bovenaan; de keuzes voor een rapportage in gewone taal', key: 'insight' },
-  { id: 'opdracht', naam: 'Snelle opdracht', uitleg: 'Een opdracht aanmaken op één scherm: knop bij Opdrachten en via Cmd+K', key: 'quickAssign' },
-  { id: 'beoordelen', naam: 'Filter in Beoordelen', uitleg: 'Meetmomenten van andere opleidingen verbergen; instellingen in de filterbalk', key: 'grading' },
-  { id: 'meldingen', naam: 'Filter in Meldingen', uitleg: 'Meldingen over meetmomenten van andere opleidingen verbergen (menu en pagina)', key: 'notifFilter' },
-  { id: 'rapporten', naam: 'Voortgangsrapporten', uitleg: 'Knop op het profiel van een student en in het menu bij Groepen', key: 'reports' },
-  { id: 'zoeken', naam: 'Zoeken (Cmd+K)', uitleg: 'Snel naar menu-items en groepen springen; Ctrl+K op Windows', key: 'search' },
-  { id: 'zijbalk', naam: 'Zijbalk inklappen', uitleg: 'Knop linksonder om de zijbalk tot iconen in te klappen', key: 'navToggle' },
+  { id: 'thema', groep: 'uiterlijk', naam: 'Thema', uitleg: 'Opmaak en thema\'s voor Simulise', key: 'enabled' },
+  { id: 'vandaag', groep: 'nakijken', naam: 'Vandaag', uitleg: 'Eigen startscherm met je beoordeelwachtrij over alle groepen; bovenaan de zijbalk en via Cmd+K', key: 'today' },
+  { id: 'schil', groep: 'uiterlijk', naam: 'Nieuwe schil (thema Helder)', uitleg: 'Zijbalk rond taken, gewone taal en een kleur per klas; werkt alleen met het thema Helder', key: 'shell' },
+  { id: 'focus', groep: 'nakijken', naam: 'Focusmodus bij beoordelen', uitleg: 'Het werk met rubric, feedback en beoordeling toekennen ernaast, en een compacte lijst van de klas; Alt+F', key: 'focus' },
+  { id: 'media', groep: 'nakijken', naam: 'Media bij het nakijken', uitleg: 'Video, audio en bestanden van een ingeleverde portfoliopagina afspelen op het beoordeelscherm', key: 'reviewMedia' },
+  { id: 'matrix', groep: 'klassen', naam: 'Opdrachten van een klas', uitleg: 'Rustig overzicht per vak met wat op jou wacht bovenaan; de matrix per student als stippenkaart', key: 'matrixView' },
+  { id: 'inzicht', groep: 'rapporten', naam: 'Inzicht in gewone taal', uitleg: 'Analytics als vragen, geordend, met je klassen bovenaan; de keuzes voor een rapportage in gewone taal', key: 'insight' },
+  { id: 'opdracht', groep: 'klassen', naam: 'Snelle opdracht', uitleg: 'Een opdracht aanmaken op één scherm: knop bij Opdrachten en via Cmd+K', key: 'quickAssign' },
+  { id: 'beoordelen', groep: 'nakijken', naam: 'Filter in Beoordelen', uitleg: 'Meetmomenten van andere opleidingen verbergen; instellingen in de filterbalk', key: 'grading' },
+  { id: 'meldingen', groep: 'nakijken', naam: 'Filter in Meldingen', uitleg: 'Meldingen over meetmomenten van andere opleidingen verbergen (menu en pagina)', key: 'notifFilter' },
+  { id: 'rapporten', groep: 'rapporten', naam: 'Voortgangsrapporten', uitleg: 'Knop op het profiel van een student en in het menu bij Groepen', key: 'reports' },
+  { id: 'zoeken', groep: 'overig', naam: 'Zoeken (Cmd+K)', uitleg: 'Snel naar menu-items en groepen springen; Ctrl+K op Windows', key: 'search' },
+  { id: 'zijbalk', groep: 'overig', naam: 'Zijbalk inklappen', uitleg: 'Knop linksonder om de zijbalk tot iconen in te klappen', key: 'navToggle' },
   // dev: alleen in de ontwikkelaarsmodus (eigen schakelaar onderaan de popup)
-  { id: 'inspector', naam: 'Inspector', uitleg: 'Alt+I: selectors en paginarapporten zonder namen', key: 'developer', dev: true },
-  { id: 'hulpknop', naam: 'Hulpknop verbergen', uitleg: 'Zwevende knop "Hulp nodig?" weg; hulp blijft in het gebruikersmenu', key: 'hideSupport' },
+  { id: 'inspector', groep: 'overig', naam: 'Inspector', uitleg: 'Alt+I: selectors en paginarapporten zonder namen', key: 'developer', dev: true },
+  { id: 'hulpknop', groep: 'overig', naam: 'Hulpknop verbergen', uitleg: 'Zwevende knop "Hulp nodig?" weg; hulp blijft in het gebruikersmenu', key: 'hideSupport' },
 ];
 
 globalThis.SD_DEFAULTS = {
@@ -40,6 +41,9 @@ globalThis.SD_DEFAULTS = {
   qaStandaard: {},    // snelle opdracht: je vaste keuzes (deadline, inleverstukken, labels, actief)
   matrixView: true,   // module matrix
   matrixMij: false,   // matrix: alles behalve wat op jou wacht lichter
+  matrixSorteer: 'voornaam', // gedraaide matrix: studenten op voornaam, achternaam, wacht, laat of klaar
+  matrixKolommen: 'simulise', // gedraaide matrix: opdrachten in de volgorde van Simulise, op deadline of op code
+  matrixPeriode: '',  // gedraaide matrix: alleen opdrachten met een deadline in deze periode (code), leeg = alle
   matrixDraai: true,  // matrix per student gedraaid: studenten als rijen, opdrachten als kolommen
   matrixWeergave: 'overzicht', // opdrachten van een klas: 'overzicht' (per vak) of 'student' (stippenkaart)
   focus: true,        // module focus

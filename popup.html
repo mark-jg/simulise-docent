@@ -2,62 +2,91 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
+<title>Simulise Docent</title>
 <link rel="stylesheet" href="update/pagina.css">
 <style>
-  body { line-height: 1.4; padding: 16px; width: 250px; background: var(--card); }
-  h1 { font-size: 15px; margin: 0 0 12px; }
-  label { display: flex; align-items: center; gap: 10px; padding: 5px 0; cursor: pointer; }
-  .swatch { width: 18px; height: 18px; border-radius: 5px; border: 1px solid rgba(0,0,0,.12); flex: none;
-            background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%); }
-  small { color: var(--muted); }
-  hr { border: 0; border-top: 1px solid var(--border); margin: 10px 0; }
-  .themes { display: flex; flex-direction: column; }
-  #modules label, label:has(#developer) { align-items: flex-start; }
-  label:has(#developer) small { display: block; font-size: 11px; line-height: 1.3; }
-  button.dev { font: inherit; font-size: 12px; font-weight: 600; margin: 4px 0 0 26px; padding: 5px 10px; border: 1px solid var(--border-2); border-radius: var(--pil); background: var(--card); cursor: pointer; }
-  button.dev:hover { border-color: var(--accent); color: var(--accent-text); }
-  #modules small { display: block; font-size: 11px; line-height: 1.3; }
-  .head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 12px; }
-  .head h1 { margin: 0; }
-  .ver, .foot { font-size: 11px; color: var(--muted); }
-  .update { background: var(--warn-soft); border-radius: var(--radius-sm); padding: 8px 10px; margin: 0 0 10px; }
+  /* Het zijpaneel van de extensie: een kolom naast Simulise, niet eroverheen. Ook bruikbaar als gewone pagina. */
+  body { line-height: 1.4; padding: 0 0 24px; min-width: 260px; background: var(--bg); }
+  .head { position: sticky; top: 0; z-index: 2; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 14px 16px 10px; background: var(--bg); }
+  .head h1 { font-size: 17px; }
+  .ver, .foot { font-size: 12px; color: var(--muted); }
+  main { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
+  details.blok { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+  details.blok > summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 11px 14px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  details.blok > summary::-webkit-details-marker { display: none; }
+  details.blok > summary::after { content: ""; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; }
+  details.blok[open] > summary::after { transform: rotate(45deg); }
+  details.blok > summary small { font-weight: 400; }
+  .in { padding: 0 14px 14px; }
+  h3 { margin: 12px 0 2px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  h3:first-child { margin-top: 0; }
+  label.keuze { display: flex; align-items: flex-start; gap: 10px; padding: 5px 0; cursor: pointer; }
+  label.keuze input { margin-top: 3px; flex: none; }
+  label.keuze small { display: block; font-size: 12px; line-height: 1.3; }
+  .swatch { width: 18px; height: 18px; border-radius: 5px; border: 1px solid rgba(0,0,0,.12); flex: none; margin-top: 1px; background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%); }
+  .update { background: var(--warn-soft); border-radius: var(--radius-sm); padding: 10px 12px; }
   .update strong { display: block; font-size: 13px; }
   .update p { margin: 2px 0 6px; font-size: 12px; color: var(--muted); }
-  .update button { font: inherit; font-size: 12px; font-weight: 600; padding: 5px 9px; border: 0; border-radius: var(--pil); background: var(--accent); color: var(--op-accent); cursor: pointer; }
-  .update button.sec { background: var(--card); color: var(--fg); }
-  .update button[disabled] { opacity: .5; cursor: default; }
-  .update .btns { display: flex; gap: 6px; flex-wrap: wrap; }
-  #updateProgress { margin: 6px 0 0; font-size: 11px; }
-  #updateProgress:empty { display: none; }
-  .update .small { margin: 6px 0 0; font-size: 11px; }
-  .update .small a { color: inherit; }
-  .note { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
-  .note:empty { display: none; }
-  .foot { display: flex; justify-content: space-between; margin-top: 10px; }
+  .update .btns, .rij { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .update button { font-size: 12px; font-weight: 600; padding: 5px 12px; }
+  #updateProgress { margin: 6px 0 0; font-size: 12px; }
+  #updateProgress:empty, .note:empty { display: none; }
+  .update .small { margin: 6px 0 0; font-size: 12px; }
+  .note { font-size: 12px; color: var(--muted); margin: 0; padding: 0 4px; }
+  button.klein { font-size: 12px; padding: 4px 12px; }
+  .periode { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card-2); }
+  .periode > summary { list-style: none; display: flex; align-items: baseline; gap: 8px; padding: 8px 10px; cursor: pointer; font-size: 13px; }
+  .periode > summary::-webkit-details-marker { display: none; }
+  .periode > summary b { font-weight: 600; }
+  .periode > summary .nu { padding: 1px 8px; border-radius: var(--pil); background: var(--accent-soft); color: var(--accent-text); font-size: 11px; font-weight: 600; }
+  .periode .velden { padding: 2px 10px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .periode .velden label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); min-width: 0; }
+  .periode .velden label.breed { grid-column: 1 / -1; }
+  .periode .velden label.vink { flex-direction: row; align-items: center; gap: 8px; color: var(--fg); }
+  .periode input[type=text], .periode input[type=date], .periode input[type=number], .periode textarea { width: 100%; font-size: 13px; padding: 5px 8px; }
+  .periode textarea { min-height: 56px; resize: vertical; }
+  #pMelding { font-size: 12px; color: var(--muted); } #pMelding.fout { color: var(--fout); }
+  .foot { display: flex; justify-content: space-between; gap: 8px; padding: 6px 4px 0; }
   .foot a { color: inherit; }
 </style>
 <script src="update/pagina.js"></script>
 </head>
 <body>
   <div class="head"><h1>Simulise Docent</h1><span class="ver" id="ver"></span></div>
-  <div class="update" id="update" hidden>
-    <strong id="updTitle">Nieuwe versie beschikbaar</strong>
-    <p id="updText"></p>
-    <div class="btns"><button id="doUpdate" disabled>Nu bijwerken</button><button id="pickFolder" class="sec" hidden>Extensiemap kiezen</button></div>
-    <p id="updateProgress"></p>
-    <p class="small"><a href="#" id="manualZip">Handmatig: zip downloaden</a></p>
-  </div>
-  <p class="note" id="note"></p>
-  <div id="modules"></div>
-  <hr>
-  <div class="themes" id="themes"></div>
-  <hr>
-  <label><input type="checkbox" id="compact"> Compacte weergave</label>
-  <hr>
-  <label><input type="checkbox" id="developer"> <span>Ontwikkelaarsmodus<small>Inspector (Alt+I): selectors en paginarapporten zonder namen</small></span></label>
-  <button id="inspect" class="dev" hidden>Inspector starten</button>
-  <div class="foot"><a href="#" id="profielen">Rapportprofielen</a><a href="#" id="updCheck">Controleer op updates</a></div>
+  <main>
+    <div class="update" id="update" hidden>
+      <strong id="updTitle">Nieuwe versie beschikbaar</strong>
+      <p id="updText"></p>
+      <div class="btns"><button id="doUpdate" class="primary" disabled>Nu bijwerken</button><button id="pickFolder" hidden>Extensiemap kiezen</button></div>
+      <p id="updateProgress"></p>
+      <p class="small"><a href="#" id="manualZip">Handmatig: zip downloaden</a></p>
+    </div>
+    <p class="note" id="note"></p>
+
+    <details class="blok" open><summary>Onderdelen <small id="modTel"></small></summary><div class="in" id="modules"></div></details>
+
+    <details class="blok" id="blokPerioden"><summary>Periodes en normen <small id="pNu"></small></summary><div class="in">
+      <p class="note" id="pUitleg" style="padding:0 0 6px">De periodes van het schooljaar. Ze gelden voor het voortgangsrapport en de vergaderlijst, het filter op deadline bij de opdrachten van een klas en de deadlines op de klaspagina.</p>
+      <div id="perioden"></div>
+      <div class="rij" style="margin-top:10px"><button id="pErbij" class="klein">+ Periode</button><button id="pOpslaan" class="klein primary">Opslaan</button><span id="pMelding"></span></div>
+      <h3>Vergaderlijst</h3>
+      <label class="keuze"><span>Aanwezigheid onder <input type="number" id="pGrens" min="0" max="100" style="width:64px"> % is een bespreekpunt</span></label>
+      <p class="note" style="padding:6px 0 0">De regels achter een norm (hoeveel leerlijnen op welke stap) en het toetsplan van het team stel je in bij <a href="#" id="profielen">Rapportprofielen</a>.</p>
+    </div></details>
+
+    <details class="blok"><summary>Uiterlijk <small id="themaNu"></small></summary><div class="in">
+      <div class="themes" id="themes"></div>
+      <label class="keuze"><input type="checkbox" id="compact"> <span>Compacte weergave</span></label>
+    </div></details>
+
+    <details class="blok"><summary>Updates en ontwikkelaar</summary><div class="in">
+      <div class="rij"><button id="updCheck" class="klein">Controleer op updates</button><a href="#" id="updPagina" style="font-size:12px">Instellingen voor updates</a></div>
+      <label class="keuze" style="margin-top:8px"><input type="checkbox" id="developer"> <span>Ontwikkelaarsmodus<small>Inspector (Alt+I): selectors en paginarapporten zonder namen</small></span></label>
+      <button id="inspect" class="klein" hidden>Inspector starten</button>
+    </div></details>
+  </main>
   <script src="modules/registry.js"></script>
+  <script src="rapport/standaard.js"></script>
   <script src="popup.js"></script>
   <script src="update/updater.js"></script>
 </body>

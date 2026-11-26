@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Simulise Docent",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "description": "Thema's en docent-tools voor Simulise (ma.simulise.com). Draait lokaal; controleert alleen GitHub op updates.",
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://api.github.com/*",
@@ -27,13 +28,15 @@
   },
   "action": {
     "default_title": "Simulise Docent",
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+  "side_panel": {
+    "default_path": "popup.html"
   },
   "options_page": "update/update.html",
   "background": {
@@ -52,6 +55,7 @@
         "modules/core.js",
         "modules/regels.js",
         "modules/klassen.js",
+        "modules/perioden.js",
         "modules/thema.js",
         "modules/beoordelen.js",
         "modules/meldingen.js",

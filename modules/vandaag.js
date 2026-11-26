@@ -36,7 +36,7 @@ SD.register({
 
   Q: `query sdDocentVandaag($page: Int!, $perPage: Int!, $filters: [String!]!, $orderBy: AssignedAssignmentsOrder) {
     assignedAssignments(page: $page, first: $perPage, filters: $filters, orderBy: $orderBy) {
-      data { id status deliveredAt connectableKey user { username } assignment { id title forEducations }
+      data { id status deliveredAt endDate connectableKey user { username } assignment { id title forEducations }
         assignmentConnection { id connectable { ... on WorkGroup { id } ... on SchoolGroup { id } } } }
       aggregations { groups { key item { autocompletion { id text value } } count } statuses { key count } __typename }
       paginatorInfo { total currentPage hasMorePages }
@@ -135,6 +135,22 @@ SD.register({
     .stippen .bezig, .legenda .bezig { background: color-mix(in srgb, var(--k, var(--sim-accent, #0e8a74)) 35%, var(--sim-surface, #fff)); }
     .stippen .laat, .legenda .laat { background: var(--sim-danger, #c0392b); }
     .stippen .niet, .legenda .niet { background: var(--sim-surface-2, #eef0f3); border: 1px solid var(--sim-border-2, #cfd4da); }
+    .strook .titel small.dl { font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+    .strook .titel small.dl.voorbij { color: var(--sim-text-2, #5b6470); }
+    .deadlines { padding: 14px 18px 16px; }
+    .dl-kop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px; color: var(--sim-text-2, #5b6470); }
+    .dl-kop label { display: inline-flex; align-items: center; gap: 8px; }
+    .dl-kop select { font: inherit; font-size: 13px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--sim-border-2, #cfd4da); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); }
+    .dl-twee { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 28px; margin-top: 12px; }
+    .dl-twee h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; color: var(--sim-text-2, #5b6470); }
+    .dl-twee h3 span { margin-left: 4px; padding: 1px 8px; border-radius: 999px; background: var(--sim-surface-2, #eef0f3); font-size: 12px; }
+    .dl-rij { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 2px 12px; padding: 9px 0; border-top: 1px solid var(--sim-border, #e3e6ea); align-items: baseline; }
+    .dl-dag b { display: block; font-size: 13px; font-weight: 600; }
+    .dl-dag small { font-size: 12px; color: var(--sim-text-3, #8a93a0); }
+    .dl-rij > a { color: var(--sim-text, #1e2328); font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dl-rij > a:hover { color: var(--sim-accent-text, #0b6f5e); text-decoration: underline; }
+    .dl-rij .som { grid-column: 2; font-size: 12px; color: var(--sim-text-2, #5b6470); }
+    .dl-leeg { margin: 8px 0 0; font-size: 13px; color: var(--sim-text-3, #8a93a0); }
     .legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font-size: 12px; color: var(--sim-text-2, #5b6470); }
     .legenda span { display: inline-flex; align-items: center; gap: 6px; }
     .legenda i { width: 11px; height: 11px; border-radius: 50%; box-sizing: border-box; }
@@ -393,6 +409,8 @@ SD.register({
       this.sluit(); // van Vandaag naar een klas of andersom
     }
     this.klas = klas?.id ? { id: String(klas.id) } : null;
+    this.periode = null; // deadlines: begint bij de periode van vandaag (modules/perioden.js)
+    this.SD.perioden.laad().then(() => { if (this.host && this.klas) this.teken(); }, () => {});
     this.groep = ''; // elke keer beginnen met alle groepen
     const { host, shadow } = this.SD.shadowHost('sim-docent-vandaag', this.CSS);
     this.host = host;
@@ -424,6 +442,7 @@ SD.register({
     });
     this.scherm.addEventListener('change', (e) => {
       if (e.target.matches('[data-verborgen]')) { this.toonVerborgen = e.target.checked; this.teken(); }
+      if (e.target.matches('[data-periode]')) { this.periode = e.target.value; this.teken(); }
     });
     this.laad();
   },
@@ -469,6 +488,40 @@ SD.register({
     return ['ma', 'di', 'wo', 'do', 'vr'].map((naam) => { const dag = iso(d); d.setDate(d.getDate() + 1); return `<span class="${set.has(dag) ? 'ja' : ''}${dag === vandaag ? ' nu' : ''}"><i></i>${naam}</span>`; }).join('');
   },
 
+  /* Een datum van Simulise als JJJJ-MM-DD (de server geeft een tijdstempel of dd-mm-jjjj); leeg als er geen is. */
+  datum(x) {
+    const t = String(x || '');
+    if (/^\d{4}-\d{2}-\d{2}/.test(t)) return t.slice(0, 10);
+    const m = t.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
+    if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    const d = Date.parse(t);
+    return Number.isFinite(d) ? new Date(d).toISOString().slice(0, 10) : '';
+  },
+  dagTekst(iso, metJaar = false) { const [j, m, d] = iso.split('-').map(Number); return new Date(j, m - 1, d).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'long', ...(metJaar ? { year: 'numeric' } : {}) }); },
+
+  /* De deadlines van een klas in één periode: wat nog komt (eerst de dichtstbijzijnde) en wat voorbij is (laatste eerst). */
+  deadlines(stroken, k) {
+    const esc = this.esc, P = this.SD.perioden, nu = P.vandaag();
+    if (this.periode == null) this.periode = P.huidige()?.code || '';
+    const code = P.vind(this.periode) ? this.periode : '';
+    const met = stroken.filter((x) => x.deadline && P.bevat(code, x.deadline));
+    const komt = met.filter((x) => x.deadline >= nu).sort((a, b) => a.deadline.localeCompare(b.deadline));
+    const voorbij = met.filter((x) => x.deadline < nu).sort((a, b) => b.deadline.localeCompare(a.deadline));
+    const dagen = (iso) => Math.round((Date.parse(iso) - Date.parse(nu)) / 864e5);
+    const wanneer = (iso) => { const n = dagen(iso); return n === 0 ? 'vandaag' : n === 1 ? 'morgen' : n > 0 ? `over ${n} dagen` : n === -1 ? 'gisteren' : `${-n} dagen geleden`; };
+    const regel = (x) => `<div class="dl-rij"><span class="dl-dag"><b>${esc(this.dagTekst(x.deadline))}</b><small>${esc(wanneer(x.deadline))}</small></span>
+      <a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="Open het overzicht per student">${esc(x.titel)}</a>
+      <span class="som">${[[x.klaar, 'klaar'], [x.wacht, x.wacht === 1 ? 'wacht op jou' : 'wachten op jou'], [x.bezig, 'bezig'], [x.laat, 'te laat'], [x.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`;
+    const zonder = stroken.filter((x) => !x.deadline).length;
+    const p = P.vind(code);
+    return `<h2>Deadlines</h2>
+      <div class="lijst kaart deadlines"><div class="dl-kop">${P.lijst.length ? `<label>Periode <select data-periode>${[['', 'Alle periodes'], ...P.lijst.map((x) => [x.code, `${x.code}${x.naam ? ` · ${x.naam}` : ''}`])].map(([v, t]) => `<option value="${esc(v)}"${v === code ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+          ${p ? `<small>${esc(this.dagTekst(p.van, true))} tot en met ${esc(this.dagTekst(p.tot, true))}</small>` : ''}` : '<small>Stel periodes in via het zijpaneel van de extensie (Periodes en normen) om per periode te kijken.</small>'}</div>
+        <div class="dl-twee"><div><h3>Aankomend <span>${komt.length}</span></h3>${komt.map(regel).join('') || '<p class="dl-leeg">Geen deadlines meer in deze periode.</p>'}</div>
+          <div><h3>Afgelopen <span>${voorbij.length}</span></h3>${voorbij.map(regel).join('') || '<p class="dl-leeg">Nog geen deadline voorbij in deze periode.</p>'}</div></div>
+        ${zonder ? `<p class="dl-leeg">${zonder} ${zonder === 1 ? 'opdracht heeft' : 'opdrachten hebben'} geen deadline.</p>` : ''}</div>`;
+  },
+
   /* Stippenkaart van een klas: per opdracht één stip per inlevering, zonder namen. */
   SOORT: { FINISHED: 'klaar', HANDED_IN: 'wacht', FEEDBACK_ASKED: 'wacht', BEING_PROCESSED: 'wacht', IN_PROGRESS: 'bezig', DEADLINE_PAST: 'laat' },
   stroken() {
@@ -477,7 +530,8 @@ SD.register({
       for (const r of bron?.rijen || []) {
         const id = r.assignment?.id || r.id;
         let x = per.get(id);
-        if (!x) per.set(id, x = { titel: r.assignment?.title || '', klaar: 0, wacht: 0, bezig: 0, laat: 0, niet: 0, link: '' });
+        if (!x) per.set(id, x = { titel: r.assignment?.title || '', klaar: 0, wacht: 0, bezig: 0, laat: 0, niet: 0, link: '', deadline: '' });
+        if (!x.deadline) x.deadline = this.datum(r.endDate);
         x[this.SOORT[r.status] || 'niet']++;
         // De eerste inlevering die op jou wacht: daar gaat de knop Nakijken heen.
         if (bron === this.bron.open && !x.link) x.link = this.link(r);
@@ -571,10 +625,12 @@ SD.register({
       </div>
       ${stroken?.length ? `<h2>Alle opdrachten in deze klas</h2>
       <div class="lijst kaart"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}>${stroken.map((x) => `<div class="strook"><span class="titel"><a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="${esc(x.titel)}: open het overzicht per student">${esc(x.titel)}</a>
+          ${x.deadline ? `<small class="dl${x.deadline < this.SD.perioden.vandaag() ? ' voorbij' : ''}">Deadline ${esc(this.dagTekst(x.deadline))}</small>` : ''}
           ${x.wacht && x.link ? `<a class="nakijk" href="${esc(x.link)}" title="Open de eerste inlevering die op jou wacht">Nakijken (${x.wacht})</a>` : ''}</span>
         <span class="stippen" role="img" aria-label="${x.klaar} klaar, ${x.wacht} wachten op jou, ${x.bezig} bezig, ${x.laat} te laat, ${x.niet} niet gestart">${['klaar', 'wacht', 'bezig', 'laat', 'niet'].map((soort) => `<i class="${soort}"></i>`.repeat(Math.min(x[soort], 60))).join('')}</span>
         <span class="som">${[[x.klaar, 'klaar'], [x.wacht, x.wacht === 1 ? 'wacht op jou' : 'wachten op jou'], [x.bezig, 'bezig'], [x.laat, 'te laat'], [x.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`).join('')}</div>
       <p class="legenda"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}><span><i class="klaar"></i>Klaar</span><span><i class="wacht"></i>Wacht op jou</span><span><i class="bezig"></i>Student is bezig</span><span><i class="laat"></i>Te laat</span><span><i class="niet"></i>Nog niet gestart</span><span>Eén stip is één inlevering. Klik op een titel voor het overzicht per student.</span></p>` : ''}
+      ${stroken?.length ? this.deadlines(stroken, k) : ''}
       ${k ? `<p class="uitleg">Te laat, Nog niet gestart en Klaar tellen de inleveringen in deze klas waarvan jij beoordelaar bent.</p>
       <div class="snel" aria-label="Deze klas in Simulise">${[['assignments', 'Alle opdrachten'], ['students', 'Studenten'], ['teachers', 'Docenten'], ['templates', 'Sjablonen'], ['community', 'Community'], ['files', 'Bestanden'], ['settings', 'Instellingen']]
     .map(([pad, naam]) => `<a class="knop" href="/groups/school/${esc(encodeURIComponent(k.id))}/${pad}">${naam}</a>`).join('')}</div>` : ''}</div>`;

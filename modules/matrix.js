@@ -44,6 +44,10 @@ SD.register({
       else if (wat === 'rij') { e.preventDefault(); this._naarRij = Number(el.dataset.rij); chrome.storage.sync.set({ matrixWeergave: 'student' }); }
     };
     document.addEventListener('click', this._klik, true);
+    this._kies = (e) => { const el = e.target.closest?.('select[data-sd-matrix-kies]'); if (el) chrome.storage.sync.set({ [el.dataset.sdMatrixKies]: el.value }); };
+    document.addEventListener('change', this._kies, true);
+    this._ontvolgP = SD.perioden.volg(() => { this._teken = null; this.pas(); });
+    SD.perioden.laad().catch(() => {});
     this._hash = () => this.pas();
     window.addEventListener('hashchange', this._hash);
     this._ontvolg = SD.klassen.volg(() => this.pas());
@@ -60,6 +64,8 @@ SD.register({
   destroy() {
     document.removeEventListener('click', this._klik, true);
     window.removeEventListener('hashchange', this._hash);
+    document.removeEventListener('change', this._kies, true);
+    this._ontvolgP?.();
     this._ontvolg?.();
     this._stop?.();
     this.ruimOp();
@@ -131,7 +137,7 @@ SD.register({
       const kopLink = tr.querySelector('a.divider-plan');
       const titel = (kopLink?.textContent || '').replace(/\s+/g, ' ').trim();
       const dl = tr.querySelector('small.reviewers > a > small')?.textContent;
-      rijen.push({ nr, titel, vak: this.vak(titel), deadline: this.deadline(dl), dag: (String(dl || '').match(/(\d{1,2})-(\d{1,2})-\d{4}/) || []).slice(1, 3).join('-'), tel, totaal: cellen.length, link, cellen: perStudent,
+      rijen.push({ nr, titel, vak: this.vak(titel), deadline: this.deadline(dl), dag: (String(dl || '').match(/(\d{1,2})-(\d{1,2})-\d{4}/) || []).slice(1, 3).join('-'), datum: (() => { const m = String(dl || '').match(/(\d{1,2})-(\d{1,2})-(\d{4})/); return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : ''; })(), tel, totaal: cellen.length, link, cellen: perStudent,
         href: /^(#|javascript:)?$/i.test(kopLink?.getAttribute('href') || '') ? '' : kopLink.getAttribute('href') });
     });
     return rijen;
@@ -155,16 +161,44 @@ SD.register({
     });
   },
 
-  /* De gedraaide tabel: studenten als rijen, opdrachten als kolommen. */
-  draai(rijen, studenten) {
-    const esc = this.esc;
+  /* Achternaam om op te sorteren: het laatste deel van de naam, zonder tussenvoegsels ("Sanne van der Berg" geeft "berg sanne"). */
+  achternaam(naam) {
+    const delen = String(naam || '').trim().split(/\s+/);
+    if (delen.length < 2) return delen.join(' ').toLowerCase();
+    const TUSSEN = new Set(['van', 'de', 'der', 'den', 'het', 'ter', 'ten', 'te', 'in', 't', "'t", 'el', 'al', 'la', 'le', 'du', 'da', 'dos', 'di', 'von', 'bin', 'ben', 'op']);
+    let i = 1;
+    while (i < delen.length - 1 && !TUSSEN.has(delen[i].toLowerCase())) i++; // voornamen tot het eerste tussenvoegsel, anders tot het laatste woord
+    let j = i;
+    while (j < delen.length - 1 && TUSSEN.has(delen[j].toLowerCase())) j++;
+    return `${delen.slice(j).join(' ')} ${delen.slice(0, i).join(' ')}`.toLowerCase();
+  },
+
+  /* De gedraaide tabel: studenten als rijen, opdrachten als kolommen. Sorteren en de periode kies je erboven. */
+  draai(alleRijen, studenten) {
+    const esc = this.esc, s = this.SD.settings, P = this.SD.perioden;
     const NAAM = { mij: 'wacht op jou', collega: 'bij een collega', bezig: 'student bezig', laat: 'te laat', niet: 'niet gestart', klaar: 'klaar', overig: '' };
-    const kop = rijen.map((r, i) => `<th data-kol="${i}" class="${i && r.vak !== rijen[i - 1].vak ? 'sd-md-rand' : ''}" title="${esc(r.titel)}${r.deadline ? ` · ${esc(r.deadline)}` : ''}">${r.href ? `<a href="${esc(r.href)}">${esc(this.code(r.titel))}</a>` : `<span>${esc(this.code(r.titel))}</span>`}<small>${esc(r.dag || '')}</small></th>`).join('');
-    const lijf = studenten.map((st, k) => `<tr><th class="sd-md-naam">${st.href ? `<a href="${esc(st.href)}">${esc(st.naam)}</a>` : esc(st.naam)}</th>${rijen.map((r, i) => {
+    const periode = P.vind(s.matrixPeriode) ? s.matrixPeriode : '';
+    let rijen = alleRijen.filter((r) => P.bevat(periode, r.datum));
+    if (s.matrixKolommen === 'deadline') rijen = [...rijen].sort((a, b) => (a.datum || '9999').localeCompare(b.datum || '9999') || a.nr - b.nr);
+    else if (s.matrixKolommen === 'code') rijen = [...rijen].sort((a, b) => this.code(a.titel).localeCompare(this.code(b.titel), 'nl', { numeric: true }) || a.nr - b.nr);
+    const tel = (k, soort) => rijen.reduce((n, r) => n + (r.cellen[k]?.soort === soort ? 1 : 0), 0);
+    const volgorde = studenten.map((st, k) => ({ st, k }));
+    const opNaam = (a, b) => a.st.naam.localeCompare(b.st.naam, 'nl');
+    const sorteer = { achternaam: (a, b) => this.achternaam(a.st.naam).localeCompare(this.achternaam(b.st.naam), 'nl'), wacht: (a, b) => tel(b.k, 'mij') - tel(a.k, 'mij') || opNaam(a, b),
+      laat: (a, b) => tel(b.k, 'laat') - tel(a.k, 'laat') || opNaam(a, b), klaar: (a, b) => tel(b.k, 'klaar') - tel(a.k, 'klaar') || opNaam(a, b), voornaam: opNaam }[s.matrixSorteer] || opNaam;
+    volgorde.sort(sorteer);
+    const keuze = (sleutel, nu, opties, label) => `<label>${label} <select data-sd-matrix-kies="${sleutel}">${opties.map(([v, t]) => `<option value="${esc(v)}"${v === nu ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+    const rand = (i) => (i && rijen[i].vak !== rijen[i - 1].vak ? 'sd-md-rand' : '');
+    const kop = rijen.map((r, i) => `<th data-kol="${r.nr}" class="${rand(i)}" title="${esc(r.titel)}${r.deadline ? ` · ${esc(r.deadline)}` : ''}">${r.href ? `<a href="${esc(r.href)}">${esc(this.code(r.titel))}</a>` : `<span>${esc(this.code(r.titel))}</span>`}<small>${esc(r.dag || '')}</small></th>`).join('');
+    const lijf = volgorde.map(({ st, k }) => `<tr><th class="sd-md-naam">${st.href ? `<a href="${esc(st.href)}">${esc(st.naam)}</a>` : esc(st.naam)}</th>${rijen.map((r, i) => {
       const c = r.cellen[k];
-      return `<td data-kol="${i}" class="${i && r.vak !== rijen[i - 1].vak ? 'sd-md-rand' : ''}">${c ? `<a class="sd-md-stip ${c.soort}" href="${esc(c.href || '#')}" title="${esc(this.code(r.titel))}: ${esc(c.tip || NAAM[c.soort])}" aria-label="${esc(r.titel)}: ${esc(c.tip || NAAM[c.soort])}"></a>` : ''}</td>`;
+      return `<td data-kol="${r.nr}" class="${rand(i)}">${c ? `<a class="sd-md-stip ${c.soort}" href="${esc(c.href || '#')}" title="${esc(this.code(r.titel))}: ${esc(c.tip || NAAM[c.soort])}" aria-label="${esc(r.titel)}: ${esc(c.tip || NAAM[c.soort])}"></a>` : ''}</td>`;
     }).join('')}</tr>`).join('');
-    return `<div class="sd-md-rol"><table class="sd-md"><thead><tr><th class="sd-md-naam">Student</th>${kop}</tr></thead><tbody>${lijf}</tbody></table></div>
+    return `<div class="sd-md-kies">${keuze('matrixSorteer', s.matrixSorteer || 'voornaam', [['voornaam', 'voornaam'], ['achternaam', 'achternaam'], ['wacht', 'wacht op jou eerst'], ['laat', 'te laat eerst'], ['klaar', 'meeste klaar eerst']], 'Studenten op')}
+        ${keuze('matrixKolommen', s.matrixKolommen || 'simulise', [['simulise', 'volgorde van Simulise'], ['deadline', 'deadline'], ['code', 'code']], 'Opdrachten op')}
+        ${P.lijst.length ? keuze('matrixPeriode', periode, [['', 'alle periodes'], ...P.lijst.map((p) => [p.code, `${p.code}${p.naam ? ` (${p.naam})` : ''}`])], 'Deadline in') : ''}
+        <span class="sd-md-aantal">${rijen.length} van ${alleRijen.length} opdrachten</span></div>
+      ${rijen.length ? `<div class="sd-md-rol"><table class="sd-md"><thead><tr><th class="sd-md-naam">Student</th>${kop}</tr></thead><tbody>${lijf}</tbody></table></div>` : '<p class="sd-md-leeg">Geen opdrachten met een deadline in deze periode.</p>'}
       <p class="sd-md-voet">Boven elke kolom staat de code van de opdracht; wijs hem aan voor de hele titel en de deadline. Klik op een stip om die inlevering te openen.</p>`;
   },
 
@@ -198,7 +232,7 @@ SD.register({
     const thuis = this.SD.isOn('vandaag');
     const filter = [...document.querySelectorAll('#content-wrapper .selectize-input .item')].map((el) => el.textContent.replace(/[×\s]+$/, '').replace(/\s+/g, ' ').trim()).filter(Boolean);
     const studenten = draai ? this.studenten(tabel) : [];
-    const teken = JSON.stringify([klasId, naam, kleur, rijen.map((r) => [r.titel, r.deadline, r.tel, draai ? r.cellen : 0]), student, alleenMij, draai, studenten, thuis, filter, [...this.open]]);
+    const teken = JSON.stringify([klasId, naam, kleur, rijen.map((r) => [r.titel, r.deadline, r.tel, draai ? r.cellen : 0]), student, alleenMij, draai, studenten, draai ? [s.matrixSorteer, s.matrixKolommen, s.matrixPeriode, this.SD.perioden.lijst.map((p) => [p.code, p.van, p.tot])] : 0, thuis, filter, [...this.open]]);
     const anker = tabel.closest('.row') || tabel.closest('.panel') || tabel;
     if (!anker.hasAttribute('data-sd-matrix-tabel')) anker.setAttribute('data-sd-matrix-tabel', ''); // in het overzicht verbergt de opmaak dit deel
     let balk = document.querySelector('.sd-matrix-balk'), overzicht = document.querySelector('.sd-matrix-overzicht'), gedraaid = document.querySelector('.sd-matrix-draai');
@@ -224,8 +258,7 @@ SD.register({
       const nr = this._naarRij;
       this._naarRij = null;
       if (draai) { // de kolom van die opdracht
-        const kol = rijen.findIndex((r) => r.nr === nr);
-        const cellen = [...gedraaid.querySelectorAll(`[data-kol="${kol}"]`)];
+        const cellen = [...gedraaid.querySelectorAll(`[data-kol="${nr}"]`)];
         cellen[0]?.scrollIntoView({ block: 'nearest', inline: 'center' });
         cellen.forEach((el) => el.classList.add('sd-m-hier'));
         setTimeout(() => cellen.forEach((el) => el.classList.remove('sd-m-hier')), 2500);

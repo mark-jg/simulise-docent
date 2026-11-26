@@ -90,6 +90,10 @@ chrome.runtime.onInstalled.addListener(async ({ reason, previousVersion }) => {
   }
 });
 
+/* ---------- Zijpaneel ----------
+ * Een klik op het icoon opent de instellingen als kolom naast de pagina (popup.html als zijpaneel), niet als venster eroverheen. */
+chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: true }).catch(() => {});
+
 /* ---------- Gedeelde bronnen voor de rapporten (rapport/bron.js) ----------
  * Haalt het toetsplan van het team of het aanwezigheidsbestand op achter een gedeelde OneDrive- of
  * SharePoint-link. Alleen lezen, alleen bij Microsoft, en alleen nadat de gebruiker daar toestemming voor gaf
