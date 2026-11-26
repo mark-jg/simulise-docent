@@ -153,7 +153,9 @@ const DIAGRAM = { 'e-beroeps': { id: 'd', phaseCount: 4, aspects: [
   ASPECT('3. Coördineert de mediaproductie', '#16a34a', { 1: FASE(1, true, 1, '04-11-2026') }),
   ASPECT('4. Professioneel handelen', '#9333ea', { 1: FASE(1, false, 0, '03-11-2026') }),
   ASPECT('5. Vakvaardigheden', '#0e7490', { 1: FASE(1, true, 1, '20-10-2026'), 2: FASE(2, true, 1, '05-11-2026') })] },
-  'e-bava': { id: 'd2', phaseCount: 5, aspects: [ASPECT('Lezen', '#e8650a', { 1: FASE(1, true, 1, '04-11-2026'), 2: FASE(2, true, 1, '04-11-2026') }), ASPECT('Reading', '#24388f', {})] } };
+  'e-bava': { id: 'd2', phaseCount: 5, aspects: [ASPECT('Lezen', '#e8650a', { 1: FASE(1, true, 1, '04-11-2026'), 2: FASE(2, true, 1, '04-11-2026') }), ASPECT('Reading', '#24388f', {}),
+    // Zoals bij het echte BAVA: direct een hogere stap behaald, zonder de lagere.
+    ASPECT('Luisteren', '#e8650a', { 3: FASE(3, true, 1, '05-11-2026') })] } };
 const GROEPSPAGINA = `<html><head><meta name="csrf-token" content="tok-123"></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
 <div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/groups"><span>Groepen</span></a></span><span class="text-muted">/</span><span>MR1A</span></p></div>
 <ul class="nav nav-tabs"><li><a href="/groups/school/${UUID}/community"><span>Community</span></a></li></ul></header>
@@ -462,26 +464,42 @@ function bouwZip() {
 
   // 2. Popup, modules en updatecontrole
   const popup = await nieuw(`chrome-extension://${id}/popup.html`);
-  const alleOpen = (p) => p.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; })); // het zijpaneel klapt blokken in
+  const alleOpen = (p) => p.evaluate(() => { document.body.setAttribute('data-alles', ''); document.querySelectorAll('details').forEach((d) => { d.open = true; }); }); // het zijpaneel heeft tabbladen: alles tegelijk tonen
   await alleOpen(popup);
   check(await popup.locator('#modules input').count() === 14, 'popup toont aan/uit per module');
   { const mf = JSON.parse(fs.readFileSync(path.join(ext, 'manifest.json'), 'utf8'));
-    const pan = await popup.evaluate(() => ({ koppen: [...document.querySelectorAll('#modules h3')].map((h) => h.textContent).join(','), blokken: [...document.querySelectorAll('details.blok > summary')].map((x) => x.firstChild.textContent.trim()).join(','), tel: document.getElementById('modTel').textContent,
-      perioden: [...document.querySelectorAll('#perioden .periode > summary b')].map((b) => b.textContent).join(','), breed: getComputedStyle(document.body).minWidth }));
+    const pan = await popup.evaluate(() => ({ koppen: [...document.querySelectorAll('#modules h3')].map((h) => h.textContent).join(','), tabs: [...document.querySelectorAll('[data-tabs="hoofd"] [role=tab]')].map((x) => x.textContent).join(','),
+      plan: [...document.querySelectorAll('[data-tabs="plan"] [role=tab]')].map((x) => x.textContent).join(','), tel: document.getElementById('modTel').textContent,
+      modules: [...document.querySelectorAll('#pModules .item > summary b')].map((b) => b.textContent).join(','), normen: [...document.querySelectorAll('#pNormen .item > summary b')].map((b) => b.textContent).join(','),
+      momenten: [...document.querySelectorAll('#pMomenten .item > summary')].map((x) => x.innerText.replace(/\s+/g, ' ').trim()).join(' | '), normzin: [...document.querySelectorAll('#pNormen .item:nth-child(2) [data-normzin] li')].map((li) => li.textContent).join(' | ') }));
     check(mf.side_panel?.default_path === 'popup.html' && !mf.action.default_popup && mf.permissions.includes('sidePanel') && pan.koppen === 'Nakijken,Klassen en opdrachten,Rapporten en inzicht,Uiterlijk en schil,Overig'
-      && pan.blokken === 'Onderdelen,Fases, modules en normen,Uiterlijk,Updates en ontwikkelaar' && /^\d+ van 14 aan$/.test(pan.tel) && pan.perioden === 'M1,M2',
-      `instellingen als zijpaneel naast de pagina: onderdelen per soort werk (${pan.koppen}), blokken ${pan.blokken}, periodes ${pan.perioden}`);
-    // Een periode toevoegen en opslaan: komt in het gekozen rapportprofiel, waar de andere modules het lezen.
-    await popup.click('#pErbij'); await popup.fill('#perioden .periode:last-child [data-p="code"]', 'M3'); await popup.fill('#perioden .periode:last-child [data-p="fase"]', 'Basisfase'); await popup.fill('#perioden .periode:last-child [data-p="eis"][data-ll="4"]', '2'); await popup.fill('#perioden .periode:last-child [data-p="eis"][data-ll="1"]', '1'); await popup.fill('#perioden .periode:last-child [data-p="eisMin"]', '1'); await popup.fill('#perioden .periode:last-child [data-p="regel"][data-veld="minAantal"] >> nth=0', '3'); await popup.fill('#perioden .periode:last-child [data-p="regel"][data-veld="stap"]', '2'); await popup.fill('#perioden .periode:last-child [data-p="regel"][data-veld="verplicht"]', '1, 2');
-    const zinNu = await popup.evaluate(() => [...document.querySelectorAll('#perioden .periode:last-child [data-normzin] li')].map((li) => li.textContent).join(' | '));
-    check(zinNu === 'beroepsleerlijnen: leerlijn 1 op stap 1, leerlijn 4 op stap 2; minimaal 1 van de 2 moeten kloppen | minimaal 3 beroepsleerlijnen op stap 2, waaronder leerlijn 1 en 2', `zijpaneel: de eisen van een module staan in gewone taal en volgen wat je invult (${zinNu})`); await popup.fill('#perioden .periode:last-child [data-p="norm"]', 'alle leerlijnen op stap 2');
-    await popup.fill('#perioden .periode:last-child [data-p="doel"][data-rol="beroeps"]', '2'); await popup.click('#pOpslaan'); await popup.waitForTimeout(300);
-    const bewaardP = await popup.evaluate(() => chrome.storage.local.get(['rpProfielen']).then((x) => { const p = x.rpProfielen[0].perioden.at(-1); return `${x.rpProfielen[0].perioden.length}:${p.code}:${p.van}:${p.doel.beroeps}:${p.norm}:${'_nieuw' in p}:${p.fase}:${JSON.stringify(p.regels)}`; }));
-    check(bewaardP === '3:M3:2027-02-06:2:alle leerlijnen op stap 2:false:Basisfase:[{"eisen":{"1":1,"4":2},"minAantal":1,"rol":"beroeps","soort":"perLeerlijn"},{"minAantal":3,"rol":"beroeps","stap":2,"verplicht":[1,2]}]' && (await popup.textContent('#pMelding')) === 'Opgeslagen.', `zijpaneel: een module met fase, norm, doelstap en een eigen eis per leerlijn toevoegen en opslaan in het rapportprofiel (${bewaardP})`);
-    await alleOpen(popup);
-    await popup.fill('#perioden .periode:last-child [data-p="tot"]', '2027-01-01'); await popup.click('#pOpslaan');
+      && pan.tabs === 'Onderdelen,Toetsplan,Uiterlijk,Meer' && /^\d+ van 14 aan$/.test(pan.tel),
+      `instellingen als zijpaneel naast de pagina, met tabbladen (${pan.tabs}) en de onderdelen per soort werk (${pan.koppen})`);
+    check(pan.plan === 'Fasen,Modules,Beslismomenten,Normen' && pan.modules === 'M1,M2' && pan.normen === 'Norm M1,VSA-norm' && /voorlopig studieadvies besluit 05-02 module M2 · VSA-norm/.test(pan.momenten)
+      && pan.normzin === 'minimaal 4 beroepsleerlijnen op stap 1, waaronder leerlijn 1, 2 en 3 | minimaal 3 vakken bij basisvaardigheden op stap 1 (per vak minstens 1 leerlijn) (telt niet mee voor op koers)',
+      `toetsplan in vier tabbladen (${pan.plan}); het bestaande profiel is omgezet naar losse modules (${pan.modules}), normen (${pan.normen}) en beslismomenten (${pan.momenten}); eisen in gewone taal (${pan.normzin})`);
+    // Een fase, een module, een norm en een beslismoment toevoegen, koppelen en opslaan.
+    await popup.click('[data-erbij="fasen"]'); await popup.fill('#pFasenLijst .item:last-child [data-veld="naam"]', 'Basisfase');
+    await popup.click('[data-erbij="modules"]'); await popup.selectOption('#pModules .item:last-child [data-veld="fase"]', 'Basisfase'); await alleOpen(popup);
+    await popup.click('[data-erbij="normen"]'); const N = '#pNormen .item:last-child';
+    await popup.fill(`${N} [data-veld="naam"]`, 'Eindnorm'); await popup.fill(`${N} [data-regel="minAantal"]:not([data-vakken])`, '3'); await popup.fill(`${N} [data-regel="stap"]`, '2'); await popup.fill(`${N} [data-regel="verplicht"]`, '1, 2');
+    await popup.fill(`${N} [data-regel="eis"][data-ll="4"]`, '2'); await popup.fill(`${N} [data-regel="eisMin"]`, '1');
+    await popup.fill(`${N} [data-regel="minAantal"][data-vakken]`, '2'); await popup.fill(`${N} [data-regel="vakStap"]`, '2'); await popup.fill(`${N} [data-doel="beroeps"]`, '2');
+    const zinNu = await popup.evaluate(() => [...document.querySelectorAll('#pNormen .item:last-child [data-normzin] li')].map((li) => li.textContent).join(' | '));
+    check(zinNu === 'minimaal 3 beroepsleerlijnen op stap 2, waaronder leerlijn 1 en 2 | beroepsleerlijnen: leerlijn 4 op stap 2; alle moeten kloppen | minimaal 2 vakken bij basisvaardigheden op stap 2 (per vak minstens 1 leerlijn)',
+      `zijpaneel, norm: de eisen staan in gewone taal en volgen wat je invult, de basisvaardigheden op de te behalen stap (${zinNu})`);
+    await popup.selectOption(`${N} [data-regel="vakLeerlijnen"]`, 'alle'); await alleOpen(popup);
+    await popup.click('[data-erbij="momenten"]'); const M = '#pMomenten .item:last-child';
+    await popup.fill(`${M} [data-veld="naam"]`, 'Eindgesprek'); await popup.fill(`${M} [data-veld="datum"]`, '2027-04-09'); await popup.selectOption(`${M} [data-veld="norm"]`, { label: 'Eindnorm' }); await alleOpen(popup);
+    await popup.check(`${M} [data-veld="beslis"]`); await alleOpen(popup);
+    await popup.click('#pOpslaan'); await popup.waitForTimeout(300);
+    const bewaardP = await popup.evaluate(() => chrome.storage.local.get(['rpProfielen']).then((x) => { const pr = x.rpProfielen[0], p = pr.perioden.at(-1);
+      return `${pr.perioden.length}:${p.code}:${p.van}:${p.fase}:${p.moment}:${p.beslis}:${p.meetdatum}:${p.normNaam}:${p.doel.beroeps}:${SDRapport.regelTekst(pr, p).length}:${pr.fasen.map((f) => f.naam)}:${pr.normen.length}:${pr.momenten.length}:${JSON.stringify(p.regels.find((r) => r.soort === 'categorieen').perCategorie)}:${pr.perioden[1].normNaam}`; }));
+    check(bewaardP === '3:M3:2027-02-06:Basisfase:Eindgesprek:true:2027-04-09:Eindnorm:2:3:Basisfase:3:3:{"minLeerlijnen":"alle","stap":2}:VSA-norm' && /^Opgeslagen\./.test(await popup.textContent('#pMelding')),
+      `zijpaneel: fase, module, norm en beslismoment los ingesteld en gekoppeld; bij opslaan uitgeschreven per module voor het rapport (${bewaardP})`);
+    await popup.fill('#pModules .item:last-child [data-veld="tot"]', '2027-01-01'); await popup.click('#pOpslaan');
     check(/einddatum ligt voor de begindatum/.test(await popup.textContent('#pMelding')), 'zijpaneel: een einddatum voor de begindatum wordt geweigerd');
-    await popup.evaluate(() => chrome.storage.local.remove(['rpProfielen', 'rpGekozen'])); await popup.reload(); await alleOpen(popup); }
+    await popup.evaluate(() => chrome.storage.local.remove(['rpProfielen', 'rpGekozen', 'paneelTab'])); await popup.reload(); await alleOpen(popup); }
   const zet = (s) => popup.evaluate((s) => chrome.storage.sync.set(s), s).then(() => sim.waitForTimeout(300));
   const attr = () => sim.evaluate(() => document.documentElement.getAttribute('data-sim-theme'));
 
@@ -753,6 +771,7 @@ function bouwZip() {
     'rapport in de pagina zelf (panelen van Simulise), geen nieuw tabblad; eigen inhoud van de pagina verborgen');
   check(['Sam Voorbeeld', 'MEP1A', 'Beroepsleerlijnen', 'Basisvaardigheden', 'Boven verwachting', 'Nog niet behaald', 'stap 2/4', 'Ontdekken wat adviseren is'].every((w) => rapportTekst.includes(w)) && (await sim.locator('.sdw .sdw-diagram svg').count()) === 2,
     `rapport uit Simulise-gegevens: stappen, statussen, beide diagrammen (${rapportTekst.slice(0, 80).replace(/\n/g, ' ')}…)`);
+  check(/Luisteren[\s\S]{0,80}stap 3\/5/.test(await wt()), 'BAVA: een direct behaalde hogere stap telt (Luisteren op stap 3 zonder stap 1 en 2), niet alleen opeenvolgende stappen');
   check(rapportTekst.indexOf('Beroepsleerlijnen ·') < rapportTekst.indexOf('Basisvaardigheden ·'), 'beroeps eerst, dan BAVA (volgorde van het profiel)');
   check(rapportVerzoeken.length >= 1 && rapportVerzoeken.every((h) => h === 'app'), `diagram van de tweede opleiding opgevraagd met de vraag en headers van de app (${rapportVerzoeken.length}×)`);
   const kennis = await popup.evaluate(() => chrome.storage.local.get('rpAppKennis').then((s) => s.rpAppKennis));
@@ -801,10 +820,12 @@ function bouwZip() {
   // Norm van een gekozen module: de stand op het meetmoment van die module, getoetst aan haar eigen norm; de eisen staan erbij.
   { const voorNorm = await sim.evaluate(() => ({ regels: [...document.querySelectorAll('.sdw .sdw-regels li')].map((li) => li.textContent).join(' | '), norm: document.querySelector('.sdw .panel-body p strong')?.textContent }));
     await sim.selectOption('.sdw .sdw-norm select', 'M1'); await sim.waitForTimeout(300);
+    const datumLos = await sim.evaluate(() => document.querySelector('.sdw [data-balk] input[type=date]').value);
+    await sim.click('.sdw .sdw-meetmoment'); await sim.waitForTimeout(300);
     const naNorm = await sim.evaluate(() => ({ regels: [...document.querySelectorAll('.sdw .sdw-regels li')].map((li) => li.textContent).join(' | '), kop: document.querySelector('.sdw .panel-body p').textContent.replace(/\s+/g, ' ').trim().slice(0, 40),
       datum: document.querySelector('.sdw [data-balk] input[type=date]').value, stand: document.querySelector('.sdw .sdw-sub').textContent }));
-    check(/minimaal 4 beroepsleerlijnen op stap 1, waaronder leerlijn 1, 2 en 3/.test(voorNorm.regels) && voorNorm.norm === 'VSA-norm' && naNorm.regels === 'minimaal 5 beroepsleerlijnen op stap 1' && /^Norm M1 · M1 meetmoment/.test(naNorm.kop) && naNorm.datum === '2026-11-13' && /Stand op 13 november 2026/.test(naNorm.stand),
-      `vergaderlijst: norm van een gekozen module op haar meetmoment, met de eisen in woorden erbij (automatisch: ${voorNorm.norm}; M1: ${naNorm.regels}; ${naNorm.datum})`);
+    check(/minimaal 4 beroepsleerlijnen op stap 1, waaronder leerlijn 1, 2 en 3/.test(voorNorm.regels) && voorNorm.norm === 'VSA-norm' && naNorm.regels === 'minimaal 5 beroepsleerlijnen op stap 1' && /^Norm M1 · M1 meetmoment/.test(naNorm.kop) && naNorm.datum === '2026-11-13' && /Stand op 13 november 2026/.test(naNorm.stand) && datumLos !== '2026-11-13',
+      `vergaderlijst: norm en datum los te kiezen, een knop zet de datum op het meetmoment van de norm, de eisen staan in woorden erbij (automatisch: ${voorNorm.norm}; M1: ${naNorm.regels}; ${naNorm.datum})`);
     await sim.selectOption('.sdw .sdw-norm select', ''); await sim.waitForTimeout(200); }
   await sim.selectOption('.sdw [data-balk] select >> nth=0', 'groep');
   check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await wt()).includes('Stand op'), 'werkbalk: groepsoverzicht');
@@ -1260,7 +1281,7 @@ function bouwZip() {
     melding: document.querySelector('#analyticsForm .alert').textContent.trim(), onder: document.querySelector('#analyticsForm .btn-success + p').textContent.trim(), kruimel: document.querySelector('#content header .header-text').textContent.replace(/\s+/g, ' ').trim() }));
   let w1 = await wz();
   check(w1.soort === 'keuzes' && w1.titel === 'Wie heeft deze opdracht af?' && w1.kop === 'Inzicht' && w1.stappen === 'Welke opdracht? | Welke studenten? | Welke periode? | Meer keuzes' && w1.knop === 'Toon rapportage'
-    && w1.melding === 'Kies eerst iets; dit is verplicht.' && w1.onder === 'Maak eerst de verplichte keuze hierboven.' && /^Inzicht\s*\/\s*Wie heeft deze opdracht af\?$/.test(w1.kruimel),
+    && w1.melding === 'Kies eerst iets; dit is verplicht.' && w1.onder === 'Maak eerst de verplichte keuze hierboven.' && /^Inzicht\s*\/\s*Status opdracht over groepen$/.test(w1.kruimel),
     `keuzes voor een rapportage: de vraag als titel, stappen en meldingen in gewone taal (${w1.stappen}; knop "${w1.knop}"; melding "${w1.melding}"; onder "${w1.onder}"; kruimel "${w1.kruimel}")`);
   await pz.evaluate(() => chrome.storage.sync.set({ insight: false })); await sim.waitForTimeout(500);
   w1 = await wz();

@@ -309,19 +309,18 @@
     let alleenSignaal = false;
     const signaalVink = vink('alleen bespreekgevallen', false, (v) => { alleenSignaal = v; });
     signaalVink.classList.add('sdw-alleen-signaal');
-    // Norm van een module: de stand op het meetmoment van die module (veld meetdatum, anders de laatste dag), getoetst aan haar eigen norm.
+    // Norm en datum staan los van elkaar: "Norm" kiest aan welke module wordt getoetst, "Stand op" op welke dag je kijkt.
+    // De knop zet de datum op het meetmoment van de gekozen norm (veld meetdatum van de module, anders haar laatste dag).
     const meetmoment = (code) => { const p = (profiel.perioden || []).find((x) => x.code === code); const d = p ? (p.meetdatum || p.tot) : vandaag; return d < vandaag ? d : vandaag; };
-    const normKeuze = keuze([['', 'automatisch (eerstvolgende besluit)'], ...(profiel.perioden || []).map((p) => [p.code, `${p.code}${p.naam ? ` · ${p.naam}` : ''}`])], '', (v) => {
-      opties.toets = v || null;
-      opties.peildatum = v ? meetmoment(v) : vandaag;
-      datum.value = opties.peildatum;
-    });
-    const normGroep = el('span', { className: 'sdw-groepje sdw-norm' }, [el('span', { textContent: 'Norm van' }), normKeuze]);
+    const normKeuze = keuze([['', 'eerstvolgende besluit (automatisch)'], ...(profiel.perioden || []).map((p) => [p.code, `${p.code}${p.normNaam ? ` · ${p.normNaam}` : p.naam ? ` · ${p.naam}` : ''}`])], '', (v) => { opties.toets = v || null; });
+    const naarMeet = el('button', { type: 'button', className: 'btn btn-default btn-sm sdw-meetmoment', textContent: 'Zet op meetmoment', title: 'Zet de datum op het meetmoment van de gekozen norm' });
+    naarMeet.onclick = () => { const code = opties.toets || zichtbaar()[0]?.toets?.code; if (!code) return; opties.peildatum = meetmoment(code); datum.value = opties.peildatum; teken(); };
+    const normGroep = el('span', { className: 'sdw-groepje sdw-norm' }, [el('span', { textContent: 'Norm' }), normKeuze]);
     const nadrukVink = vink('doelstap groot', opties.nadruk ?? (profiel.weergave?.nadrukDoelstap !== false), (v) => { opties.nadruk = v; });
     balk.append(
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Weergave' }), soortKeuze]),
       normGroep,
-      el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Peildatum' }), datum]),
+      el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Stand op' }), datum, naarMeet]),
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Vergelijk met' }), keuze([['vorige', 'vorige periode'], ['geen', 'niets'], ...(profiel.perioden || []).map((p) => [p.code, p.code])], opties.vergelijkMet, (v) => { opties.vergelijkMet = v; })]),
       el('span', { className: 'sdw-groepje' }, rollen.length > 1 ? rollen.map((x) => vink(x.titel, true, (v) => { v ? gekozen.add(x.rol) : gekozen.delete(x.rol); opties.opleidingen = [...gekozen]; })) : []),
       nadrukVink, groepKeuzes, signaalVink,
@@ -374,7 +373,7 @@
       const ms = SDRapport.modellen(studenten, profiel, vergaderNu ? { ...opties, filter: alleenSignaal ? 'signaal' : 'alle' } : opties);
       zichtbaarCache = ms;
       groepKeuzes.hidden = !isGroep || vergaderNu;
-      normGroep.hidden = !(profiel.perioden || []).length;
+      normGroep.hidden = !(profiel.perioden || []).length; naarMeet.hidden = normGroep.hidden;
       signaalVink.hidden = !vergaderNu;
       nadrukVink.hidden = opties.soort !== 'student';
       excel.hidden = !isGroep && opties.soort === 'student';

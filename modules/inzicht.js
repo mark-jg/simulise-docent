@@ -175,7 +175,8 @@ SD.register({
         const ouder = n.parentElement;
         if (!ouder || ouder.closest('script, style, textarea, input, select, option, .selectize-control, [contenteditable="true"], .sd-inzicht')) continue;
         const inStap = !!ouder.closest('.list-group-item h4');
-        const nieuw = inStap ? this.STAP[kern] : (this.TEKST[kern] ?? vragen[kern]);
+        // In de kruimelkop blijft de korte naam van Simulise staan: de vraag is daar te lang en breekt over twee regels.
+        const nieuw = inStap ? this.STAP[kern] : (this.TEKST[kern] ?? (ouder.closest('header.header') ? undefined : vragen[kern]));
         if (nieuw && nieuw !== kern && t.includes(kern)) raak.push([n, t, t.replace(kern, nieuw)]);
       }
       for (const [n, oud, nieuw] of raak) { n.__sdizVoor = oud; n.__sdizNa = nieuw; n.nodeValue = nieuw; (this._vertaald ??= new Set()).add(n); }

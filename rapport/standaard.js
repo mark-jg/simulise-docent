@@ -3,6 +3,8 @@
  * en normen, de categorieën (zoals bij BAVA) en de weergave. Aan te passen op de pagina Rapportprofielen.
  *
  * Opbouw:
+ *                   stapTelling: 'opeenvolgend' (stap 2 telt pas na stap 1) of 'hoogste' (de hoogste behaalde stap; standaard bij een
+ *                   opleiding met categorieen, zoals BAVA, waar een student vaak direct op een hoger niveau wordt beoordeeld)
  *   opleidingen[]   rol (beroeps | bava | eigen naam), herken (tekst of regex op de naam van de opleiding
  *                   in Simulise), titel, kop (bovenaan de pagina), categorieen[] (naam, kleur, leerlijnen[]),
  *                   stappen { leerlijnnummer: { stap: omschrijving } }
@@ -55,12 +57,12 @@ globalThis.SD_RAPPORT_STANDAARD = {
     },
     {
       code: 'M2', naam: 'Periode 2', van: '2026-11-16', tot: '2027-02-05', moment: 'voorlopig studieadvies', beslis: true, normNaam: 'VSA-norm',
-      norm: 'minimaal 4 van de 5 beroepsleerlijnen op stap 1 (waarvan leerlijn 1, 2 en 3) en minimaal 3 van de 4 basisvaardigheden voldoende.',
+      norm: 'minimaal 4 van de 5 beroepsleerlijnen op stap 1 (waarvan leerlijn 1, 2 en 3) en minimaal 3 van de 4 basisvaardigheden op de te behalen stap.',
       doel: { beroeps: 1, bava: 1 },
       regels: [
         { rol: 'beroeps', stap: 1, minAantal: 4, verplicht: [1, 2, 3] },
-        // "Voldoende" bij basisvaardigheden telt standaard niet mee: in het diagram staat geen voldoende.
-        // Zet "telt" op true om een vak als voldoende te rekenen bij minstens 1 leerlijn met een behaalde stap.
+        // Basisvaardigheden: een vak telt als de te behalen stap (perCategorie.stap) is gehaald bij minLeerlijnen leerlijnen van dat vak
+        // (0 of 'alle' = alle leerlijnen). Telt standaard niet mee voor "op koers"; zet "telt" op true om dat wel te doen.
         { rol: 'bava', soort: 'categorieen', minAantal: 3, perCategorie: { minLeerlijnen: 1, stap: 1 }, telt: false },
       ],
     },

@@ -1264,3 +1264,9 @@ html:root:root .sd-matrix-draai .sd-md-kies select { width: auto; height: auto; 
    Met de balk en het overzicht van de extensie erboven moet de pagina kunnen schuiven, anders valt de onderkant buiten het venster. */
 html[data-sim-matrix] #content-wrapper { overflow-y: auto !important; overflow-x: hidden !important; }
 html:root:root .sd-matrix-draai .sd-md-rol { max-height: max(260px, calc(100vh - 300px)); }
+
+/* Kruimelkop: één regel, lange delen afkappen in plaats van over twee regels breken. */
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header .header-text { flex-wrap: nowrap !important; min-width: 0 !important; white-space: nowrap !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header .header-text > span { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; max-width: 34ch; flex: 0 1 auto; min-width: 0; }
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header .header-text > span.header-text-first-item { flex: none; max-width: none; overflow: visible !important; }
+html[data-sim-theme]:not([data-sim-theme="off"]) #content header.header .header-text > span:not(.header-text-first-item) { font-weight: 400 !important; font-size: 14px !important; }

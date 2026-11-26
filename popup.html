@@ -11,7 +11,7 @@
   .head h1 { font-size: 17px; }
   .ver, .foot { font-size: 12px; color: var(--muted); }
   main { padding: 0 12px; display: flex; flex-direction: column; gap: 10px; }
-  details.blok { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
+ details.blok { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); }
   details.blok > summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 11px 14px; cursor: pointer; font-size: 14px; font-weight: 600; }
   details.blok > summary::-webkit-details-marker { display: none; }
   details.blok > summary::after { content: ""; margin-left: auto; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; }
@@ -34,32 +34,46 @@
   .update .small { margin: 6px 0 0; font-size: 12px; }
   .note { font-size: 12px; color: var(--muted); margin: 0; padding: 0 4px; }
   button.klein { font-size: 12px; padding: 4px 12px; }
-  .periode { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card-2); }
-  .periode > summary { list-style: none; display: flex; align-items: baseline; gap: 8px; padding: 8px 10px; cursor: pointer; font-size: 13px; }
-  .periode > summary::-webkit-details-marker { display: none; }
-  .periode > summary b { font-weight: 600; }
-  .periode > summary .nu { padding: 1px 8px; border-radius: var(--pil); background: var(--accent-soft); color: var(--accent-text); font-size: 11px; font-weight: 600; }
-  .periode .velden { padding: 2px 10px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .periode .velden label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); min-width: 0; }
-  .periode .velden label.breed { grid-column: 1 / -1; }
-  .periode .velden label.vink { flex-direction: row; align-items: center; gap: 8px; color: var(--fg); }
-  .periode input[type=text], .periode input[type=date], .periode input[type=number], .periode textarea { width: 100%; font-size: 13px; padding: 5px 8px; }
-  .periode textarea { min-height: 56px; resize: vertical; }
-  .periode .normzin { grid-column: 1 / -1; margin: 0; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--card); border: 1px solid var(--border); font-size: 12px; color: var(--fg); }
-  .periode .normzin b { display: block; margin-bottom: 2px; font-size: 12px; color: var(--muted); font-weight: 600; }
-  .periode .normzin ul { margin: 0; padding-left: 16px; }
-  .periode h4 { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--fg); }
-  .periode .zin { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--fg); }
-  .periode .zin input[type=number] { width: 48px; text-align: center; padding: 4px 2px; }
-  .periode .zin input[type=text] { width: 84px; padding: 4px 6px; }
-  .periode > summary .kort { flex-basis: 100%; font-size: 11px; color: var(--muted); }
-  .periode > summary { flex-wrap: wrap; }
-  .periode .eisen { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
-  .periode .eisen small { margin-left: 4px; }
-  .periode .eisrij { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; align-items: flex-end; }
-  .periode .eisrij label { flex: 0 0 44px; align-items: center; }
-  .periode .eisrij label.min { flex: 0 0 76px; margin-left: auto; }
-  .periode .eisrij input { text-align: center; padding: 5px 2px; }
+  /* Tabbladen */
+  .tabs { position: sticky; top: 46px; z-index: 2; display: flex; gap: 2px; padding: 0 12px 8px; background: var(--bg); overflow-x: auto; }
+  .tabs button { flex: 1 0 auto; padding: 6px 10px; border: 0; border-radius: var(--pil); background: transparent; color: var(--muted); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .tabs button[aria-selected="true"] { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .12); }
+  .subtabs { top: 0; position: static; padding: 0 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+  .subtabs button { font-size: 12px; padding: 5px 9px; }
+  .subtabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-text); box-shadow: none; }
+  [role=tabpanel][hidden] { display: none; }
+  body[data-alles] [role=tabpanel][hidden] { display: block; }
+  .kaartblok { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .kaartblok + .kaartblok { margin-top: 10px; }
+  .kaartblok > h2 { margin: 0 0 2px; font-size: 14px; }
+  .uitleg { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+  /* Een regel in een lijst (fase, module, moment, norm) */
+  .item { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--card-2); }
+  .item > summary { list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 8px 10px; cursor: pointer; font-size: 13px; }
+  .item > summary::-webkit-details-marker { display: none; }
+  .item > summary b { font-weight: 600; }
+  .item > summary .nu { padding: 1px 8px; border-radius: var(--pil); background: var(--accent-soft); color: var(--accent-text); font-size: 11px; font-weight: 600; }
+  .item > summary small { margin-left: auto; }
+  .item > summary .kort { flex-basis: 100%; margin: 0; font-size: 11px; color: var(--muted); }
+  .velden { padding: 2px 10px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .velden label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); min-width: 0; }
+  .velden label.breed, .velden .breed { grid-column: 1 / -1; }
+  .velden label.vink { flex-direction: row; align-items: center; gap: 8px; color: var(--fg); }
+  .velden input[type=text], .velden input[type=date], .velden input[type=number], .velden textarea, .velden select { width: 100%; font-size: 13px; padding: 5px 8px; }
+  .velden textarea { min-height: 52px; resize: vertical; }
+  .velden h4 { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--fg); }
+  .normzin { grid-column: 1 / -1; margin: 0; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--card); border: 1px solid var(--border); font-size: 12px; color: var(--fg); }
+  .normzin b { display: block; margin-bottom: 2px; color: var(--muted); font-weight: 600; }
+  .normzin ul { margin: 0; padding-left: 16px; }
+  .zin { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--fg); }
+  .velden .zin input[type=number] { width: 48px; text-align: center; padding: 4px 2px; }
+  .velden .zin input[type=text] { width: 84px; padding: 4px 6px; }
+  .velden .zin select { width: auto; padding: 4px 6px; }
+  .eisrij { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; }
+  .eisrij label { flex: 0 0 44px; align-items: center; }
+  .velden .eisrij input { text-align: center; padding: 5px 2px; }
+  .rijknop { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+  .opslaan { position: sticky; bottom: 0; display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 10px 0 2px; background: var(--card); border-top: 1px solid var(--border); }
   #pMelding { font-size: 12px; color: var(--muted); } #pMelding.fout { color: var(--fout); }
   .foot { display: flex; justify-content: space-between; gap: 8px; padding: 6px 4px 0; }
   .foot a { color: inherit; }
@@ -68,6 +82,9 @@
 </head>
 <body>
   <div class="head"><h1>Simulise Docent</h1><span class="ver" id="ver"></span></div>
+  <div class="tabs" role="tablist" aria-label="Instellingen" data-tabs="hoofd">
+    <button role="tab" data-tab="onderdelen" aria-selected="true">Onderdelen</button><button role="tab" data-tab="toetsplan" aria-selected="false">Toetsplan</button><button role="tab" data-tab="uiterlijk" aria-selected="false">Uiterlijk</button><button role="tab" data-tab="meer" aria-selected="false">Meer</button>
+  </div>
   <main>
     <div class="update" id="update" hidden>
       <strong id="updTitle">Nieuwe versie beschikbaar</strong>
@@ -78,27 +95,35 @@
     </div>
     <p class="note" id="note"></p>
 
-    <details class="blok" open><summary>Onderdelen <small id="modTel"></small></summary><div class="in" id="modules"></div></details>
+    <section role="tabpanel" data-paneel="onderdelen"><div class="kaartblok"><h2>Onderdelen <small id="modTel"></small></h2><div id="modules"></div></div></section>
 
-    <details class="blok" id="blokPerioden"><summary>Fases, modules en normen <small id="pNu"></small></summary><div class="in">
-      <p class="note" id="pUitleg" style="padding:0 0 6px">De periodes van het schooljaar. Ze gelden voor het voortgangsrapport en de vergaderlijst, het filter op deadline bij de opdrachten van een klas en de deadlines op de klaspagina.</p>
-      <div id="perioden"></div>
-      <div class="rij" style="margin-top:10px"><button id="pErbij" class="klein">+ Module</button><button id="pOpslaan" class="klein primary">Opslaan</button><span id="pMelding"></span></div>
-      <h3>Vergaderlijst</h3>
-      <label class="keuze"><span>Aanwezigheid onder <input type="number" id="pGrens" min="0" max="100" style="width:64px"> % is een bespreekpunt</span></label>
-      <p class="note" style="padding:6px 0 0">De regels achter een norm (hoeveel leerlijnen op welke stap) en het toetsplan van het team stel je in bij <a href="#" id="profielen">Rapportprofielen</a>.</p>
-    </div></details>
+    <section role="tabpanel" data-paneel="toetsplan" hidden><div class="kaartblok">
+      <h2>Toetsplan <small id="pNu"></small></h2>
+      <p class="uitleg" id="pUitleg"></p>
+      <div class="tabs subtabs" role="tablist" aria-label="Toetsplan" data-tabs="plan">
+        <button role="tab" data-tab="fasen" aria-selected="true">Fasen</button><button role="tab" data-tab="modules" aria-selected="false">Modules</button><button role="tab" data-tab="momenten" aria-selected="false">Beslismomenten</button><button role="tab" data-tab="normen" aria-selected="false">Normen</button>
+      </div>
+      <section role="tabpanel" data-paneel="fasen"><p class="uitleg">Een fase bundelt modules, bijvoorbeeld de basisfase. Waar je op module filtert, kun je ook een fase kiezen.</p><div id="pFasenLijst"></div><button class="klein" data-erbij="fasen" style="margin-top:8px">+ Fase</button></section>
+      <section role="tabpanel" data-paneel="modules" hidden><p class="uitleg">Een module is een periode met een begin en een eind. Ze bepaalt welke opdrachten en deadlines bij elkaar horen.</p><div id="pModules"></div><button class="klein" data-erbij="modules" style="margin-top:8px">+ Module</button></section>
+      <section role="tabpanel" data-paneel="momenten" hidden><p class="uitleg">Een beslismoment is de dag waarop je de stand bekijkt. Koppel het aan een module en aan de norm die dan geldt.</p><div id="pMomenten"></div><button class="klein" data-erbij="momenten" style="margin-top:8px">+ Beslismoment</button></section>
+      <section role="tabpanel" data-paneel="normen" hidden><p class="uitleg">Een norm zegt wanneer een student op koers is. Eén norm kan bij meerdere beslismomenten horen.</p><div id="pNormen"></div><button class="klein" data-erbij="normen" style="margin-top:8px">+ Norm</button>
+        <h3>Vergaderlijst</h3>
+        <label class="keuze"><span>Aanwezigheid onder <input type="number" id="pGrens" min="0" max="100" style="width:64px"> % is een bespreekpunt</span></label></section>
+      <div class="opslaan"><button id="pOpslaan" class="klein primary">Opslaan</button><span id="pMelding"></span></div>
+      <p class="note" style="padding:6px 0 0">Het toetsplan van het team (gedeelde link) en de voorvertoning van het rapport staan bij <a href="#" id="profielen">Rapportprofielen</a>.</p>
+    </div></section>
 
-    <details class="blok"><summary>Uiterlijk <small id="themaNu"></small></summary><div class="in">
+    <section role="tabpanel" data-paneel="uiterlijk" hidden><div class="kaartblok"><h2>Uiterlijk <small id="themaNu"></small></h2>
       <div class="themes" id="themes"></div>
       <label class="keuze"><input type="checkbox" id="compact"> <span>Compacte weergave</span></label>
-    </div></details>
+    </div></section>
 
-    <details class="blok"><summary>Updates en ontwikkelaar</summary><div class="in">
-      <div class="rij"><button id="updCheck" class="klein">Controleer op updates</button><a href="#" id="updPagina" style="font-size:12px">Instellingen voor updates</a></div>
-      <label class="keuze" style="margin-top:8px"><input type="checkbox" id="developer"> <span>Ontwikkelaarsmodus<small>Inspector (Alt+I): selectors en paginarapporten zonder namen</small></span></label>
-      <button id="inspect" class="klein" hidden>Inspector starten</button>
-    </div></details>
+    <section role="tabpanel" data-paneel="meer" hidden><div class="kaartblok"><h2>Updates</h2>
+      <div class="rij"><button id="updCheck" class="klein">Controleer op updates</button><a href="#" id="updPagina" style="font-size:12px">Instellingen voor updates</a></div></div>
+      <div class="kaartblok"><h2>Ontwikkelaar</h2>
+      <label class="keuze"><input type="checkbox" id="developer"> <span>Ontwikkelaarsmodus<small>Inspector (Alt+I): selectors en paginarapporten zonder namen</small></span></label>
+      <button id="inspect" class="klein" hidden>Inspector starten</button></div>
+    </section>
   </main>
   <script src="modules/registry.js"></script>
   <script src="rapport/standaard.js"></script>

@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.27.0)
+## Huidige staat (v0.28.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -130,6 +130,18 @@ v0.27: de vergaderlijst heeft een keuze "Norm van" (weergave.js, .sdw-norm): opt
                 De normen komen altijd uit het gekozen rapportprofiel; zolang niemand iets instelt is dat het ingebouwde profiel
                 rapport/standaard.js (M1: alle 5 beroepsleerlijnen op stap 1; M2: 4 van 5 waaronder 1, 2, 3). In het zijpaneel per module
                 bewerkbaar: de gewone regel per opleiding, de eis per leerlijn, de vakkenregel (telt mee of niet) en meetdatum.
+v0.28: zijpaneel met tabbladen (popup.html: [role=tablist][data-tabs], [role=tabpanel][data-paneel]; body[data-alles] toont alles, voor de
+                rooktest). Toetsplan = vier losse lijsten in het profiel: fasen[] { naam }, perioden[] (modules), momenten[] { naam, datum,
+                module, norm, beslis } en normen[] { id, naam, tekst, doel, regels }. Bij opslaan schrijft popup.js ze ook uit in perioden[]
+                (per module het laatste beslismoment: moment, beslis, meetdatum, normNaam, norm, doel, regels), want daar lezen render.js,
+                weergave.js en perioden.js. Een profiel zonder normen[]/momenten[] wordt in het paneel omgezet (pUitPerioden). Wie perioden[]
+                met de hand wijzigt op Rapportprofielen terwijl normen[]/momenten[] bestaan, raakt dat kwijt bij de volgende opslag in het paneel.
+                Vakkenregel: perCategorie { stap, minLeerlijnen (getal of 'alle') }: een vak telt als de te behalen stap is gehaald.
+                BAVA (gezien november 2026, getResults): 19 leerlijnen met elk 5 fasen, weights -1 Niet beoordeeld / 0 Niet behaald / 1 Behaald,
+                reviewsRequired 1; studenten krijgen vaak direct "Behaald" op fase 2, 3 of 4 zonder de lagere fasen. rapporten.naarOpleiding
+                geeft daarom ook hoogste, historieHoogste, nietBehaaldBoven en datumHoogste; render.js gebruikt die bij stapTelling 'hoogste'
+                (standaard voor een opleiding met categorieen). De wizard van Analytics onthoudt een oud tijdsbereik (TIMERANGE dd-mm-jjjj);
+                analyticsRapport zet het einde op vandaag.
 matrix.js, aanvulling v0.24: in de weergave per student de knop "Draaien" (instelling matrixDraai, standaard aan): eigen tabel
                 .sd-matrix-draai table.sd-md met studenten als rijen en opdrachten als kolommen (code() maakt de korte kop uit de titel),
                 html[data-sim-matrix-draai] verbergt dan de tabel van Simulise. Het adres #sd-opdracht=<titel> (links op de klaspagina van

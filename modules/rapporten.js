@@ -188,7 +188,10 @@ SD.register({
       const fouten = [];
       for (const [oi, ed] of opl.entries()) {
         // Leerlijnen horen bij één opleiding: die keuze alleen voor de huidige opleiding meenemen.
-        const pickers = v.query.pickers.filter((p) => ed.huidig || !/ASPECT|LEERLIJN/i.test(p.key)).map((p) => (isOpl(p) ? { ...p, values: [ed.waarde] } : p));
+        // Simulise onthoudt het tijdsbereik van een eerdere rapportage; loopt dat niet tot vandaag, dan ontbreken de laatste beoordelingen.
+        const vandaagNl = new Date().toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const totVandaag = (p) => (/^TIMERANGE$/i.test(p.key) && Array.isArray(p.values) && p.values.length === 2 && /^\d{2}-\d{2}-\d{4}$/.test(p.values[1]) ? { ...p, values: [p.values[0], vandaagNl] } : p);
+        const pickers = v.query.pickers.filter((p) => ed.huidig || !/ASPECT|LEERLIJN/i.test(p.key)).map((p) => (isOpl(p) ? { ...p, values: [ed.waarde] } : totVandaag(p)));
         const rijen = [];
         let skills = {};
         for (let page = 1; page <= 20; page++) {
@@ -374,6 +377,11 @@ SD.register({
       const huidig = fasen.find((f) => f.phase === stap), volgende = fasen.find((f) => f.phase === stap + 1);
       const niveauBoven = (huidig?.weights || []).find((w) => /boven verwachting/i.test(w.title))?.level ?? 2;
       const laatste = [...datums(huidig), ...datums(volgende)].sort().pop() || null;
+      // Bij een opleiding waar de stappen niveaus zijn (zoals BAVA) wordt vaak direct een hogere stap behaald, zonder de lagere.
+      // Daarvoor ook de hoogste behaalde stap, los van de volgorde; rapport/render.js kiest per opleiding welke telling geldt.
+      const behaaldeFasen = fasen.filter(behaald);
+      const hoogste = behaaldeFasen.reduce((m, f) => Math.max(m, f.phase), 0);
+      const beoordeeld = (f) => (f.reviews || []).some((r) => r.score == null || r.score >= 0); // score -1 is "Niet beoordeeld"
       return {
         naam: a.aspect?.name || '?',
         kleur: a.aspect?.skill?.color || undefined,
@@ -383,6 +391,10 @@ SD.register({
         beoordeeldNiet: !!volgende && (volgende.reviews || []).length > 0 && !behaald(volgende),
         datum: laatste,
         historie,
+        hoogste,
+        historieHoogste: behaaldeFasen.map((f) => ({ stap: f.phase, datum: datums(f).pop() || null })).filter((h) => h.datum),
+        nietBehaaldBoven: fasen.some((f) => f.phase > hoogste && beoordeeld(f) && !behaald(f)),
+        datumHoogste: fasen.flatMap((f) => (beoordeeld(f) ? datums(f) : [])).sort().pop() || null,
       };
     });
     return { naam, maxStap: diagram.phaseCount || Math.max(1, ...((diagram.aspects || []).flatMap((a) => (a.phases || []).map((f) => f.phase)))), leerlijnen };

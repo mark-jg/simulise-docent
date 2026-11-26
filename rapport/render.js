@@ -90,7 +90,8 @@
     const titel = (rol) => ((profiel.opleidingen || []).find((o) => o.rol === rol)?.titel || rol).toLowerCase();
     return (periode?.regels || []).map((r) => {
       const telt = r.telt === false ? ' (telt niet mee voor op koers)' : '';
-      if (r.soort === 'categorieen') return `minimaal ${r.minAantal} van de vakken bij ${titel(r.rol)} voldoende${telt}`;
+      if (r.soort === 'categorieen') { const pc = r.perCategorie || {}; const per = !pc.minLeerlijnen || pc.minLeerlijnen === 'alle' ? 'alle leerlijnen' : `minstens ${pc.minLeerlijnen} ${Number(pc.minLeerlijnen) === 1 ? 'leerlijn' : 'leerlijnen'}`;
+        return `minimaal ${r.minAantal} vakken bij ${titel(r.rol)} op stap ${Number(pc.stap) || 1} (per vak ${per})${telt}`; }
       if (r.soort === 'perLeerlijn') {
         const e = Object.entries(r.eisen || {}).filter(([, st]) => Number(st) > 0).sort((a, b) => Number(a[0]) - Number(b[0]));
         return `${titel(r.rol)}: ${e.map(([n, st]) => `leerlijn ${n} op stap ${st}`).join(', ')}; ${r.minAantal == null || r.minAantal === '' || Number(r.minAantal) >= e.length ? 'alle' : `minimaal ${r.minAantal} van de ${e.length}`} moeten kloppen${telt}`;
@@ -119,7 +120,11 @@
         cats = [...new Map(o.leerlijnen.filter((l) => l.categorie).map((l) => [l.categorie, { naam: l.categorie, kleur: l.kleur || GRIJS, leerlijnen: [] }])).values()];
       }
       const past = (n, naam) => { const a = norm(n), b = norm(naam); return a === b || b.startsWith(a) || b.endsWith(a) || b.includes(` ${a}`) || a.startsWith(b); };
-      let lijnen = o.leerlijnen.map((ll0, i) => {
+      // Telling van de stap: 'opeenvolgend' (stap 2 telt pas na stap 1) of 'hoogste' (de hoogste behaalde stap, voor opleidingen waar de
+      // stappen niveaus zijn, zoals BAVA). In het profiel: opleidingen[].stapTelling; zonder die keuze 'hoogste' bij vakken (categorieën).
+      const hoogsteTelt = (conf.stapTelling || (cats ? 'hoogste' : 'opeenvolgend')) === 'hoogste';
+      let lijnen = o.leerlijnen.map((bron, i) => {
+        const ll0 = hoogsteTelt && bron.hoogste != null ? { ...bron, stap: bron.hoogste, historie: bron.historieHoogste || bron.historie, beoordeeldNiet: !!bron.nietBehaaldBoven, datum: bron.datumHoogste || bron.datum } : bron;
         let ll = ll0;
         if (historisch && Array.isArray(ll0.historie)) {
           const stap = stapOp(ll0, datum);
@@ -156,9 +161,11 @@
       const o = per(r.rol);
       if (!o) return { ok: false, tekst: `geen diagram voor ${r.rol}`, rol: r.rol };
       if (r.soort === 'categorieen') {
-        const pc = r.perCategorie || { minLeerlijnen: 1, stap: 1 };
-        const goed = (o.cats || []).filter((c) => o.lijnen.filter((l) => l.cat === c.naam && l.stap >= (pc.stap || 1)).length >= (pc.minLeerlijnen || 1));
-        return { ok: goed.length >= r.minAantal, rol: r.rol, marge: goed.length - r.minAantal, krap: r.minAantal < (o.cats || []).length, tekst: `${goed.length} van de ${(o.cats || []).length} basisvaardigheden voldoende` };
+        // Een vak telt als de te behalen stap (perCategorie.stap) is gehaald bij minLeerlijnen leerlijnen van dat vak; minLeerlijnen 0 of 'alle' = alle leerlijnen.
+        const pc = r.perCategorie || { minLeerlijnen: 1, stap: 1 }, stap = Number(pc.stap) || 1;
+        const vakken = (o.cats || []).filter((c) => c.aantal);
+        const goed = vakken.filter((c) => { const ls = o.lijnen.filter((l) => l.cat === c.naam); const nodig = !pc.minLeerlijnen || pc.minLeerlijnen === 'alle' ? ls.length : Math.min(ls.length, Number(pc.minLeerlijnen)); return ls.filter((l) => l.stap >= stap).length >= nodig; });
+        return { ok: goed.length >= r.minAantal, rol: r.rol, marge: goed.length - r.minAantal, krap: r.minAantal < vakken.length, tekst: `${goed.length} van de ${vakken.length} ${o.conf.titel?.toLowerCase() || 'vakken'} op stap ${stap}` };
       }
       if (r.soort === 'perLeerlijn') { // per leerlijn een eigen vereiste stap: eisen { leerlijnnummer: stap }, minAantal (standaard alle)
         const eisen = r.eisen || {};

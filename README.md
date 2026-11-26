@@ -101,6 +101,14 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.28.0: het zijpaneel heeft tabbladen (Onderdelen, Toetsplan, Uiterlijk, Meer). Onder Toetsplan stel je Fasen,
+  Modules, Beslismomenten en Normen elk apart in en koppel je ze: een module hoort bij een fase, een beslismoment bij
+  een module en een norm. Bij de basisvaardigheden geldt de te behalen stap (in te stellen), niet meer "voldoende".
+  BAVA wordt goed gelezen: de hoogste behaalde stap telt, ook als de lagere stappen niet apart zijn behaald. Het
+  overzicht vanuit Inzicht kijkt altijd tot vandaag, ook als Simulise een oudere einddatum had onthouden.
+- 0.27.1: in de vergaderlijst staan "Norm" en "Stand op" los van elkaar; de knop "Zet op meetmoment" zet de datum
+  op het meetmoment van de gekozen norm. De kruimelkop blijft op één regel: bij Inzicht staat daar weer de korte naam
+  van de rapportage.
 - 0.27.0: normen duidelijk en per module te toetsen. In de vergaderlijst kies je "Norm van" een module: de stand
   op het meetmoment van die module, getoetst aan haar eigen norm, met de eisen in woorden erbij. In het zijpaneel staat
   bij elke module "Op koers als ..." in gewone taal, met velden voor het aantal leerlijnen, de stap, verplichte
