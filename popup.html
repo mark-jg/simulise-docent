@@ -45,6 +45,21 @@
   .periode .velden label.vink { flex-direction: row; align-items: center; gap: 8px; color: var(--fg); }
   .periode input[type=text], .periode input[type=date], .periode input[type=number], .periode textarea { width: 100%; font-size: 13px; padding: 5px 8px; }
   .periode textarea { min-height: 56px; resize: vertical; }
+  .periode .normzin { grid-column: 1 / -1; margin: 0; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--card); border: 1px solid var(--border); font-size: 12px; color: var(--fg); }
+  .periode .normzin b { display: block; margin-bottom: 2px; font-size: 12px; color: var(--muted); font-weight: 600; }
+  .periode .normzin ul { margin: 0; padding-left: 16px; }
+  .periode h4 { grid-column: 1 / -1; margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--fg); }
+  .periode .zin { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--fg); }
+  .periode .zin input[type=number] { width: 48px; text-align: center; padding: 4px 2px; }
+  .periode .zin input[type=text] { width: 84px; padding: 4px 6px; }
+  .periode > summary .kort { flex-basis: 100%; font-size: 11px; color: var(--muted); }
+  .periode > summary { flex-wrap: wrap; }
+  .periode .eisen { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+  .periode .eisen small { margin-left: 4px; }
+  .periode .eisrij { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; align-items: flex-end; }
+  .periode .eisrij label { flex: 0 0 44px; align-items: center; }
+  .periode .eisrij label.min { flex: 0 0 76px; margin-left: auto; }
+  .periode .eisrij input { text-align: center; padding: 5px 2px; }
   #pMelding { font-size: 12px; color: var(--muted); } #pMelding.fout { color: var(--fout); }
   .foot { display: flex; justify-content: space-between; gap: 8px; padding: 6px 4px 0; }
   .foot a { color: inherit; }
@@ -65,10 +80,10 @@
 
     <details class="blok" open><summary>Onderdelen <small id="modTel"></small></summary><div class="in" id="modules"></div></details>
 
-    <details class="blok" id="blokPerioden"><summary>Periodes en normen <small id="pNu"></small></summary><div class="in">
+    <details class="blok" id="blokPerioden"><summary>Fases, modules en normen <small id="pNu"></small></summary><div class="in">
       <p class="note" id="pUitleg" style="padding:0 0 6px">De periodes van het schooljaar. Ze gelden voor het voortgangsrapport en de vergaderlijst, het filter op deadline bij de opdrachten van een klas en de deadlines op de klaspagina.</p>
       <div id="perioden"></div>
-      <div class="rij" style="margin-top:10px"><button id="pErbij" class="klein">+ Periode</button><button id="pOpslaan" class="klein primary">Opslaan</button><span id="pMelding"></span></div>
+      <div class="rij" style="margin-top:10px"><button id="pErbij" class="klein">+ Module</button><button id="pOpslaan" class="klein primary">Opslaan</button><span id="pMelding"></span></div>
       <h3>Vergaderlijst</h3>
       <label class="keuze"><span>Aanwezigheid onder <input type="number" id="pGrens" min="0" max="100" style="width:64px"> % is een bespreekpunt</span></label>
       <p class="note" style="padding:6px 0 0">De regels achter een norm (hoeveel leerlijnen op welke stap) en het toetsplan van het team stel je in bij <a href="#" id="profielen">Rapportprofielen</a>.</p>
@@ -87,6 +102,7 @@
   </main>
   <script src="modules/registry.js"></script>
   <script src="rapport/standaard.js"></script>
+  <script src="rapport/render.js"></script>
   <script src="popup.js"></script>
   <script src="update/updater.js"></script>
 </body>

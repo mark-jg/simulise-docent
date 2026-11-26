@@ -109,29 +109,67 @@ async function pLaad() {
 }
 
 function pTeken() {
-  const profiel = pProfiel(), nu = vandaagIso(), rollen = (profiel.opleidingen || []).map((o) => ({ rol: o.rol, titel: o.titel || o.rol }));
+  const profiel = pProfiel(), nu = vandaagIso(), rollen = (profiel.opleidingen || []).map((o) => ({ rol: o.rol, titel: o.titel || o.rol, cats: Array.isArray(o.categorieen) && o.categorieen.length > 0, aantal: Math.max(5, ...Object.keys(o.stappen || {}).map(Number)) }));
   const huidig = P.lijst.find((p) => p.van <= nu && nu <= p.tot);
-  document.getElementById('pNu').textContent = huidig ? `nu: ${huidig.code}` : `${P.lijst.length} ${P.lijst.length === 1 ? 'periode' : 'periodes'}`;
-  document.getElementById('pUitleg').textContent = `Profiel: ${profiel.naam}${profiel.gedeeld ? ' (van het team: wijzigingen hier worden bij het verversen overschreven; pas het bestand op OneDrive aan).' : '.'} De periodes gelden voor het voortgangsrapport en de vergaderlijst, het filter op deadline bij de opdrachten van een klas en de deadlines op de klaspagina.`;
+  document.getElementById('pNu').textContent = huidig ? `nu: ${huidig.code}` : `${P.lijst.length} ${P.lijst.length === 1 ? 'module' : 'modules'}`;
+  document.getElementById('pUitleg').textContent = `Profiel: ${profiel.naam}${profiel.gedeeld ? ' (van het team: wijzigingen hier worden bij het verversen overschreven; pas het bestand op OneDrive aan).' : '.'} Een module is een periode met een begin en een eind; meerdere modules kunnen onder één fase vallen. Ze gelden voor het voortgangsrapport en de vergaderlijst en voor de filters bij de opdrachten van een klas en op de klaspagina.`;
   document.getElementById('pGrens').value = profiel.aanwezigheid?.grens === null ? '' : (profiel.aanwezigheid?.grens ?? 80);
-  document.getElementById('perioden').innerHTML = P.lijst.map((p, i) => `<details class="periode" data-nr="${i}"${p._nieuw ? ' open' : ''}><summary><b>${pEsc(p.code || 'Nieuw')}</b><span>${pEsc(p.naam || '')}</span>${p === huidig ? '<span class="nu">nu</span>' : ''}<small style="margin-left:auto">${pEsc((p.van || '').slice(5).split('-').reverse().join('-'))} t/m ${pEsc((p.tot || '').slice(5).split('-').reverse().join('-'))}</small></summary>
+  document.getElementById('perioden').innerHTML = P.lijst.map((p, i) => `<details class="periode" data-nr="${i}"${p._nieuw ? ' open' : ''}><summary><b>${pEsc(p.code || 'Nieuw')}</b><span>${pEsc([p.fase, p.naam].filter(Boolean).join(' · '))}</span>${p === huidig ? '<span class="nu">nu</span>' : ''}<small style="margin-left:auto">${pEsc((p.van || '').slice(5).split('-').reverse().join('-'))} t/m ${pEsc((p.tot || '').slice(5).split('-').reverse().join('-'))}</small><span class="kort">${pEsc(SDRapport.regelTekst(profiel, p).join(' · ') || 'geen eisen')}</span></summary>
     <div class="velden"><label>Code<input type="text" data-p="code" value="${pEsc(p.code || '')}" placeholder="M1"></label><label>Naam<input type="text" data-p="naam" value="${pEsc(p.naam || '')}" placeholder="Periode 1"></label>
+      <label class="breed">Fase<input type="text" data-p="fase" list="pFasen" value="${pEsc(p.fase || '')}" placeholder="Bijvoorbeeld Basisfase; meerdere modules kunnen dezelfde fase hebben"></label>
       <label>Van<input type="date" data-p="van" value="${pEsc(p.van || '')}"></label><label>Tot en met<input type="date" data-p="tot" value="${pEsc(p.tot || '')}"></label>
       <label class="breed">Moment<input type="text" data-p="moment" value="${pEsc(p.moment || '')}" placeholder="meetmoment, voorlopig studieadvies…"></label>
-      <label class="breed vink"><input type="checkbox" data-p="beslis"${p.beslis ? ' checked' : ''}> Er valt een besluit in deze periode</label>
+      <label class="breed vink"><input type="checkbox" data-p="beslis"${p.beslis ? ' checked' : ''}> Er valt een besluit in deze module</label>
+      <label>Gemeten op<input type="date" data-p="meetdatum" value="${pEsc(p.meetdatum || '')}" title="De dag waarop de stand voor deze module wordt bekeken; leeg = de laatste dag"></label><span></span>
+      <div class="normzin" data-normzin><b>Op koers als</b>${SDRapport.regelTekst(profiel, p).length ? `<ul>${SDRapport.regelTekst(profiel, p).map((t) => `<li>${pEsc(t)}</li>`).join('')}</ul>` : 'Nog geen eisen: niemand krijgt een oordeel voor deze module.'}</div>
+      ${rollen.map((r) => { const regel = (p.regels || []).find((x) => x.rol === r.rol && (r.cats ? x.soort === 'categorieen' : !x.soort));
+        return r.cats ? `<h4>${pEsc(r.titel)}</h4><div class="zin">minimaal <input type="number" min="0" max="20" data-p="regel" data-rol="${pEsc(r.rol)}" data-veld="minAantal" data-soort="categorieen" value="${pEsc(regel?.minAantal ?? '')}"> vakken voldoende
+            <label class="vink" style="flex-direction:row"><input type="checkbox" data-p="regel" data-rol="${pEsc(r.rol)}" data-veld="telt" data-soort="categorieen"${regel && regel.telt !== false ? ' checked' : ''}> telt mee</label></div>`
+          : `<h4>${pEsc(r.titel)}</h4><div class="zin">minimaal <input type="number" min="0" max="20" data-p="regel" data-rol="${pEsc(r.rol)}" data-veld="minAantal" value="${pEsc(regel?.minAantal ?? '')}"> leerlijnen op stap <input type="number" min="1" max="9" data-p="regel" data-rol="${pEsc(r.rol)}" data-veld="stap" value="${pEsc(regel?.stap ?? '')}">
+            verplicht <input type="text" data-p="regel" data-rol="${pEsc(r.rol)}" data-veld="verplicht" value="${pEsc((regel?.verplicht || []).join(', '))}" placeholder="1, 2, 3" title="Nummers van leerlijnen die er in elk geval bij moeten zijn"></div>`; }).join('')}
       <label>Naam van de norm<input type="text" data-p="normNaam" value="${pEsc(p.normNaam || '')}" placeholder="VSA-norm"></label>
       ${rollen.map((r) => `<label>Doelstap ${pEsc(r.titel)}<input type="number" min="0" max="9" data-p="doel" data-rol="${pEsc(r.rol)}" value="${pEsc(p.doel?.[r.rol] ?? '')}"></label>`).join('')}
+      ${rollen.filter((r) => !r.cats).map((r) => { const regel = (p.regels || []).find((x) => x.soort === 'perLeerlijn' && x.rol === r.rol); const n = Math.max(r.aantal, ...Object.keys(regel?.eisen || {}).map(Number), 1);
+        return `<div class="breed eisen"><span>Eis per leerlijn, ${pEsc(r.titel)} <small>vereiste stap; leeg = telt niet mee</small></span><div class="eisrij">${Array.from({ length: n }, (_, k) => `<label>${k + 1}<input type="number" min="0" max="9" data-p="eis" data-rol="${pEsc(r.rol)}" data-ll="${k + 1}" value="${pEsc(regel?.eisen?.[k + 1] ?? '')}"></label>`).join('')}
+          <label class="min">minimaal<input type="number" min="1" max="${n}" data-p="eisMin" data-rol="${pEsc(r.rol)}" value="${pEsc(regel?.minAantal ?? '')}" placeholder="alle"></label></div></div>`; }).join('')}
       <label class="breed">Norm in woorden<textarea data-p="norm">${pEsc(p.norm || '')}</textarea></label>
-      <label class="breed" style="flex-direction:row;justify-content:space-between;align-items:center"><span>${(p.regels || []).length} ${(p.regels || []).length === 1 ? 'regel' : 'regels'} voor "op koers"</span><button type="button" class="klein" data-p-weg="${i}">Periode verwijderen</button></label></div></details>`).join('')
-    || '<p class="note" style="padding:0">Nog geen periodes.</p>';
+      <label class="breed" style="flex-direction:row;justify-content:space-between;align-items:center"><span></span><button type="button" class="klein" data-p-weg="${i}">Module verwijderen</button></label></div></details>`).join('')
+    || '<p class="note" style="padding:0">Nog geen modules.</p>';
+  document.getElementById('perioden').insertAdjacentHTML('afterbegin', `<datalist id="pFasen">${[...new Set(P.lijst.map((p) => String(p.fase || '').trim()).filter(Boolean))].map((f) => `<option value="${pEsc(f)}">`).join('')}</datalist>`);
 }
 
 document.getElementById('perioden').addEventListener('input', (e) => {
   const veld = e.target.dataset.p, p = P.lijst[Number(e.target.closest('.periode')?.dataset.nr)];
   if (!veld || !p) return;
   if (veld === 'beslis') p.beslis = e.target.checked;
+  else if (veld === 'regel') { // de gewone eis per opleiding: { rol, stap, minAantal, verplicht } of voor vakken { rol, soort: 'categorieen', minAantal, perCategorie, telt }
+    const rol = e.target.dataset.rol, vakken = e.target.dataset.soort === 'categorieen', wat = e.target.dataset.veld;
+    p.regels = [...(p.regels || [])];
+    let i = p.regels.findIndex((x) => x.rol === rol && (vakken ? x.soort === 'categorieen' : !x.soort));
+    const regel = i >= 0 ? { ...p.regels[i] } : vakken ? { rol, soort: 'categorieen', minAantal: 0, perCategorie: { minLeerlijnen: 1, stap: 1 } } : { rol, stap: 1, minAantal: 0 };
+    if (wat === 'telt') regel.telt = e.target.checked;
+    else if (wat === 'verplicht') regel.verplicht = e.target.value.split(/[^0-9]+/).filter(Boolean).map(Number);
+    else regel[wat] = e.target.value === '' ? 0 : Number(e.target.value);
+    if (!vakken && !regel.stap) regel.stap = 1;
+    if (regel.verplicht && !regel.verplicht.length) delete regel.verplicht;
+    if (i < 0) i = p.regels.length;
+    if (regel.minAantal > 0) p.regels[i] = regel; else if (i < p.regels.length) p.regels.splice(i, 1);
+  }
+  else if (veld === 'eis' || veld === 'eisMin') { // een eigen eis per leerlijn: regel { rol, soort: 'perLeerlijn', eisen, minAantal }
+    const rol = e.target.dataset.rol;
+    p.regels = [...(p.regels || [])];
+    let i = p.regels.findIndex((x) => x.soort === 'perLeerlijn' && x.rol === rol);
+    const regel = i >= 0 ? { ...p.regels[i], eisen: { ...(p.regels[i].eisen || {}) } } : { rol, soort: 'perLeerlijn', eisen: {} };
+    if (veld === 'eis') { if (e.target.value === '' || Number(e.target.value) <= 0) delete regel.eisen[e.target.dataset.ll]; else regel.eisen[e.target.dataset.ll] = Number(e.target.value); }
+    else if (e.target.value === '') delete regel.minAantal; else regel.minAantal = Number(e.target.value);
+    if (i < 0) i = p.regels.length;
+    if (Object.keys(regel.eisen).length) p.regels[i] = regel; else p.regels.splice(i, 1);
+  }
   else if (veld === 'doel') { p.doel = { ...(p.doel || {}) }; if (e.target.value === '') delete p.doel[e.target.dataset.rol]; else p.doel[e.target.dataset.rol] = Number(e.target.value); }
   else p[veld] = e.target.value;
+  const kaart = e.target.closest('.periode'), zinnen = SDRapport.regelTekst(pProfiel(), p);
+  kaart.querySelector('[data-normzin]').innerHTML = `<b>Op koers als</b>${zinnen.length ? `<ul>${zinnen.map((t) => `<li>${pEsc(t)}</li>`).join('')}</ul>` : 'Nog geen eisen: niemand krijgt een oordeel voor deze module.'}`;
+  kaart.querySelector('summary .kort').textContent = zinnen.join(' · ') || 'geen eisen';
   pMeld('Niet opgeslagen.');
 });
 document.getElementById('perioden').addEventListener('click', (e) => {
@@ -144,19 +182,19 @@ document.getElementById('pErbij').addEventListener('click', () => {
   let van = vandaagIso();
   if (laatste?.tot) { const d = new Date(`${laatste.tot}T12:00:00`); d.setDate(d.getDate() + 1); van = d.toISOString().slice(0, 10); }
   const tot = new Date(`${van}T12:00:00`); tot.setDate(tot.getDate() + 69);
-  P.lijst.push({ code: `M${P.lijst.length + 1}`, naam: `Periode ${P.lijst.length + 1}`, van, tot: tot.toISOString().slice(0, 10), moment: '', beslis: false, norm: '', doel: { ...(laatste?.doel || {}) }, regels: [], _nieuw: true });
+  P.lijst.push({ code: `M${P.lijst.length + 1}`, naam: `Module ${P.lijst.length + 1}`, fase: laatste?.fase || '', van, tot: tot.toISOString().slice(0, 10), moment: '', beslis: false, norm: '', doel: { ...(laatste?.doel || {}) }, regels: [], _nieuw: true });
   pTeken(); pMeld('Niet opgeslagen.');
 });
 document.getElementById('pGrens').addEventListener('input', () => pMeld('Niet opgeslagen.'));
 document.getElementById('pOpslaan').addEventListener('click', async () => {
-  const lijst = P.lijst.map(({ _nieuw, ...p }) => ({ ...p, code: String(p.code || '').trim() }));
+  const lijst = P.lijst.map(({ _nieuw, ...p }) => { const q = { ...p, code: String(p.code || '').trim(), fase: String(p.fase || '').trim() }; if (!q.fase) delete q.fase; if (!q.meetdatum) delete q.meetdatum; return q; });
   const codes = new Set();
   for (const p of lijst) {
-    if (!p.code) { pMeld('Elke periode heeft een code nodig.', true); return; }
+    if (!p.code) { pMeld('Elke module heeft een code nodig.', true); return; }
     if (codes.has(p.code)) { pMeld(`De code ${p.code} komt twee keer voor.`, true); return; }
     codes.add(p.code);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.van || '') || !/^\d{4}-\d{2}-\d{2}$/.test(p.tot || '')) { pMeld(`Periode ${p.code}: vul Van en Tot en met in.`, true); return; }
-    if (p.tot < p.van) { pMeld(`Periode ${p.code}: de einddatum ligt voor de begindatum.`, true); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.van || '') || !/^\d{4}-\d{2}-\d{2}$/.test(p.tot || '')) { pMeld(`Module ${p.code}: vul Van en Tot en met in.`, true); return; }
+    if (p.tot < p.van) { pMeld(`Module ${p.code}: de einddatum ligt voor de begindatum.`, true); return; }
   }
   lijst.sort((a, b) => a.van.localeCompare(b.van));
   const grens = document.getElementById('pGrens').value;

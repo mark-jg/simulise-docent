@@ -54,6 +54,7 @@
     .sdw .sdw-normen li { margin-bottom: 4px; } .sdw .sdw-normen .fa { width: 16px; }
     .sdw .sdw-ok { color: var(--sim-success, #1f9d55); } .sdw .sdw-nee { color: var(--sim-danger, #c93c3c); }
     .sdw a.sdw-link { cursor: pointer; }
+    .sdw .sdw-regels { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--sim-text-2, #5b6470); }
     .sdw .sdw-tellers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     .sdw .sdw-teller { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 12px; border-radius: 999px; background: var(--sim-surface-2, #eef0f3); font-size: 13px; }
     .sdw .sdw-teller b { font-size: 15px; font-variant-numeric: tabular-nums; }
@@ -179,7 +180,8 @@
       ${metAanw ? `<td class="sdw-getal${m.aanwezig?.pct != null && grens != null && m.aanwezig.pct < grens ? ' sdw-laag' : ''}">${m.aanwezig?.pct != null ? SDRapport.procent(m.aanwezig.pct) : '–'}</td><td class="sdw-getal">${m.aanwezig?.ongeoorloofd ?? '–'}</td><td class="sdw-getal">${m.aanwezig?.teLaat ?? '–'}</td>` : ''}
       <td class="sdw-waarom">${esc(m.signaal.redenen.join('; '))}${m.aanwezig?.opmerking ? `${m.signaal.redenen.length ? '; ' : ''}<em>${esc(m.aanwezig.opmerking)}</em>` : ''}</td></tr>`;
     const groepen = ['onder', 'bespreek', 'ok', 'geen'].map((n) => [n, ms.filter((m) => m.signaal.niveau === n)]).filter(([, l]) => l.length);
-    const norm = e.toets ? `<p class="m-b-none"><strong>${esc(e.toets.normNaam || `Norm ${e.toets.code}`)}</strong> · ${esc(e.toets.code)} ${esc(e.toets.moment || '')}: ${esc(e.toets.norm || '')}</p>` : '<p class="m-b-none text-muted">Voor deze periode staat geen norm in het toetsplan.</p>';
+    const norm = e.toets ? `<p class="m-b-none"><strong>${esc(e.toets.normNaam || `Norm ${e.toets.code}`)}</strong> · ${esc(e.toets.code)} ${esc(e.toets.moment || '')}: ${esc(e.toets.norm || '')}</p>
+        ${SDRapport.regelTekst(profiel, e.toets).length ? `<ul class="sdw-regels">${SDRapport.regelTekst(profiel, e.toets).map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '<p class="sdw-sub">Bij deze module staan geen eisen; niemand krijgt dan een oordeel. Stel ze in via het zijpaneel van de extensie (Fases, modules en normen).</p>'}` : '<p class="m-b-none text-muted">Voor deze module staat geen norm in het toetsplan.</p>';
     return `<section class="panel panel-default"><div class="panel-body">${norm}
         <p class="sdw-sub">Stand op ${langeDatum(e.datum)}${metAanw && grens != null ? ` · aanwezigheid onder ${grens}% is een bespreekpunt` : ''}${metAanw ? ` · aanwezigheid bekend van ${alle.filter((m) => m.aanwezig).length} van de ${alle.length} studenten` : ''}</p>
         <div class="sdw-tellers"><span class="sdw-teller onder"><b>${tel('onder')}</b> onder de norm</span><span class="sdw-teller bespreek"><b>${tel('bespreek')}</b> bespreken</span><span class="sdw-teller ok"><b>${tel('ok')}</b> op koers</span>${tel('geen') ? `<span class="sdw-teller"><b>${tel('geen')}</b> zonder norm</span>` : ''}</div></div>
@@ -307,9 +309,18 @@
     let alleenSignaal = false;
     const signaalVink = vink('alleen bespreekgevallen', false, (v) => { alleenSignaal = v; });
     signaalVink.classList.add('sdw-alleen-signaal');
+    // Norm van een module: de stand op het meetmoment van die module (veld meetdatum, anders de laatste dag), getoetst aan haar eigen norm.
+    const meetmoment = (code) => { const p = (profiel.perioden || []).find((x) => x.code === code); const d = p ? (p.meetdatum || p.tot) : vandaag; return d < vandaag ? d : vandaag; };
+    const normKeuze = keuze([['', 'automatisch (eerstvolgende besluit)'], ...(profiel.perioden || []).map((p) => [p.code, `${p.code}${p.naam ? ` · ${p.naam}` : ''}`])], '', (v) => {
+      opties.toets = v || null;
+      opties.peildatum = v ? meetmoment(v) : vandaag;
+      datum.value = opties.peildatum;
+    });
+    const normGroep = el('span', { className: 'sdw-groepje sdw-norm' }, [el('span', { textContent: 'Norm van' }), normKeuze]);
     const nadrukVink = vink('doelstap groot', opties.nadruk ?? (profiel.weergave?.nadrukDoelstap !== false), (v) => { opties.nadruk = v; });
     balk.append(
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Weergave' }), soortKeuze]),
+      normGroep,
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Peildatum' }), datum]),
       el('span', { className: 'sdw-groepje' }, [el('span', { textContent: 'Vergelijk met' }), keuze([['vorige', 'vorige periode'], ['geen', 'niets'], ...(profiel.perioden || []).map((p) => [p.code, p.code])], opties.vergelijkMet, (v) => { opties.vergelijkMet = v; })]),
       el('span', { className: 'sdw-groepje' }, rollen.length > 1 ? rollen.map((x) => vink(x.titel, true, (v) => { v ? gekozen.add(x.rol) : gekozen.delete(x.rol); opties.opleidingen = [...gekozen]; })) : []),
@@ -363,6 +374,7 @@
       const ms = SDRapport.modellen(studenten, profiel, vergaderNu ? { ...opties, filter: alleenSignaal ? 'signaal' : 'alle' } : opties);
       zichtbaarCache = ms;
       groepKeuzes.hidden = !isGroep || vergaderNu;
+      normGroep.hidden = !(profiel.perioden || []).length;
       signaalVink.hidden = !vergaderNu;
       nadrukVink.hidden = opties.soort !== 'student';
       excel.hidden = !isGroep && opties.soort === 'student';

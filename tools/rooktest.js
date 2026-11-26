@@ -267,7 +267,8 @@ function bouwZip() {
       filterVerzoeken.push(`${r.request().method()} ${r.request().headers()['x-csrf-token'] || '-'} ${r.request().postData() || ''}`);
       if (r.request().method() !== 'POST') return r.fulfill({ status: 400, contentType: 'application/json', body: '{"message":"The GET method is not supported"}' });
       if (r.request().headers()['x-csrf-token'] !== 'tok-123') return r.fulfill({ status: 419, contentType: 'application/json', body: '{"message":"CSRF token mismatch."}' });
-      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ table: (GROEPSPAGINA.match(/<thead>[\s\S]*<\/tbody>/) || [''])[0].replace('</tbody>', `<tr><td class="sticky left"><div><a class="divider-plan" href="#">Meetmoment MR Engels M1 (Cohort 2026)</a><small class="reviewers">Beoordelaars: <a>Collega Ander</a><a href="#"><small>Deadline: 20-11-2026 23:59</small></a></small></div></td><td data-status="FINISHED"><a></a></td><td data-status="NOT_STARTED"><a></a></td></tr></tbody>`) }) });
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ table: (GROEPSPAGINA.match(/<thead>[\s\S]*<\/tbody>/) || [''])[0].replace('</tbody>', `<tr><td class="sticky left"><div><a class="divider-plan" href="#">Meetmoment MR Engels M1 (Cohort 2026)</a><small class="reviewers">Beoordelaars: <a>Collega Ander</a><a href="#"><small>Deadline: 20-11-2026 23:59</small></a></small></div></td><td data-status="FINISHED"><a></a></td><td data-status="NOT_STARTED"><a></a></td></tr>
+<tr><td class="sticky left"><div><a class="divider-plan" href="#">Meetmoment MR rekenen M1 (Cohort 2026)</a><small class="reviewers">Beoordelaars: <a>Collega Ander</a></small></div></td><td data-status="NOT_STARTED"><a></a></td><td data-status="NOT_STARTED"><a></a></td></tr></tbody>`) }) });
     }
     if (p === '/school/assignments') return r.fulfill({ contentType: 'text/html', body: `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><header class="header header-md"><p class="header-text">Opdrachten</p><a href="/school/assignment/create" class="btn btn-xs btn-success">Nieuwe opdracht</a></header><section id="scrollable-page-wrapper"><div class="lijst-van-simulise"><table class="table"><tbody><tr><td>Bestaande opdracht</td></tr></tbody></table></div></section></div>${APP_GQL}</body></html>` });
     if (p === '/api/autocomplete/teachers' || p === '/api/autocomplete/assignmentauthors') return r.fulfill({ contentType: 'application/json', body: JSON.stringify([{ id: 'user:77', text: 'Collega Test', value: '77', search: 'Collega Test' }, { id: 'user:4242', text: 'Docent Test', value: '4242' }]) });
@@ -468,13 +469,15 @@ function bouwZip() {
     const pan = await popup.evaluate(() => ({ koppen: [...document.querySelectorAll('#modules h3')].map((h) => h.textContent).join(','), blokken: [...document.querySelectorAll('details.blok > summary')].map((x) => x.firstChild.textContent.trim()).join(','), tel: document.getElementById('modTel').textContent,
       perioden: [...document.querySelectorAll('#perioden .periode > summary b')].map((b) => b.textContent).join(','), breed: getComputedStyle(document.body).minWidth }));
     check(mf.side_panel?.default_path === 'popup.html' && !mf.action.default_popup && mf.permissions.includes('sidePanel') && pan.koppen === 'Nakijken,Klassen en opdrachten,Rapporten en inzicht,Uiterlijk en schil,Overig'
-      && pan.blokken === 'Onderdelen,Periodes en normen,Uiterlijk,Updates en ontwikkelaar' && /^\d+ van 14 aan$/.test(pan.tel) && pan.perioden === 'M1,M2',
+      && pan.blokken === 'Onderdelen,Fases, modules en normen,Uiterlijk,Updates en ontwikkelaar' && /^\d+ van 14 aan$/.test(pan.tel) && pan.perioden === 'M1,M2',
       `instellingen als zijpaneel naast de pagina: onderdelen per soort werk (${pan.koppen}), blokken ${pan.blokken}, periodes ${pan.perioden}`);
     // Een periode toevoegen en opslaan: komt in het gekozen rapportprofiel, waar de andere modules het lezen.
-    await popup.click('#pErbij'); await popup.fill('#perioden .periode:last-child [data-p="code"]', 'M3'); await popup.fill('#perioden .periode:last-child [data-p="norm"]', 'alle leerlijnen op stap 2');
+    await popup.click('#pErbij'); await popup.fill('#perioden .periode:last-child [data-p="code"]', 'M3'); await popup.fill('#perioden .periode:last-child [data-p="fase"]', 'Basisfase'); await popup.fill('#perioden .periode:last-child [data-p="eis"][data-ll="4"]', '2'); await popup.fill('#perioden .periode:last-child [data-p="eis"][data-ll="1"]', '1'); await popup.fill('#perioden .periode:last-child [data-p="eisMin"]', '1'); await popup.fill('#perioden .periode:last-child [data-p="regel"][data-veld="minAantal"] >> nth=0', '3'); await popup.fill('#perioden .periode:last-child [data-p="regel"][data-veld="stap"]', '2'); await popup.fill('#perioden .periode:last-child [data-p="regel"][data-veld="verplicht"]', '1, 2');
+    const zinNu = await popup.evaluate(() => [...document.querySelectorAll('#perioden .periode:last-child [data-normzin] li')].map((li) => li.textContent).join(' | '));
+    check(zinNu === 'beroepsleerlijnen: leerlijn 1 op stap 1, leerlijn 4 op stap 2; minimaal 1 van de 2 moeten kloppen | minimaal 3 beroepsleerlijnen op stap 2, waaronder leerlijn 1 en 2', `zijpaneel: de eisen van een module staan in gewone taal en volgen wat je invult (${zinNu})`); await popup.fill('#perioden .periode:last-child [data-p="norm"]', 'alle leerlijnen op stap 2');
     await popup.fill('#perioden .periode:last-child [data-p="doel"][data-rol="beroeps"]', '2'); await popup.click('#pOpslaan'); await popup.waitForTimeout(300);
-    const bewaardP = await popup.evaluate(() => chrome.storage.local.get(['rpProfielen']).then((x) => { const p = x.rpProfielen[0].perioden.at(-1); return `${x.rpProfielen[0].perioden.length}:${p.code}:${p.van}:${p.doel.beroeps}:${p.norm}:${'_nieuw' in p}`; }));
-    check(bewaardP === '3:M3:2027-02-06:2:alle leerlijnen op stap 2:false' && (await popup.textContent('#pMelding')) === 'Opgeslagen.', `zijpaneel: een periode met norm en doelstap toevoegen en opslaan in het rapportprofiel (${bewaardP})`);
+    const bewaardP = await popup.evaluate(() => chrome.storage.local.get(['rpProfielen']).then((x) => { const p = x.rpProfielen[0].perioden.at(-1); return `${x.rpProfielen[0].perioden.length}:${p.code}:${p.van}:${p.doel.beroeps}:${p.norm}:${'_nieuw' in p}:${p.fase}:${JSON.stringify(p.regels)}`; }));
+    check(bewaardP === '3:M3:2027-02-06:2:alle leerlijnen op stap 2:false:Basisfase:[{"eisen":{"1":1,"4":2},"minAantal":1,"rol":"beroeps","soort":"perLeerlijn"},{"minAantal":3,"rol":"beroeps","stap":2,"verplicht":[1,2]}]' && (await popup.textContent('#pMelding')) === 'Opgeslagen.', `zijpaneel: een module met fase, norm, doelstap en een eigen eis per leerlijn toevoegen en opslaan in het rapportprofiel (${bewaardP})`);
     await alleOpen(popup);
     await popup.fill('#perioden .periode:last-child [data-p="tot"]', '2027-01-01'); await popup.click('#pOpslaan');
     check(/einddatum ligt voor de begindatum/.test(await popup.textContent('#pMelding')), 'zijpaneel: een einddatum voor de begindatum wordt geweigerd');
@@ -785,6 +788,7 @@ function bouwZip() {
   await sim.waitForSelector('.sdw table.sdw-matrix', { timeout: 20000 }).catch(() => {});
   check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await sim.locator('.sdw table.sdw-matrix').first().locator('tbody tr').count()) === 2 && (await wt()).includes('Anna Test') && (await wt()).includes('2 van 2 studenten'),
     'groep: meetmomenten naast elkaar, een tabel per opleiding met een rij per student');
+  check(filterVerzoeken.some((v) => v === 'POST tok-123 filters='), `groepsrapport: de studenten komen uit de tabel die Simulise zelf ophaalt, niet uit de kale pagina (${filterVerzoeken[0] || 'geen verzoek'})`);
   // Vergaderlijst: een rij per student, gegroepeerd op signaal; zonder aanwezigheidsbestand geen kolommen daarvoor.
   await sim.selectOption('.sdw [data-balk] select >> nth=0', 'vergader');
   const vg = () => sim.evaluate(() => ({ rijen: [...document.querySelectorAll('.sdw table.sdw-vergader tbody tr:not(.sdw-groepkop)')].map((tr) => [...tr.children].map((td) => td.innerText.trim()).join(' | ')),
@@ -794,6 +798,14 @@ function bouwZip() {
   let v1 = await vg();
   check(v1.rijen.length === 2 && v1.koppen === 'Student | Signaal | Beroepsleerlijnen | Basisvaardigheden | Waarom' && /onder de norm \| \d+ bespreken \| \d+ op koers/.test(v1.tellers) && v1.filter && v1.groepen.length > 0,
     `vergaderlijst: een rij per student met signaal en stand per opleiding, gegroepeerd (${v1.groepen}; ${v1.tellers}; ${v1.rijen.join(' // ')})`);
+  // Norm van een gekozen module: de stand op het meetmoment van die module, getoetst aan haar eigen norm; de eisen staan erbij.
+  { const voorNorm = await sim.evaluate(() => ({ regels: [...document.querySelectorAll('.sdw .sdw-regels li')].map((li) => li.textContent).join(' | '), norm: document.querySelector('.sdw .panel-body p strong')?.textContent }));
+    await sim.selectOption('.sdw .sdw-norm select', 'M1'); await sim.waitForTimeout(300);
+    const naNorm = await sim.evaluate(() => ({ regels: [...document.querySelectorAll('.sdw .sdw-regels li')].map((li) => li.textContent).join(' | '), kop: document.querySelector('.sdw .panel-body p').textContent.replace(/\s+/g, ' ').trim().slice(0, 40),
+      datum: document.querySelector('.sdw [data-balk] input[type=date]').value, stand: document.querySelector('.sdw .sdw-sub').textContent }));
+    check(/minimaal 4 beroepsleerlijnen op stap 1, waaronder leerlijn 1, 2 en 3/.test(voorNorm.regels) && voorNorm.norm === 'VSA-norm' && naNorm.regels === 'minimaal 5 beroepsleerlijnen op stap 1' && /^Norm M1 · M1 meetmoment/.test(naNorm.kop) && naNorm.datum === '2026-11-13' && /Stand op 13 november 2026/.test(naNorm.stand),
+      `vergaderlijst: norm van een gekozen module op haar meetmoment, met de eisen in woorden erbij (automatisch: ${voorNorm.norm}; M1: ${naNorm.regels}; ${naNorm.datum})`);
+    await sim.selectOption('.sdw .sdw-norm select', ''); await sim.waitForTimeout(200); }
   await sim.selectOption('.sdw [data-balk] select >> nth=0', 'groep');
   check((await sim.locator('.sdw table.sdw-matrix').count()) === 2 && (await wt()).includes('Stand op'), 'werkbalk: groepsoverzicht');
   const [dl] = await Promise.all([sim.waitForEvent('download'), sim.click('.sdw .sdw-excel')]);
@@ -994,6 +1006,18 @@ function bouwZip() {
     check(kl.koppen === 'Opdrachten 4 | Meetmomenten 1' && kl.titels === 'BUR - casus ; ENG_1.5: True crime ; LOB - werkveld verkennen ; PS_1.8: Wie ben ik?' && kl.som === '1 bezig · 1 te laat' && kl.meetTitel === 'Meetmoment MR Engels M1 (Cohort 2026)' && !/Anna|Bram|Collega/.test(kl.tekst)
       && filterVerzoeken.length >= 1 && filterVerzoeken.every((v) => v === 'POST tok-123 filters='),
       `klaspagina deadlines, hele klas: alle opdrachten van de klas op datum met de stand, meetmomenten apart, zonder namen, opgehaald zoals Simulise de tabel zelf ophaalt (${kl.koppen}; ${kl.titels}; ${kl.som}; ${filterVerzoeken[0]})`);
+    // Een meetmoment zonder deadline hoort bij de module uit zijn titel ("... M1 ..."); een fase omvat meerdere modules.
+    await vd.locator('select[data-periode]').selectOption('M1'); await sim.waitForTimeout(300);
+    const dlM1 = await vd.locator('.deadlines').evaluate((el) => `${el.querySelectorAll('.dl-twee > div:first-child .dl-rij').length} | ${[...el.querySelectorAll('.dl-twee > div:last-child .dl-rij')].map((r) => `${r.querySelector('a').textContent}: ${r.querySelector('.dl-dag b').textContent}`).join(' ; ')}`);
+    const pfase = await nieuw(`chrome-extension://${id}/popup.html`);
+    await pfase.evaluate(() => { const p = JSON.parse(JSON.stringify(SD_RAPPORT_STANDAARD)); p.perioden.forEach((x) => { x.fase = 'Basisfase'; }); return chrome.storage.local.set({ rpProfielen: [p], rpGekozen: p.id }); }); await sim.waitForTimeout(500);
+    const metFase = (await vd.locator('select[data-periode] option').evaluateAll((os) => os.map((o) => `${o.value}=${o.textContent}`))).join(' | ');
+    await vd.locator('select[data-periode]').selectOption('fase:Basisfase'); await sim.waitForTimeout(300);
+    const inFase = await vd.locator('.deadlines').evaluate((el) => [...el.querySelectorAll('.dl-twee h3')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()).join(' | '));
+    check(dlM1 === '0 | Meetmoment MR rekenen M1 (Cohort 2026): Geen deadline' && /^=Alle modules \| fase:Basisfase=Basisfase \(M1, M2\) \| M1=M1/.test(metFase) && inFase === 'Opdrachten 4 | Meetmomenten 2',
+      `deadlines per module en fase: een meetmoment zonder deadline hoort bij de module uit de titel (${dlM1}); een fase omvat meerdere modules (${metFase}; ${inFase})`);
+    await pfase.evaluate(() => chrome.storage.local.remove(['rpProfielen', 'rpGekozen'])); await pfase.close(); await sim.waitForTimeout(300);
+    await vd.locator('select[data-periode]').selectOption('');
     await vd.locator('select[data-dlweergave]').selectOption('mij'); await sim.waitForTimeout(300);
   { const hoogtes = await vd.locator('.strook').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height)).join(','));
     await vd.locator('select[data-strook="strookSort"]').selectOption('naam'); await sim.waitForTimeout(200);

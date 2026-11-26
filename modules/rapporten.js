@@ -538,12 +538,37 @@ SD.register({
     } catch (e) { this.fout(w, e.message || e); }
   },
 
-  /* Studenten van een groep: eerst de studentenpagina, anders de opdrachtenpagina van de groep, waar elke
-   * student een kolom is (th.rotated a[href=/@gebruiker/assignments], naam in .rotated-header-content). */
+  /* Studenten van een groep. Eerst de studentenpagina: per student links naar /@gebruiker/activity (één met de naam), /portfolio en
+   * /report (gezien november 2026; vroeger /@gebruiker zelf). Anders de tabel van de opdrachtenpagina, waar elke student een kolom is
+   * (th a[href=/@gebruiker/assignments], naam in .rotated-header-content). Die tabel staat niet in de pagina zelf: Simulise haalt hem op
+   * met POST .../assignments/filter (antwoord { table }), met de beveiligingscode van de pagina. */
   async groepsleden(uuid) {
-    const leden = await this.ledenVan(`/groups/school/${uuid}/students`, /^\/@([^/]+)\/?$/);
+    const leden = await this.ledenVan(`/groups/school/${uuid}/students`, /^\/@([^/]+)(?:\/activity)?\/?$/);
     if (leden.length) return leden;
+    const viaTabel = await this.ledenUitTabel(uuid).catch(() => []);
+    if (viaTabel.length) return viaTabel;
     return this.ledenVan(`/groups/school/${uuid}/assignments`, /^\/@([^/]+)\/assignments\/?$/, 'th');
+  },
+
+  async ledenUitTabel(uuid) {
+    const pad = `/groups/school/${encodeURIComponent(uuid)}/assignments`;
+    let csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    if (!csrf) {
+      const pagina = await fetch(`${pad}?filters=`, { credentials: 'same-origin' });
+      if (pagina.ok) csrf = new DOMParser().parseFromString(await pagina.text(), 'text/html').querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+    const res = await fetch(`${pad}/filter?_continue=${encodeURIComponent(pad)}`, { method: 'POST', credentials: 'same-origin', body: 'filters=',
+      headers: { accept: 'application/json', 'x-requested-with': 'XMLHttpRequest', 'x-csrf-token': csrf, 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8' } });
+    if (!res.ok) return [];
+    const tabel = (await res.json())?.table;
+    if (typeof tabel !== 'string') return [];
+    const doc = new DOMParser().parseFromString(`<table>${tabel}</table>`, 'text/html');
+    const leden = new Map();
+    for (const a of doc.querySelectorAll('thead th a[href*="/@"]')) {
+      const m = new URL(a.getAttribute('href'), location.href).pathname.match(/^\/@([^/]+)\/assignments\/?$/);
+      if (m && !leden.has(m[1])) leden.set(m[1], (a.querySelector('.rotated-header-content')?.textContent || a.textContent || '').replace(/\s+/g, ' ').trim());
+    }
+    return [...leden.entries()].map(([gebruiker, naam]) => ({ gebruiker: decodeURIComponent(gebruiker), naam }));
   },
 
   async ledenVan(start, patroon, binnen = null) {

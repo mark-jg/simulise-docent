@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.25.3)
+## Huidige staat (v0.27.0)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -117,6 +117,19 @@ v0.25: popup.html is het zijpaneel (manifest side_panel, permissie sidePanel, ge
                 matrix.js: boven de gedraaide tabel drie keuzes (select[data-sd-matrix-kies]): matrixSorteer, matrixKolommen,
                 matrixPeriode (alleen opdrachten met een deadline in die periode). vandaag.js vraagt nu ook endDate op; de klaspagina
                 toont per strook small.dl en een blok .deadlines (periode kiezen, aankomend en afgelopen).
+v0.26: fases en modules. Bij Mediacollege is een periode een module (M1, M2, ...); een periode in het profiel heeft een optioneel veld
+                fase. SD.perioden: keuzes() (alles, 'fase:<naam>', modulecodes), geldig(), bij(), bereik(), hoort(keuze, datum, titel): met een
+                deadline telt de datum, zonder deadline de modulecode in de titel (inTitel: M1 en M01, niet M10). Nieuwe regelsoort in
+                render.js: { rol, soort: 'perLeerlijn', eisen: { nr: stap }, minAantal }; in het zijpaneel per module in te vullen.
+                Gezien op de echte klassen (november 2026): meetmomenten van de BAVA-vakken heten "Meetmoment <opleiding> <vak> M1 (Cohort
+                2026)" en hebben vaak GEEN deadline; meetmomenten per beroepsleerlijn heten "Meetmoment MEP/MIP - <n>. <naam>_1.1" of "_1.2"
+                (geen M1 in de titel) en hebben wel een deadline. Gewone opdrachten hebben meestal geen modulecode in de titel.
+v0.27: de vergaderlijst heeft een keuze "Norm van" (weergave.js, .sdw-norm): opties.toets = modulecode, peildatum = meetdatum van die
+                module (veld meetdatum, anders tot; nooit later dan vandaag). Zonder keuze geldt als vanouds de eerstvolgende module met een
+                besluit (toetsIndex). SDRapport.regelTekst(profiel, periode) zet de regels in gewone taal (vergaderlijst en zijpaneel).
+                De normen komen altijd uit het gekozen rapportprofiel; zolang niemand iets instelt is dat het ingebouwde profiel
+                rapport/standaard.js (M1: alle 5 beroepsleerlijnen op stap 1; M2: 4 van 5 waaronder 1, 2, 3). In het zijpaneel per module
+                bewerkbaar: de gewone regel per opleiding, de eis per leerlijn, de vakkenregel (telt mee of niet) en meetdatum.
 matrix.js, aanvulling v0.24: in de weergave per student de knop "Draaien" (instelling matrixDraai, standaard aan): eigen tabel
                 .sd-matrix-draai table.sd-md met studenten als rijen en opdrachten als kolommen (code() maakt de korte kop uit de titel),
                 html[data-sim-matrix-draai] verbergt dan de tabel van Simulise. Het adres #sd-opdracht=<titel> (links op de klaspagina van
@@ -411,7 +424,9 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
   `POST /groups/school/<id>/assignments/filter?_continue=<pad>` (form `filters=<komma's>`, kop `x-csrf-token` uit `meta[name="csrf-token"]`, antwoord
   `{ table: "<thead>…</tbody>" }`; GET geeft 400). Dat is een leesverzoek dat de pagina bij elk openen doet. vandaag.js (klasDeadlines) gebruikt het voor de
   weergave "alle opdrachten" in het blok Deadlines (instelling vdDeadlines); de deadline staat als tekst "Deadline: dd-mm-jjjj uu:mm" in de eerste cel.
-  Hetzelfde geldt voor rapporten.js (ledenVan op deze pagina): die vindt in de kale HTML geen studenten.
+  rapporten.js (groepsleden) leest de studenten daarom van de studentenpagina `/groups/school/<id>/students`: `li.list-group-item` met per student links
+  naar `/@{gebruiker}/activity` (twee, één met de naam als tekst), `/@{gebruiker}/portfolio` en `/@{gebruiker}/report/assignment/badges` (gezien november 2026;
+  een link naar `/@{gebruiker}` zelf staat er niet meer). Tweede route: de koppen van de opgehaalde tabel (`thead th a[href=/@{gebruiker}/assignments]`).
 - **Labels ("school topics")**: per onderdeel aan of uit (`getTopicsForFeature`, `schoolTopicUpdateEnabled`, beheerpagina
   `pages/manage/topics`), met `required` en `canCreateLabelsInline`. Bij opdrachten: Opleidingen, Deelaspecten, Tags, Cohorten,
   Modules (M01 t/m M12), Versies. Het label **Vakken** (`labels(only: [SUBJECTS])`) bestaat en staat op rubrics (Nederlands,

@@ -6,10 +6,11 @@
  *   opleidingen[]   rol (beroeps | bava | eigen naam), herken (tekst of regex op de naam van de opleiding
  *                   in Simulise), titel, kop (bovenaan de pagina), categorieen[] (naam, kleur, leerlijnen[]),
  *                   stappen { leerlijnnummer: { stap: omschrijving } }
- *   perioden[]      code, naam, van, tot (JJJJ-MM-DD), moment (bijv. meetmoment), beslis (true = besluit),
+ *   perioden[]      code, naam, fase (meerdere modules kunnen onder één fase vallen), van, tot (JJJJ-MM-DD), moment (bijv. meetmoment), beslis (true = besluit),
  *                   normNaam (bijv. VSA-norm), norm (tekst), doel { rol: stap }, regels[]
  *   regels          { rol, stap, minAantal, verplicht: [leerlijnnummers] }  of
  *                   { rol, soort: 'categorieen', minAantal, perCategorie: { minLeerlijnen, stap } };
+ *                   { rol, soort: 'perLeerlijn', eisen: { leerlijnnummer: stap }, minAantal } voor een eigen eis per leerlijn;
  *                   met telt: false telt een regel niet mee in het oordeel "op koers"
  *   categorieen     naam, woord (zo in een zin: "rekenen", "Engels"), kleur, leerlijnen[], beoordeeldVanaf (periodecode)
  *   jaardoel        { rol: stap } voor de ondertitel ("jaar 1 werkt toe naar stap 2")

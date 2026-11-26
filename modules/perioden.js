@@ -1,7 +1,8 @@
 /* Perioden: de periodes van het schooljaar, gedeeld door de modules (matrix, klaspagina) en het zijpaneel.
  *
  * De periodes staan in het gekozen rapportprofiel (chrome.storage.local rpProfielen / rpGekozen, zie rapport/standaard.js):
- * code, naam, van, tot (JJJJ-MM-DD), moment, beslis, norm, doel, regels. Je stelt ze in via het zijpaneel van de extensie
+ * code, naam, fase, van, tot (JJJJ-MM-DD), moment, beslis, norm, doel, regels. Bij Mediacollege is een periode een module;
+ * meerdere modules kunnen onder één fase vallen. Je stelt ze in via het zijpaneel van de extensie
  * (Periodes en normen) of op de pagina Rapportprofielen; een toetsplan van het team (rapport/bron.js) brengt ze mee.
  * Zo gebruiken het voortgangsrapport, de vergaderlijst, de opdrachten van een klas en de deadlines dezelfde periodes.
  *
@@ -9,6 +10,8 @@
  *   SD.perioden.lijst         [{ code, naam, van, tot, ... }] op volgorde van begindatum
  *   SD.perioden.huidige(d)    de periode waar datum d (JJJJ-MM-DD, standaard vandaag) in valt, anders de laatst begonnen, anders null
  *   SD.perioden.vind(code)    één periode
+ *   SD.perioden.keuzes()      keuzes voor een filter: alles, fases ('fase:<naam>') en modules
+ *   SD.perioden.hoort(k, d, t) hoort een opdracht met deadline d en titel t bij keuze k
  *   SD.perioden.volg(fn)      fn wordt aangeroepen als de periodes veranderen; geeft een functie terug om te stoppen
  */
 SD.perioden = {
@@ -23,6 +26,37 @@ SD.perioden = {
   huidige(datum = this.vandaag()) {
     return this.lijst.find((p) => p.van <= datum && datum <= p.tot) || [...this.lijst].reverse().find((p) => p.van <= datum) || null;
   },
+  /* ---------- Fases en modules ----------
+   * Een periode is bij Mediacollege een module (M1, M2, ...). Modules kunnen samen onder een fase vallen (veld fase).
+   * Een keuze in een filter is '' (alles), de code van een module, of 'fase:<naam>' voor alle modules van die fase. */
+  fasen() { return [...new Set(this.lijst.map((p) => String(p.fase || '').trim()).filter(Boolean))]; },
+  /* De modules bij een keuze; null bij '' of een keuze die niet (meer) bestaat. */
+  bij(keuze) {
+    if (!keuze) return null;
+    const lijst = keuze.startsWith('fase:') ? this.lijst.filter((p) => String(p.fase || '').trim() === keuze.slice(5)) : this.lijst.filter((p) => p.code === keuze);
+    return lijst.length ? lijst : null;
+  },
+  geldig(keuze) { return !!this.bij(keuze); },
+  /* Keuzes voor een filter: [waarde, tekst]. Eerst alles, dan de fases, dan de modules. */
+  keuzes(alles = 'Alle modules') {
+    return [['', alles], ...this.fasen().map((f) => [`fase:${f}`, `${f} (${this.lijst.filter((p) => String(p.fase || '').trim() === f).map((p) => p.code).join(', ')})`]),
+      ...this.lijst.map((p) => [p.code, `${p.code}${p.naam ? ` · ${p.naam}` : ''}`])];
+  },
+  /* Eerste en laatste dag van een keuze, of null. */
+  bereik(keuze) { const l = this.bij(keuze); return l ? { van: l.map((p) => p.van).sort()[0], tot: l.map((p) => p.tot).sort().at(-1) } : null; },
+  /* Staat de code van een module in een titel? "Meetmoment Engels M1 (Cohort 2026)" hoort bij M1 (ook M01). */
+  inTitel(code, titel) {
+    const m = String(code).match(/^([A-Za-z]+)0*(\d+)$/);
+    const patroon = m ? `${m[1]}0*${m[2]}` : String(code).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`(^|[^A-Za-z0-9])${patroon}([^A-Za-z0-9]|$)`, 'i').test(String(titel || ''));
+  },
+  /* Hoort een opdracht bij de keuze? Met een deadline telt de datum; zonder deadline de code van de module in de titel. */
+  hoort(keuze, datum, titel) {
+    const l = this.bij(keuze);
+    if (!l) return true;
+    return datum ? l.some((p) => p.van <= datum && datum <= p.tot) : l.some((p) => this.inTitel(p.code, titel));
+  },
+
   /* Valt een datum (JJJJ-MM-DD) in de periode met deze code? Zonder code: altijd. */
   bevat(code, datum) { const p = code && this.vind(code); return !p || (!!datum && p.van <= datum && datum <= p.tot); },
 

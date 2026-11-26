@@ -9,6 +9,7 @@
  *   soort        'student' (voortgangsrapport) | 'gesprek' (met invulvakken) | 'groep' (overzicht, liggend)
  *   peildatum    JJJJ-MM-DD; eerder dan de gegevens = stand op die datum, uit de historie per stap
  *   vergelijkMet 'vorige' | 'geen' | periodecode (bijv. 'M1')
+ *   toets        code van een module: de norm en de doelstap van die module gebruiken (anders de eerstvolgende met een besluit)
  *   onderdelen   { kpis, diagram, tabel, normen, advies } (standaard alles aan)
  *   opleidingen  lijst rollen om te tonen (bijv. ['beroeps']); null = alle
  *   nadruk       doelstap uitvergroten (true/false), anders volgens het profiel
@@ -84,15 +85,31 @@
   }
   const procent = (x) => (x == null ? '' : `${String(x).replace('.', ',')}%`);
 
+  /* De regels van een module in gewone taal, voor de vergaderlijst en het zijpaneel: wat er precies wordt getoetst. */
+  function regelTekst(profiel, periode) {
+    const titel = (rol) => ((profiel.opleidingen || []).find((o) => o.rol === rol)?.titel || rol).toLowerCase();
+    return (periode?.regels || []).map((r) => {
+      const telt = r.telt === false ? ' (telt niet mee voor op koers)' : '';
+      if (r.soort === 'categorieen') return `minimaal ${r.minAantal} van de vakken bij ${titel(r.rol)} voldoende${telt}`;
+      if (r.soort === 'perLeerlijn') {
+        const e = Object.entries(r.eisen || {}).filter(([, st]) => Number(st) > 0).sort((a, b) => Number(a[0]) - Number(b[0]));
+        return `${titel(r.rol)}: ${e.map(([n, st]) => `leerlijn ${n} op stap ${st}`).join(', ')}; ${r.minAantal == null || r.minAantal === '' || Number(r.minAantal) >= e.length ? 'alle' : `minimaal ${r.minAantal} van de ${e.length}`} moeten kloppen${telt}`;
+      }
+      return `minimaal ${r.minAantal} ${titel(r.rol)} op stap ${r.stap}${(r.verplicht || []).length ? `, waaronder leerlijn ${lijst(r.verplicht)}` : ''}${telt}`;
+    });
+  }
+
   /* ---------- Berekenen ---------- */
   function bereken(g, profiel, opties = {}) {
     const datum = opties.peildatum || g.peildatum;
     const historisch = datum < g.peildatum; // stand op een eerdere datum, uit de historie
-    const pi = periodeIndex(profiel, datum), periode = profiel.perioden?.[pi] || null;
+    // opties.toets (code van een module): de norm van die module, in plaats van de eerstvolgende met een besluit.
+    const gekozen = opties.toets ? (profiel.perioden || []).findIndex((p) => p.code === opties.toets) : -1;
+    const pi = gekozen >= 0 ? gekozen : periodeIndex(profiel, datum), periode = profiel.perioden?.[pi] || null;
     const vergelijk = opties.vergelijkMet || (profiel.weergave?.vergelijk === false ? 'geen' : 'vorige');
     let vorige = vergelijk === 'geen' ? null : vergelijk === 'vorige' ? (pi > 0 ? profiel.perioden[pi - 1] : null) : (profiel.perioden || []).find((p) => p.code === vergelijk) || null;
     if (vorige && vorige.tot >= datum) vorige = null; // alleen vergelijken met iets dat al voorbij is
-    const ti = toetsIndex(profiel, datum), toets = profiel.perioden?.[ti] || null;
+    const ti = gekozen >= 0 ? gekozen : toetsIndex(profiel, datum), toets = profiel.perioden?.[ti] || null;
     const opleidingen = (g.opleidingen || []).map((o) => {
       const conf = rolVan(o.naam, profiel) || { rol: norm(o.naam), titel: o.naam, kop: String(o.naam).toUpperCase() };
       const doel = periode?.doel?.[conf.rol] ?? 1;
@@ -142,6 +159,15 @@
         const pc = r.perCategorie || { minLeerlijnen: 1, stap: 1 };
         const goed = (o.cats || []).filter((c) => o.lijnen.filter((l) => l.cat === c.naam && l.stap >= (pc.stap || 1)).length >= (pc.minLeerlijnen || 1));
         return { ok: goed.length >= r.minAantal, rol: r.rol, marge: goed.length - r.minAantal, krap: r.minAantal < (o.cats || []).length, tekst: `${goed.length} van de ${(o.cats || []).length} basisvaardigheden voldoende` };
+      }
+      if (r.soort === 'perLeerlijn') { // per leerlijn een eigen vereiste stap: eisen { leerlijnnummer: stap }, minAantal (standaard alle)
+        const eisen = r.eisen || {};
+        const nrs = Object.keys(eisen).map(Number).filter((n) => Number(eisen[n]) > 0 && o.lijnen.some((l) => l.nr === n)).sort((a, b) => a - b);
+        const goed = nrs.filter((n) => o.lijnen.find((l) => l.nr === n).stap >= Number(eisen[n]));
+        const mist = nrs.filter((n) => !goed.includes(n));
+        const min = Math.min(nrs.length, r.minAantal == null || r.minAantal === '' ? nrs.length : Number(r.minAantal));
+        return { ok: goed.length >= min, rol: r.rol, marge: goed.length - min, krap: min < nrs.length,
+          tekst: `${goed.length} van de ${nrs.length} ${o.conf.titel?.toLowerCase() || 'leerlijnen'} op de vereiste stap${mist.length ? `, nog niet: ${lijst(mist.map((n) => `leerlijn ${n} (stap ${eisen[n]})`))}` : ''}` };
       }
       const op = o.lijnen.filter((l) => l.stap >= r.stap);
       const mist = (r.verplicht || []).filter((n) => !op.some((l) => l.nr === n));
@@ -603,5 +629,5 @@
       .pagina.liggend { height: auto; overflow: visible; } [contenteditable="true"]:hover, [contenteditable="true"]:focus { box-shadow: none; } }
   `;
 
-  globalThis.SDRapport = { bereken, html, shell, paginas, csv, modellen, diagram, periodeIndex, toetsIndex, rolVan, stapOp, esc, stand, procent, NIVEAUS };
+  globalThis.SDRapport = { regelTekst, bereken, html, shell, paginas, csv, modellen, diagram, periodeIndex, toetsIndex, rolVan, stapOp, esc, stand, procent, NIVEAUS };
 })();

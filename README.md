@@ -101,6 +101,16 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.27.0: normen duidelijk en per module te toetsen. In de vergaderlijst kies je "Norm van" een module: de stand
+  op het meetmoment van die module, getoetst aan haar eigen norm, met de eisen in woorden erbij. In het zijpaneel staat
+  bij elke module "Op koers als ..." in gewone taal, met velden voor het aantal leerlijnen, de stap, verplichte
+  leerlijnen, de eis per leerlijn, de vakken en de dag waarop gemeten wordt.
+- 0.26.1: het voortgangsrapport van een groep vond geen studenten meer ("geen studenten gevonden"). De studenten
+  worden nu weer gevonden op de studentenpagina van de klas, met de opdrachtentabel als tweede route.
+- 0.26.0: fases en modules. Een module is een periode met begin en eind; meerdere modules kunnen onder één fase
+  vallen, en overal waar je op module filtert kun je ook een fase kiezen. Een opdracht of meetmoment zonder deadline
+  hoort bij de module waarvan de code in de titel staat ("Meetmoment Engels M1"), zodat die niet meer ontbreekt. Bij
+  een norm kun je per leerlijn een eigen vereiste stap opgeven, met het aantal leerlijnen dat eraan moet voldoen.
 - 0.25.3: "Alle opdrachten in deze klas" op de klaspagina: alle rijen even hoog (de knop Nakijken staat rechts),
   sorteren op wacht op jou, deadline of naam, filteren op periode, en de meetmomenten in een eigen groep.
 - 0.25.2: de weergave met alle deadlines van de klas bleef leeg; de plugin haalt de opdrachten nu op zoals Simulise

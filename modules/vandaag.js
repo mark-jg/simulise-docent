@@ -209,6 +209,7 @@ SD.register({
     };
     document.addEventListener('click', this._klik, true);
     SD.addCommand('vandaag', 'Vandaag: wat moet ik nakijken', () => this.open());
+    this._ontvolgP = SD.perioden.volg(() => { if (this.host && this.klas) this.teken(); }); // fases en modules gewijzigd in het zijpaneel
     // Cmd+K: elke klas als opdracht (namen uit modules/klassen.js).
     this._klasOpdrachten = [];
     const klasOpdrachten = (lijst) => {
@@ -230,6 +231,7 @@ SD.register({
   update() { if (this.host && this.model) this.teken(); },
 
   destroy(SD) {
+    this._ontvolgP?.();
     window.removeEventListener('hashchange', this._hash);
     this._ontvolg?.();
     (this._klasOpdrachten || []).forEach((id) => SD.removeCommand(id));
@@ -518,10 +520,10 @@ SD.register({
    * Elke rij is even hoog: links de titel met de deadline, in het midden de stippen, rechts de knop Nakijken. */
   strokenBlok(stroken, k) {
     const esc = this.esc, P = this.SD.perioden, K = this.SD.klassen, nu = P.vandaag();
-    const code = P.vind(this.strookPeriode) ? this.strookPeriode : '';
+    const code = P.geldig(this.strookPeriode) ? this.strookPeriode : '';
     const sorteer = { deadline: (a, b) => (a.deadline || '9999').localeCompare(b.deadline || '9999') || a.titel.localeCompare(b.titel, 'nl', { numeric: true }),
       naam: (a, b) => a.titel.localeCompare(b.titel, 'nl', { numeric: true }), wacht: (a, b) => b.wacht - a.wacht || a.titel.localeCompare(b.titel, 'nl', { numeric: true }) }[this.strookSort] || ((a, b) => b.wacht - a.wacht || a.titel.localeCompare(b.titel));
-    const zicht = stroken.filter((x) => !code || P.bevat(code, x.deadline)).sort(sorteer);
+    const zicht = stroken.filter((x) => P.hoort(code, x.deadline, x.titel)).sort(sorteer);
     const kleur = K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : '';
     const rij = (x) => `<div class="strook"><span class="titel"><a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="${esc(x.titel)}: open het overzicht per student">${esc(x.titel)}</a>
         <small class="dl${x.deadline && x.deadline < nu ? ' voorbij' : ''}">${x.deadline ? `Deadline ${esc(this.dagTekst(x.deadline))}` : 'Geen deadline'}</small></span>
@@ -532,10 +534,10 @@ SD.register({
     const keuze = (naam, nu2, opties, label) => `<label>${label} <select data-strook="${naam}">${opties.map(([v, t]) => `<option value="${esc(v)}"${v === nu2 ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
     return `<h2>Alle opdrachten in deze klas</h2>
       <div class="lijst kaart stroken"${kleur}><div class="dl-kop">${keuze('strookSort', this.strookSort || 'wacht', [['wacht', 'wacht op jou eerst'], ['deadline', 'deadline'], ['naam', 'naam']], 'Sorteer op')}
-          ${P.lijst.length ? keuze('strookPeriode', code, [['', 'Alle periodes'], ...P.lijst.map((x) => [x.code, `${x.code}${x.naam ? ` · ${x.naam}` : ''}`])], 'Periode') : ''}<small>${zicht.length} van ${stroken.length} opdrachten</small></div>
+          ${P.lijst.length ? keuze('strookPeriode', code, P.keuzes(), 'Module') : ''}<small>${zicht.length} van ${stroken.length} opdrachten</small></div>
         ${opdr.length ? `${meet.length ? `<h3>Opdrachten <span>${opdr.length}</span></h3>` : ''}${opdr.map(rij).join('')}` : ''}
         ${meet.length ? `<h3>Meetmomenten <span>${meet.length}</span></h3>${meet.map(rij).join('')}` : ''}
-        ${zicht.length ? '' : '<p class="dl-leeg">Geen opdrachten met een deadline in deze periode.</p>'}</div>
+        ${zicht.length ? '' : '<p class="dl-leeg">Geen opdrachten in deze module of fase.</p>'}</div>
       <p class="legenda"${kleur}><span><i class="klaar"></i>Klaar</span><span><i class="wacht"></i>Wacht op jou</span><span><i class="bezig"></i>Student is bezig</span><span><i class="laat"></i>Te laat</span><span><i class="niet"></i>Nog niet gestart</span><span>Eén stip is één inlevering. Klik op een titel voor het overzicht per student.</span></p>`;
   },
 
@@ -574,8 +576,8 @@ SD.register({
   deadlines(stroken, k) {
     const esc = this.esc, P = this.SD.perioden, nu = P.vandaag();
     if (this.periode == null) this.periode = P.huidige()?.code || '';
-    const code = P.vind(this.periode) ? this.periode : '';
-    const met = stroken.filter((x) => x.deadline && P.bevat(code, x.deadline));
+    const code = P.geldig(this.periode) ? this.periode : '';
+    const met = stroken.filter((x) => x.deadline && P.hoort(code, x.deadline, x.titel));
     const komt = met.filter((x) => x.deadline >= nu).sort((a, b) => a.deadline.localeCompare(b.deadline));
     const voorbij = met.filter((x) => x.deadline < nu).sort((a, b) => b.deadline.localeCompare(a.deadline));
     const dagen = (iso) => Math.round((Date.parse(iso) - Date.parse(nu)) / 864e5);
@@ -583,31 +585,32 @@ SD.register({
     const regel = (x) => `<div class="dl-rij"><span class="dl-dag"><b>${esc(this.dagTekst(x.deadline))}</b><small>${esc(wanneer(x.deadline))}</small></span>
       <a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="Open het overzicht per student">${esc(x.titel)}</a>
       <span class="som">${[[x.klaar, 'klaar'], [x.wacht, x.wacht === 1 ? 'wacht op jou' : 'wachten op jou'], [x.bezig, 'bezig'], [x.laat, 'te laat'], [x.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`;
-    const zonder = stroken.filter((x) => !x.deadline).length;
-    const p = P.vind(code);
+    const zonder = stroken.filter((x) => !x.deadline && P.hoort(code, '', x.titel)).length;
+    const p = P.bereik(code);
     const klasView = this.SD.settings.vdDeadlines === 'klas';
     const kies = `<label>Toon <select data-dlweergave><option value="mij"${klasView ? '' : ' selected'}>mijn opdrachten</option><option value="klas"${klasView ? ' selected' : ''}>alle opdrachten</option></select></label>`;
     // Hele klas: alles op datum, meetmomenten apart. Wat voorbij is staat lichter.
     let klasBlok = '';
     if (klasView) {
-      const alle = (this.alleDl || []).filter((x) => x.deadline && P.bevat(code, x.deadline)).sort((a, b) => a.deadline.localeCompare(b.deadline) || a.titel.localeCompare(b.titel));
-      const rij = (x) => `<div class="dl-rij${x.deadline < nu ? ' voorbij' : ''}"><span class="dl-dag"><b>${esc(this.dagTekst(x.deadline))}</b><small>${esc(wanneer(x.deadline))}</small></span>
+      // Met een deadline telt de datum; zonder deadline de modulecode in de titel ("Meetmoment Engels M1"). Die staan onderaan.
+      const alle = (this.alleDl || []).filter((x) => (x.deadline || code) && P.hoort(code, x.deadline, x.titel)).sort((a, b) => (a.deadline || '9999').localeCompare(b.deadline || '9999') || a.titel.localeCompare(b.titel, 'nl', { numeric: true }));
+      const rij = (x) => `<div class="dl-rij${x.deadline && x.deadline < nu ? ' voorbij' : ''}"><span class="dl-dag">${x.deadline ? `<b>${esc(this.dagTekst(x.deadline))}</b><small>${esc(wanneer(x.deadline))}</small>` : '<b>Geen deadline</b><small>hoort bij deze module</small>'}</span>
         <a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="Open het overzicht per student">${esc(x.titel)}</a>
         <span class="som">${[[x.tel.klaar, 'klaar'], [x.tel.in, 'ingeleverd'], [x.tel.bezig, 'bezig'], [x.tel.laat, 'te laat'], [x.tel.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`;
       const opdr = alle.filter((x) => !x.meet), meet = alle.filter((x) => x.meet);
-      const zonderK = (this.alleDl || []).filter((x) => !x.deadline).length;
+      const zonderK = code ? 0 : (this.alleDl || []).filter((x) => !x.deadline).length;
       klasBlok = this.alleDl == null ? '<p class="dl-leeg">Opdrachten van de klas ophalen…</p>'
         : this.alleDlFout ? `<p class="dl-leeg">De opdrachten van de klas konden niet worden opgehaald (${esc(this.alleDlFout)}). Open de <a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments">opdrachten van de klas</a> in Simulise.</p>`
         : !this.alleDl.length ? '<p class="dl-leeg">Simulise gaf geen opdrachten voor deze klas.</p>'
-        : `<div class="dl-twee"><div><h3>Opdrachten <span>${opdr.length}</span></h3>${opdr.map(rij).join('') || '<p class="dl-leeg">Geen opdrachten met een deadline in deze periode.</p>'}</div>
-          <div><h3>Meetmomenten <span>${meet.length}</span></h3>${meet.map(rij).join('') || '<p class="dl-leeg">Geen meetmomenten met een deadline in deze periode.</p>'}</div></div>
+        : `<div class="dl-twee"><div><h3>Opdrachten <span>${opdr.length}</span></h3>${opdr.map(rij).join('') || '<p class="dl-leeg">Geen opdrachten in deze module of fase.</p>'}</div>
+          <div><h3>Meetmomenten <span>${meet.length}</span></h3>${meet.map(rij).join('') || '<p class="dl-leeg">Geen meetmomenten in deze module of fase.</p>'}</div></div>
           <p class="dl-leeg">Alle opdrachten van deze klas, ook die van collega's, op volgorde van de deadline; wat voorbij is staat lichter.${zonderK ? ` ${zonderK} ${zonderK === 1 ? 'opdracht heeft' : 'opdrachten hebben'} geen deadline.` : ''}</p>`;
     }
     return `<h2>Deadlines</h2>
-      <div class="lijst kaart deadlines"><div class="dl-kop">${kies}${P.lijst.length ? `<label>Periode <select data-periode>${[['', 'Alle periodes'], ...P.lijst.map((x) => [x.code, `${x.code}${x.naam ? ` · ${x.naam}` : ''}`])].map(([v, t]) => `<option value="${esc(v)}"${v === code ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
-          ${p ? `<small>${esc(this.dagTekst(p.van, true))} tot en met ${esc(this.dagTekst(p.tot, true))}</small>` : ''}` : '<small>Stel periodes in via het zijpaneel van de extensie (Periodes en normen) om per periode te kijken.</small>'}</div>
-        ${klasView ? klasBlok : `<div class="dl-twee"><div><h3>Aankomend <span>${komt.length}</span></h3>${komt.map(regel).join('') || '<p class="dl-leeg">Geen deadlines meer in deze periode.</p>'}</div>
-          <div><h3>Afgelopen <span>${voorbij.length}</span></h3>${voorbij.map(regel).join('') || '<p class="dl-leeg">Nog geen deadline voorbij in deze periode.</p>'}</div></div>
+      <div class="lijst kaart deadlines"><div class="dl-kop">${kies}${P.lijst.length ? `<label>Module <select data-periode>${P.keuzes().map(([v, t]) => `<option value="${esc(v)}"${v === code ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+          ${p ? `<small>${esc(this.dagTekst(p.van, true))} tot en met ${esc(this.dagTekst(p.tot, true))}</small>` : ''}` : '<small>Stel fases en modules in via het zijpaneel van de extensie om per module te kijken.</small>'}</div>
+        ${klasView ? klasBlok : `<div class="dl-twee"><div><h3>Aankomend <span>${komt.length}</span></h3>${komt.map(regel).join('') || '<p class="dl-leeg">Geen deadlines meer in deze module of fase.</p>'}</div>
+          <div><h3>Afgelopen <span>${voorbij.length}</span></h3>${voorbij.map(regel).join('') || '<p class="dl-leeg">Nog geen deadline voorbij in deze module of fase.</p>'}</div></div>
         ${zonder ? `<p class="dl-leeg">${zonder} ${zonder === 1 ? 'opdracht heeft' : 'opdrachten hebben'} geen deadline.</p>` : ''}`}</div>`;
   },
 
