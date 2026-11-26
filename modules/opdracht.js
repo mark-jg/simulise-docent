@@ -73,11 +73,12 @@ SD.register({
     if (!this.SD || !this.LIJST.test(location.pathname)) return;
     const nieuw = document.querySelector('#content header a[href$="/school/assignment/create"]');
     if (!nieuw || nieuw.parentElement.querySelector('.sd-opdracht-knop')) return;
-    const a = Object.assign(document.createElement('a'), { href: '/school/assignments#snel', className: 'btn btn-sm btn-success sd-opdracht-knop', textContent: ' Snelle opdracht' });
+    // Zelfde klassen als de knop van Simulise ernaast, zodat hoogte, letter en ronding gelijk zijn in elk thema.
+    const a = Object.assign(document.createElement('a'), { href: '/school/assignments#snel', className: `${nieuw.className || 'btn btn-success'} sd-opdracht-knop`, textContent: ' Snelle opdracht' });
     a.dataset.sdOpdracht = 'open';
     a.title = 'Een opdracht aanmaken op één scherm (Simulise Docent)';
     a.prepend(Object.assign(document.createElement('i'), { className: 'fa fa-fw fa-bolt' }));
-    nieuw.after(' ', a);
+    nieuw.after(a);
   },
 
   /* ---------- Openen en sluiten ---------- */

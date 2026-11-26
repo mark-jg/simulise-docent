@@ -120,14 +120,22 @@ SD.register({
     @keyframes val { to { transform: translateY(260px) rotate(540deg); opacity: 0; } }
     @media (prefers-reduced-motion: reduce) { .confetti { display: none; } .ring .boog { transition: none; } }
     h2 { margin: 26px 0 10px; font-size: var(--sim-title-2, 17px); font-weight: 600; }
-    .strook { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 6px 18px; align-items: center; padding: 12px 0; border-top: 1px solid var(--sim-border, #e3e6ea); }
-    .strook:first-child { border-top: 0; }
-    .strook .titel { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+    .strook { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr) 120px; gap: 4px 18px; align-items: center; min-height: 66px; box-sizing: border-box; padding: 9px 0; border-top: 1px solid var(--sim-border, #e3e6ea); }
+    .stroken > .dl-kop + .strook, .stroken > h3 + .strook { border-top: 0; }
+    .stroken { padding: 12px 18px 8px; }
+    .stroken .dl-kop { padding-bottom: 6px; } .stroken .dl-kop small { margin-left: auto; }
+    .stroken h3 { margin: 12px 0 0; font-size: 13px; font-weight: 600; color: var(--sim-text-2, #5b6470); }
+    .stroken h3 span { margin-left: 4px; padding: 1px 8px; border-radius: 999px; background: var(--sim-surface-2, #eef0f3); font-size: 12px; }
+    .strook .titel { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
     .strook .titel > a:first-child { max-width: 100%; color: var(--sim-text, #1e2328); font-weight: 500; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .strook .titel > a:first-child:hover { color: var(--sim-accent-text, #0b6f5e); text-decoration: underline; }
-    .strook a.nakijk { padding: 3px 11px; border-radius: 999px; background: var(--k, var(--sim-accent, #0e8a74)); color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
+    .strook .midden { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .strook .midden .stippen { flex-wrap: nowrap; overflow: hidden; }
+    .strook .actie { text-align: right; }
+    .strook a.nakijk { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--k, var(--sim-accent, #0e8a74)); color: #fff; font-size: 12px; font-weight: 600; text-decoration: none; white-space: nowrap; }
     .strook a.nakijk:hover { filter: brightness(.93); }
-    .strook .som { grid-column: 2; font-size: 12px; color: var(--sim-text-2, #5b6470); }
+    .strook .som { font-size: 12px; color: var(--sim-text-2, #5b6470); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 760px) { .strook { grid-template-columns: minmax(0, 1fr) auto; } .strook .midden { grid-column: 1 / -1; grid-row: 2; } }
     .stippen { display: flex; flex-wrap: wrap; gap: 5px; }
     .stippen i { width: 13px; height: 13px; border-radius: 50%; box-sizing: border-box; }
     .stippen .klaar, .legenda .klaar { background: var(--k, var(--sim-accent, #0e8a74)); }
@@ -410,8 +418,10 @@ SD.register({
       this.sluit(); // van Vandaag naar een klas of andersom
     }
     this.klas = klas?.id ? { id: String(klas.id) } : null;
+    this.strookPeriode = ''; this.strookSort = 'wacht'; // "Alle opdrachten in deze klas": periode en volgorde (alleen in het geheugen)
     this.alleDl = null; // alle opdrachten van de klas met hun deadline (uit de opdrachtenpagina van Simulise)
-    if (this.klas) this.klasDeadlines(this.klas.id).then((lijst) => { this.alleDl = lijst; if (this.host) this.teken(); }, () => { this.alleDl = []; });
+    this.alleDlFout = null;
+    if (this.klas) this.klasDeadlines(this.klas.id).then((lijst) => { this.alleDl = lijst; if (this.host) this.teken(); }, (e) => { this.alleDl = []; this.alleDlFout = String(e.message || e); if (this.host) this.teken(); });
     this.periode = null; // deadlines: begint bij de periode van vandaag (modules/perioden.js)
     this.SD.perioden.laad().then(() => { if (this.host && this.klas) this.teken(); }, () => {});
     this.groep = ''; // elke keer beginnen met alle groepen
@@ -446,6 +456,7 @@ SD.register({
     this.scherm.addEventListener('change', (e) => {
       if (e.target.matches('[data-verborgen]')) { this.toonVerborgen = e.target.checked; this.teken(); }
       if (e.target.matches('[data-periode]')) { this.periode = e.target.value; this.teken(); }
+      if (e.target.matches('[data-strook]')) { this[e.target.dataset.strook] = e.target.value; this.teken(); }
       if (e.target.matches('[data-dlweergave]')) { chrome.storage.sync.set({ vdDeadlines: e.target.value }); this.SD.settings.vdDeadlines = e.target.value; this.teken(); }
     });
     this.laad();
@@ -503,22 +514,58 @@ SD.register({
   },
   dagTekst(iso, metJaar = false) { const [j, m, d] = iso.split('-').map(Number); return new Date(j, m - 1, d).toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'long', ...(metJaar ? { year: 'numeric' } : {}) }); },
 
+  /* "Alle opdrachten in deze klas": de stippenkaart, te filteren op periode (van de deadline) en te sorteren; meetmomenten apart.
+   * Elke rij is even hoog: links de titel met de deadline, in het midden de stippen, rechts de knop Nakijken. */
+  strokenBlok(stroken, k) {
+    const esc = this.esc, P = this.SD.perioden, K = this.SD.klassen, nu = P.vandaag();
+    const code = P.vind(this.strookPeriode) ? this.strookPeriode : '';
+    const sorteer = { deadline: (a, b) => (a.deadline || '9999').localeCompare(b.deadline || '9999') || a.titel.localeCompare(b.titel, 'nl', { numeric: true }),
+      naam: (a, b) => a.titel.localeCompare(b.titel, 'nl', { numeric: true }), wacht: (a, b) => b.wacht - a.wacht || a.titel.localeCompare(b.titel, 'nl', { numeric: true }) }[this.strookSort] || ((a, b) => b.wacht - a.wacht || a.titel.localeCompare(b.titel));
+    const zicht = stroken.filter((x) => !code || P.bevat(code, x.deadline)).sort(sorteer);
+    const kleur = K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : '';
+    const rij = (x) => `<div class="strook"><span class="titel"><a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="${esc(x.titel)}: open het overzicht per student">${esc(x.titel)}</a>
+        <small class="dl${x.deadline && x.deadline < nu ? ' voorbij' : ''}">${x.deadline ? `Deadline ${esc(this.dagTekst(x.deadline))}` : 'Geen deadline'}</small></span>
+      <span class="midden"><span class="stippen" role="img" aria-label="${x.klaar} klaar, ${x.wacht} wachten op jou, ${x.bezig} bezig, ${x.laat} te laat, ${x.niet} niet gestart">${['klaar', 'wacht', 'bezig', 'laat', 'niet'].map((soort) => `<i class="${soort}"></i>`.repeat(Math.min(x[soort], 60))).join('')}</span>
+        <span class="som">${[[x.klaar, 'klaar'], [x.wacht, x.wacht === 1 ? 'wacht op jou' : 'wachten op jou'], [x.bezig, 'bezig'], [x.laat, 'te laat'], [x.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></span>
+      <span class="actie">${x.wacht && x.link ? `<a class="nakijk" href="${esc(x.link)}" title="Open de eerste inlevering die op jou wacht">Nakijken (${x.wacht})</a>` : ''}</span></div>`;
+    const opdr = zicht.filter((x) => !/^meetmoment\b/i.test(x.titel)), meet = zicht.filter((x) => /^meetmoment\b/i.test(x.titel));
+    const keuze = (naam, nu2, opties, label) => `<label>${label} <select data-strook="${naam}">${opties.map(([v, t]) => `<option value="${esc(v)}"${v === nu2 ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+    return `<h2>Alle opdrachten in deze klas</h2>
+      <div class="lijst kaart stroken"${kleur}><div class="dl-kop">${keuze('strookSort', this.strookSort || 'wacht', [['wacht', 'wacht op jou eerst'], ['deadline', 'deadline'], ['naam', 'naam']], 'Sorteer op')}
+          ${P.lijst.length ? keuze('strookPeriode', code, [['', 'Alle periodes'], ...P.lijst.map((x) => [x.code, `${x.code}${x.naam ? ` · ${x.naam}` : ''}`])], 'Periode') : ''}<small>${zicht.length} van ${stroken.length} opdrachten</small></div>
+        ${opdr.length ? `${meet.length ? `<h3>Opdrachten <span>${opdr.length}</span></h3>` : ''}${opdr.map(rij).join('')}` : ''}
+        ${meet.length ? `<h3>Meetmomenten <span>${meet.length}</span></h3>${meet.map(rij).join('')}` : ''}
+        ${zicht.length ? '' : '<p class="dl-leeg">Geen opdrachten met een deadline in deze periode.</p>'}</div>
+      <p class="legenda"${kleur}><span><i class="klaar"></i>Klaar</span><span><i class="wacht"></i>Wacht op jou</span><span><i class="bezig"></i>Student is bezig</span><span><i class="laat"></i>Te laat</span><span><i class="niet"></i>Nog niet gestart</span><span>Eén stip is één inlevering. Klik op een titel voor het overzicht per student.</span></p>`;
+  },
+
   /* Alle opdrachten van een klas met hun deadline, ook die van collega's: uit de opdrachtenpagina van de klas
    * (/groups/school/<id>/assignments, door de server gemaakt). Per opdracht de titel, de deadline en hoeveel inleveringen
    * klaar, ingeleverd, bezig, te laat of niet gestart zijn. Geen namen. */
   async klasDeadlines(id) {
-    const res = await fetch(`/groups/school/${encodeURIComponent(id)}/assignments?filters=`, { credentials: 'same-origin' });
-    if (!res.ok) return [];
-    const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    // De tabel staat niet in de pagina zelf: Simulise vult hem met een verzoek (POST .../assignments/filter, antwoord { table }).
+    // Dat is hetzelfde leesverzoek dat de pagina bij het openen doet; het vraagt de beveiligingscode van de pagina (csrf-token).
+    const pad = `/groups/school/${encodeURIComponent(id)}/assignments`;
+    let csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    if (!csrf) {
+      const pagina = await fetch(`${pad}?filters=`, { credentials: 'same-origin' });
+      if (pagina.ok) csrf = new DOMParser().parseFromString(await pagina.text(), 'text/html').querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+    const res = await fetch(`${pad}/filter?_continue=${encodeURIComponent(pad)}`, { method: 'POST', credentials: 'same-origin', body: 'filters=',
+      headers: { accept: 'application/json', 'x-requested-with': 'XMLHttpRequest', 'x-csrf-token': csrf, 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8' } });
+    if (!res.ok) throw new Error(`Simulise gaf ${res.status}`);
+    const tabel = (await res.json())?.table;
+    if (typeof tabel !== 'string') throw new Error('geen tabel in het antwoord');
+    const doc = new DOMParser().parseFromString(`<table>${tabel}</table>`, 'text/html');
     const SOORT = { FINISHED: 'klaar', HANDED_IN: 'in', FEEDBACK_ASKED: 'in', BEING_PROCESSED: 'in', PARTLY_REVIEWED: 'in', IN_PROGRESS: 'bezig', DOOVER: 'bezig', DEADLINE_PAST: 'laat' };
     const uit = [];
-    for (const tr of doc.querySelectorAll('table.table-group-assignments-overview tbody > tr, table.rotated-header tbody > tr')) {
+    for (const tr of doc.querySelectorAll('tbody > tr')) {
       const cellen = tr.querySelectorAll('td[data-status]');
       const titel = (tr.querySelector('a.divider-plan')?.textContent || '').replace(/\s+/g, ' ').trim();
       if (!cellen.length || !titel) continue;
       const tel = { klaar: 0, in: 0, bezig: 0, laat: 0, niet: 0 };
       for (const td of cellen) tel[SOORT[td.dataset.status] || 'niet']++;
-      uit.push({ titel, deadline: this.datum((tr.querySelector('small.reviewers > a > small')?.textContent || '').replace(/^[^\d]*/, '')), meet: /^meetmoment\b/i.test(titel), tel, n: cellen.length });
+      uit.push({ titel, deadline: this.datum((tr.querySelector('td')?.textContent.match(/Deadline:\s*(\d{1,2}-\d{1,2}-\d{4})/) || [])[1]), meet: /^meetmoment\b/i.test(titel), tel, n: cellen.length });
     }
     return uit;
   },
@@ -539,7 +586,7 @@ SD.register({
     const zonder = stroken.filter((x) => !x.deadline).length;
     const p = P.vind(code);
     const klasView = this.SD.settings.vdDeadlines === 'klas';
-    const kies = `<label>Toon <select data-dlweergave><option value="mij"${klasView ? '' : ' selected'}>waar ik beoordelaar ben</option><option value="klas"${klasView ? ' selected' : ''}>alle opdrachten van de klas</option></select></label>`;
+    const kies = `<label>Toon <select data-dlweergave><option value="mij"${klasView ? '' : ' selected'}>mijn opdrachten</option><option value="klas"${klasView ? ' selected' : ''}>alle opdrachten</option></select></label>`;
     // Hele klas: alles op datum, meetmomenten apart. Wat voorbij is staat lichter.
     let klasBlok = '';
     if (klasView) {
@@ -550,6 +597,8 @@ SD.register({
       const opdr = alle.filter((x) => !x.meet), meet = alle.filter((x) => x.meet);
       const zonderK = (this.alleDl || []).filter((x) => !x.deadline).length;
       klasBlok = this.alleDl == null ? '<p class="dl-leeg">Opdrachten van de klas ophalen…</p>'
+        : this.alleDlFout ? `<p class="dl-leeg">De opdrachten van de klas konden niet worden opgehaald (${esc(this.alleDlFout)}). Open de <a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments">opdrachten van de klas</a> in Simulise.</p>`
+        : !this.alleDl.length ? '<p class="dl-leeg">Simulise gaf geen opdrachten voor deze klas.</p>'
         : `<div class="dl-twee"><div><h3>Opdrachten <span>${opdr.length}</span></h3>${opdr.map(rij).join('') || '<p class="dl-leeg">Geen opdrachten met een deadline in deze periode.</p>'}</div>
           <div><h3>Meetmomenten <span>${meet.length}</span></h3>${meet.map(rij).join('') || '<p class="dl-leeg">Geen meetmomenten met een deadline in deze periode.</p>'}</div></div>
           <p class="dl-leeg">Alle opdrachten van deze klas, ook die van collega's, op volgorde van de deadline; wat voorbij is staat lichter.${zonderK ? ` ${zonderK} ${zonderK === 1 ? 'opdracht heeft' : 'opdrachten hebben'} geen deadline.` : ''}</p>`;
@@ -663,13 +712,7 @@ SD.register({
         <a href="${esc(this.lijstLink(k ? k.id : this.groep))}">Open als lijst in Simulise</a>
         <span>Klik op een regel om de langst wachtende inlevering te beoordelen.</span>
       </div>
-      ${stroken?.length ? `<h2>Alle opdrachten in deze klas</h2>
-      <div class="lijst kaart"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}>${stroken.map((x) => `<div class="strook"><span class="titel"><a href="/groups/school/${esc(encodeURIComponent(k.id))}/assignments#sd-opdracht=${esc(encodeURIComponent(x.titel))}" title="${esc(x.titel)}: open het overzicht per student">${esc(x.titel)}</a>
-          ${x.deadline ? `<small class="dl${x.deadline < this.SD.perioden.vandaag() ? ' voorbij' : ''}">Deadline ${esc(this.dagTekst(x.deadline))}</small>` : ''}
-          ${x.wacht && x.link ? `<a class="nakijk" href="${esc(x.link)}" title="Open de eerste inlevering die op jou wacht">Nakijken (${x.wacht})</a>` : ''}</span>
-        <span class="stippen" role="img" aria-label="${x.klaar} klaar, ${x.wacht} wachten op jou, ${x.bezig} bezig, ${x.laat} te laat, ${x.niet} niet gestart">${['klaar', 'wacht', 'bezig', 'laat', 'niet'].map((soort) => `<i class="${soort}"></i>`.repeat(Math.min(x[soort], 60))).join('')}</span>
-        <span class="som">${[[x.klaar, 'klaar'], [x.wacht, x.wacht === 1 ? 'wacht op jou' : 'wachten op jou'], [x.bezig, 'bezig'], [x.laat, 'te laat'], [x.niet, 'niet gestart']].filter(([n]) => n).map(([n, t]) => `${n} ${t}`).join(' · ')}</span></div>`).join('')}</div>
-      <p class="legenda"${K.kleur(k.id) ? ` style="--k:${esc(K.kleur(k.id))}"` : ''}><span><i class="klaar"></i>Klaar</span><span><i class="wacht"></i>Wacht op jou</span><span><i class="bezig"></i>Student is bezig</span><span><i class="laat"></i>Te laat</span><span><i class="niet"></i>Nog niet gestart</span><span>Eén stip is één inlevering. Klik op een titel voor het overzicht per student.</span></p>` : ''}
+      ${stroken?.length ? this.strokenBlok(stroken, k) : ''}
       ${stroken?.length ? this.deadlines(stroken, k) : ''}
       ${k ? `<p class="uitleg">Te laat, Nog niet gestart en Klaar tellen de inleveringen in deze klas waarvan jij beoordelaar bent.</p>
       <div class="snel" aria-label="Deze klas in Simulise">${[['assignments', 'Alle opdrachten'], ['students', 'Studenten'], ['teachers', 'Docenten'], ['templates', 'Sjablonen'], ['community', 'Community'], ['files', 'Bestanden'], ['settings', 'Instellingen']]

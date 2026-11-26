@@ -11,7 +11,7 @@ Die heeft een eigen Inspector, maar die draait alleen op magister.net. Voor Simu
 Inspector van deze extensie (v0.5.0+, ontwikkelaarsmodus): rapporten komen als
 `simulise-rapport-<pad>.md` met namen al vervangen.
 
-## Huidige staat (v0.25.1)
+## Huidige staat (v0.25.3)
 
 ```
 manifest.json   MV3, permissions: storage, alarms; host_permissions alleen GitHub (updates);
@@ -407,8 +407,11 @@ sessies in de cloud kunnen geen tags pushen, dit werkt wel). Draai voor elke rel
 - **Opdrachtenpagina van een klas, opbouw (gemeten november 2026)**: de pagina schuift zelf niet. `body` heeft overflow hidden, `#content-wrapper.wrapper` is
   position absolute (top 54px, bottom 0) met overflow visible, en Simulise zet met script een max-height op de tabel zodat die precies past. Alles wat de extensie
   erboven zet duwt de tabel dus onder de rand van het venster. theme.css zet daarom `html[data-sim-matrix] #content-wrapper { overflow-y: auto }`.
-  De pagina `/groups/school/<id>/assignments?filters=` (door de server gemaakt) bevat alle opdrachten van de klas, ook die van collega's; vandaag.js leest
-  daar de deadlines voor de weergave "alle opdrachten van de klas" (instelling vdDeadlines).
+  LET OP: de tabel zit NIET in de HTML van `/groups/school/<id>/assignments` (daar staat een lege `<table data-section="table">`). Simulise vult hem met
+  `POST /groups/school/<id>/assignments/filter?_continue=<pad>` (form `filters=<komma's>`, kop `x-csrf-token` uit `meta[name="csrf-token"]`, antwoord
+  `{ table: "<thead>…</tbody>" }`; GET geeft 400). Dat is een leesverzoek dat de pagina bij elk openen doet. vandaag.js (klasDeadlines) gebruikt het voor de
+  weergave "alle opdrachten" in het blok Deadlines (instelling vdDeadlines); de deadline staat als tekst "Deadline: dd-mm-jjjj uu:mm" in de eerste cel.
+  Hetzelfde geldt voor rapporten.js (ledenVan op deze pagina): die vindt in de kale HTML geen studenten.
 - **Labels ("school topics")**: per onderdeel aan of uit (`getTopicsForFeature`, `schoolTopicUpdateEnabled`, beheerpagina
   `pages/manage/topics`), met `required` en `canCreateLabelsInline`. Bij opdrachten: Opleidingen, Deelaspecten, Tags, Cohorten,
   Modules (M01 t/m M12), Versies. Het label **Vakken** (`labels(only: [SUBJECTS])`) bestaat en staat op rubrics (Nederlands,

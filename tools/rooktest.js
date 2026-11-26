@@ -154,7 +154,7 @@ const DIAGRAM = { 'e-beroeps': { id: 'd', phaseCount: 4, aspects: [
   ASPECT('4. Professioneel handelen', '#9333ea', { 1: FASE(1, false, 0, '03-11-2026') }),
   ASPECT('5. Vakvaardigheden', '#0e7490', { 1: FASE(1, true, 1, '20-10-2026'), 2: FASE(2, true, 1, '05-11-2026') })] },
   'e-bava': { id: 'd2', phaseCount: 5, aspects: [ASPECT('Lezen', '#e8650a', { 1: FASE(1, true, 1, '04-11-2026'), 2: FASE(2, true, 1, '04-11-2026') }), ASPECT('Reading', '#24388f', {})] } };
-const GROEPSPAGINA = `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
+const GROEPSPAGINA = `<html><head><meta name="csrf-token" content="tok-123"></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><section class="vbox"><header class="header header-md">
 <div class="header-title"><p class="header-text"><span class="header-text-first-item"><a href="/groups"><span>Groepen</span></a></span><span class="text-muted">/</span><span>MR1A</span></p></div>
 <ul class="nav nav-tabs"><li><a href="/groups/school/${UUID}/community"><span>Community</span></a></li></ul></header>
 <ul class="nav-user"><li><a class="dropdown-toggle">Docent Test</a></li></ul>
@@ -262,6 +262,13 @@ function bouwZip() {
       { id: 'ed-bava', text: 'BAVA 4', value: 'ed-bava', prefix: '' }, { id: 'ed-beroeps', text: 'Mediaproducer / Music Industry Professional', value: 'ed-beroeps', prefix: '' },
       { id: 'ed-oud', text: 'Mediaproducer (Cohort 2024)', value: 'ed-oud', prefix: '' }, { id: 'ed-sd', text: 'Software Developer', value: 'ed-sd', prefix: '' }]) });
     if (p === '/groups') return r.fulfill({ contentType: 'text/html', body: GROEPEN });
+    // De tabel met opdrachten van een klas zoals Simulise hem ophaalt: alleen met POST en de beveiligingscode van de pagina.
+    if (/^\/groups\/school\/[^/]+\/assignments\/filter$/.test(p)) {
+      filterVerzoeken.push(`${r.request().method()} ${r.request().headers()['x-csrf-token'] || '-'} ${r.request().postData() || ''}`);
+      if (r.request().method() !== 'POST') return r.fulfill({ status: 400, contentType: 'application/json', body: '{"message":"The GET method is not supported"}' });
+      if (r.request().headers()['x-csrf-token'] !== 'tok-123') return r.fulfill({ status: 419, contentType: 'application/json', body: '{"message":"CSRF token mismatch."}' });
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ table: (GROEPSPAGINA.match(/<thead>[\s\S]*<\/tbody>/) || [''])[0].replace('</tbody>', `<tr><td class="sticky left"><div><a class="divider-plan" href="#">Meetmoment MR Engels M1 (Cohort 2026)</a><small class="reviewers">Beoordelaars: <a>Collega Ander</a><a href="#"><small>Deadline: 20-11-2026 23:59</small></a></small></div></td><td data-status="FINISHED"><a></a></td><td data-status="NOT_STARTED"><a></a></td></tr></tbody>`) }) });
+    }
     if (p === '/school/assignments') return r.fulfill({ contentType: 'text/html', body: `<html><head></head><body><aside id="nav"><ul class="nav-main"></ul></aside><div id="content"><header class="header header-md"><p class="header-text">Opdrachten</p><a href="/school/assignment/create" class="btn btn-xs btn-success">Nieuwe opdracht</a></header><section id="scrollable-page-wrapper"><div class="lijst-van-simulise"><table class="table"><tbody><tr><td>Bestaande opdracht</td></tr></tbody></table></div></section></div>${APP_GQL}</body></html>` });
     if (p === '/api/autocomplete/teachers' || p === '/api/autocomplete/assignmentauthors') return r.fulfill({ contentType: 'application/json', body: JSON.stringify([{ id: 'user:77', text: 'Collega Test', value: '77', search: 'Collega Test' }, { id: 'user:4242', text: 'Docent Test', value: '4242' }]) });
     if (p === '/api/autocomplete/assignment/plan/connects') return r.fulfill({ contentType: 'application/json', body: JSON.stringify([['MEP1A', 'gr-mep1a'], ['MEP2A', 'gr-mep2a'], ['MIP1B', 'gr-mip1b'], ['MR1A', 'gr-mr1a']]
@@ -293,7 +300,7 @@ function bouwZip() {
   const vandaagVerzoeken = [];
   const klasVerzoeken = [];
   const vandaagAfgerond = { n: 40 };
-  const opdrachtVerzoeken = [], mediaVerzoeken = [];
+  const opdrachtVerzoeken = [], mediaVerzoeken = [], filterVerzoeken = [];
   await ctx.route('https://api.simulise.com/preview/**', (r) => { const id = new URL(r.request().url()).pathname.split('/').pop(); return r.fulfill({ contentType: 'text/html', headers: { 'access-control-allow-origin': '*' },
     body: id === 'f-video' ? '<div class="post-content"><video controls poster="https://usercontent.on.simulise.cloud/portfolio/f-video/preview.jpg"><source src="https://usercontent.on.simulise.cloud/portfolio/f-video/upload.mp4" type="video/mp4"></video></div>' : id === 'f-audio' ? '<audio controls src="https://usercontent.on.simulise.cloud/portfolio/f-audio/upload.mp3"></audio>' : '<p>voorvertoning</p>' }); });
   await ctx.route('https://api.simulise.com/graphql', (r) => {
@@ -983,11 +990,22 @@ function bouwZip() {
     // Hele klas: alle opdrachten uit de opdrachtenpagina van de klas (ook van collega's), meetmomenten apart.
     await vd.locator('select[data-dlweergave]').selectOption('klas'); await sim.waitForTimeout(600);
     const kl = await vd.locator('.deadlines').evaluate((el) => ({ koppen: [...el.querySelectorAll('.dl-twee h3')].map((h) => h.textContent.replace(/\s+/g, ' ').trim()).join(' | '), titels: [...el.querySelectorAll('.dl-twee > div:first-child .dl-rij > a')].map((a) => a.textContent).join(' ; '),
-      som: el.querySelector('.dl-twee > div:first-child .dl-rij .som')?.textContent, meet: el.querySelector('.dl-twee > div:last-child .dl-leeg')?.textContent || '', tekst: el.innerText }));
-    check(kl.koppen === 'Opdrachten 4 | Meetmomenten 0' && kl.titels === 'BUR - casus ; ENG_1.5: True crime ; LOB - werkveld verkennen ; PS_1.8: Wie ben ik?' && kl.som === '1 bezig · 1 te laat' && /Geen meetmomenten/.test(kl.meet) && !/Anna|Bram|Collega/.test(kl.tekst),
-      `klaspagina deadlines, hele klas: alle opdrachten van de klas op datum met de stand, meetmomenten apart, zonder namen (${kl.koppen}; ${kl.titels}; ${kl.som})`);
+      som: el.querySelector('.dl-twee > div:first-child .dl-rij .som')?.textContent, meetTitel: el.querySelector('.dl-twee > div:last-child .dl-rij > a')?.textContent || '', tekst: el.innerText }));
+    check(kl.koppen === 'Opdrachten 4 | Meetmomenten 1' && kl.titels === 'BUR - casus ; ENG_1.5: True crime ; LOB - werkveld verkennen ; PS_1.8: Wie ben ik?' && kl.som === '1 bezig · 1 te laat' && kl.meetTitel === 'Meetmoment MR Engels M1 (Cohort 2026)' && !/Anna|Bram|Collega/.test(kl.tekst)
+      && filterVerzoeken.length >= 1 && filterVerzoeken.every((v) => v === 'POST tok-123 filters='),
+      `klaspagina deadlines, hele klas: alle opdrachten van de klas op datum met de stand, meetmomenten apart, zonder namen, opgehaald zoals Simulise de tabel zelf ophaalt (${kl.koppen}; ${kl.titels}; ${kl.som}; ${filterVerzoeken[0]})`);
     await vd.locator('select[data-dlweergave]').selectOption('mij'); await sim.waitForTimeout(300);
-  { const sl = await vd.locator('.strook').first().evaluate((el) => ({ overzicht: el.querySelector('.titel > a')?.getAttribute('href') || '', nakijk: el.querySelector('a.nakijk')?.getAttribute('href') || '', tekst: el.querySelector('a.nakijk')?.textContent || '', tweede: !!el.parentElement.children[1].querySelector('a.nakijk') }));
+  { const hoogtes = await vd.locator('.strook').evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().height)).join(','));
+    await vd.locator('select[data-strook="strookSort"]').selectOption('naam'); await sim.waitForTimeout(200);
+    const opNaam = (await vd.locator('.strook .titel > a').allTextContents()).join(' ; ');
+    await vd.locator('select[data-strook="strookSort"]').selectOption('deadline'); await sim.waitForTimeout(200);
+    const opDl = (await vd.locator('.strook .titel > a').allTextContents()).join(' ; ');
+    await vd.locator('select[data-strook="strookPeriode"]').selectOption('M1'); await sim.waitForTimeout(200);
+    const inM1 = `${await vd.locator('.strook').count()} | ${(await vd.locator('.stroken .dl-kop small').innerText()).trim()}`;
+    await vd.locator('select[data-strook="strookPeriode"]').selectOption(''); await vd.locator('select[data-strook="strookSort"]').selectOption('wacht'); await sim.waitForTimeout(200);
+    check(/^(\d+),\1$/.test(hoogtes) && opNaam === 'LOB - werkveld verkennen ; PS_1.8: Wie ben ik?' && opDl === 'LOB - werkveld verkennen ; PS_1.8: Wie ben ik?' && inM1 === '0 | 0 van 2 opdrachten' && (await vd.locator('.strook').first().locator('.titel > a').innerText()) === 'PS_1.8: Wie ben ik?',
+      `klaspagina, alle opdrachten: rijen even hoog (${hoogtes}), sorteren op wacht, deadline of naam, filteren op periode (${inM1})`); }
+  { const sl = await vd.locator('.strook').first().evaluate((el) => ({ overzicht: el.querySelector('.titel > a')?.getAttribute('href') || '', nakijk: el.querySelector('a.nakijk')?.getAttribute('href') || '', tekst: el.querySelector('a.nakijk')?.textContent || '', tweede: !!el.nextElementSibling.querySelector('a.nakijk') }));
     check(/^\/groups\/school\/[^/]+\/assignments#sd-opdracht=/.test(sl.overzicht) && /^\/@[^/]+\/assignment\/[^/]+\/review\?/.test(sl.nakijk) && sl.tekst === 'Nakijken (1)' && !sl.tweede,
       `klaspagina: de titel van een opdracht opent het overzicht per student, "Nakijken" de eerste inlevering die op jou wacht (${sl.overzicht.replace(/=.*/, '=…')}; ${sl.tekst})`); }
   check((await vd.locator('.held.klas').count()) === 1 && (await vd.locator('.held').getAttribute('style')).startsWith('--k:#') && (await vd.locator('.week').count()) === 0, 'thuispagina per klas: kop in de kleur van de klas');

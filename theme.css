@@ -1201,7 +1201,8 @@ html .sd-opdracht .sd-o-rubricknop { margin-top: 8px; font-size: 13px; padding: 
 .sd-opdracht .sd-o-poplijst { flex: 1 1 auto; min-height: 160px; overflow: auto; margin-top: 10px; padding: 2px 4px 2px 2px; }
 .sd-opdracht .sd-o-poplijst .sd-o-vink { margin: 0; padding: 7px 8px; border-radius: var(--sim-radius-sm, 8px); }
 .sd-opdracht .sd-o-poplijst .sd-o-vink:hover { background: var(--sim-surface-2, #eef0f3); }
-html .sd-opdracht-knop { margin-left: 6px; }
+/* Zelfde afstand als Simulise tussen de knoppen in de kop (5px). */
+html .sd-opdracht-knop { margin-left: 5px !important; margin-right: 0 !important; }
 
 /* ---------- Media bij het nakijken (modules/media.js): bestanden van een ingeleverde portfoliopagina ---------- */
 .sd-media { margin: 16px 0 0; padding: 14px 16px 16px; border: 1px solid var(--sim-border, #e3e6ea); border-radius: var(--sim-radius, 12px); background: var(--sim-surface, #fff); color: var(--sim-text, #1e2328); font-family: var(--sim-font, inherit); }

@@ -101,9 +101,13 @@ nagebootst (geen netwerk, geen echte data). De test controleert het content scri
 updatecontrole met badge, en of een zip zoals de workflow die bouwt goed uitpakt.
 
 ## Wijzigingen
+- 0.25.3: "Alle opdrachten in deze klas" op de klaspagina: alle rijen even hoog (de knop Nakijken staat rechts),
+  sorteren op wacht op jou, deadline of naam, filteren op periode, en de meetmomenten in een eigen groep.
+- 0.25.2: de weergave met alle deadlines van de klas bleef leeg; de plugin haalt de opdrachten nu op zoals Simulise
+  de tabel zelf ophaalt. De keuze heet "mijn opdrachten" of "alle opdrachten".
 - 0.25.1: de opdrachtenpagina van een klas past weer in het venster: de pagina schuift nu en de gedraaide tabel is
   op de hoogte van het venster afgestemd. Het blok Deadlines op de klaspagina heeft een tweede weergave "alle
-  opdrachten van de klas": alle deadlines in de gekozen periode op datum, ook die van collega's, met de meetmomenten
+  opdrachten": alle deadlines in de gekozen periode op datum, ook die van collega's, met de meetmomenten
   apart.
 - 0.25.0: de instellingen staan in een zijpaneel naast de pagina (klik op het icoon), niet meer in een venster
   eroverheen. Onderdelen staan per soort werk, en er is een blok "Periodes en normen": periodes met begin en eind,
